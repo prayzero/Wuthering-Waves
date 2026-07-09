@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WuWa 픽업 플래너 — 명조 가챠 계획 &amp; 파티 편성</title>
 <meta name="description" content="명조: 워더링 웨이브 픽업 일정 관리, 파티 편성, 뽑기 기록과 운 퍼센트 분석 도구">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23e6c15a'/><text x='50' y='68' font-size='52' text-anchor='middle' font-family='sans-serif' font-weight='bold' fill='%230d0d0d'>鳴</text></svg>">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0d0d0d">
 <meta name="mobile-web-app-capable" content="yes">
@@ -25,6 +25,8 @@
     </div>
     <nav class="tabs" id="tabs">
       <button class="tab-btn active" data-tab="planner">홈 · 플래너</button>
+      <button class="tab-btn" data-tab="contents">컨텐츠</button>
+      <button class="tab-btn" data-tab="materials">스킬 재료</button>
       <button class="tab-btn" data-tab="roster">보유 캐릭터</button>
       <button class="tab-btn" data-tab="history">픽업 기록</button>
       <button class="tab-btn" data-tab="rates">확률 정보</button>
@@ -86,6 +88,31 @@
       </div>
       <p class="own-summary" id="own-summary"></p>
       <div id="roster-grid"></div>
+    </div>
+  </section>
+
+  <!-- ================= 컨텐츠 (탑/해역/매트릭스) ================= -->
+  <section class="tab-panel" id="tab-contents">
+    <div class="section">
+      <div class="section-head">
+        <h2>엔드 컨텐츠 로테이션</h2>
+        <p class="desc">탑 · 해역 · 매트릭스의 리셋 주기와 이번 주기의 버프, 등장 몹을 한눈에 확인하세요. 로테이션이 바뀌면 [수정]으로 갱신하면 됩니다 (자동 저장).</p>
+      </div>
+      <div class="content-grid" id="content-grid"></div>
+    </div>
+  </section>
+
+  <!-- ================= 스킬 재료 ================= -->
+  <section class="tab-panel" id="tab-materials">
+    <div class="section">
+      <div class="section-head">
+        <h2>캐릭터별 스킬 재료</h2>
+        <p class="desc">캐릭터 아이콘을 누르면 포르테(스킬) 육성에 필요한 재료가 표시됩니다. 수량은 스킬 풀업 기준 근사치이며, 재료 종류 기본값은 무기 타입 기반 추정이라 실제와 다르면 [재료 수정]으로 바꿔주세요.</p>
+      </div>
+      <div class="mat-char-strip-wrap card">
+        <div class="mat-char-strip" id="mat-char-strip"></div>
+      </div>
+      <div id="mat-detail"></div>
     </div>
   </section>
 
@@ -299,6 +326,62 @@
   <div class="modal-actions">
     <button type="button" class="ghost-btn" data-close>닫기</button>
   </div>
+</dialog>
+
+<!-- ================= 모달: 컨텐츠 수정 ================= -->
+<dialog id="content-modal">
+  <h3 id="content-modal-title">컨텐츠 정보 수정</h3>
+  <form class="form-grid" id="content-form" method="dialog">
+    <div class="form-row">
+      <label>컨텐츠 이름</label>
+      <input type="text" id="ct-name" maxlength="24" required>
+    </div>
+    <div class="form-2col">
+      <div class="form-row">
+        <label>이번 주기 시작일</label>
+        <input type="date" id="ct-start" required>
+      </div>
+      <div class="form-row">
+        <label>리셋 주기 (일)</label>
+        <input type="number" id="ct-period" min="1" max="90" required>
+      </div>
+    </div>
+    <div class="form-row">
+      <label>이번 주기 버프</label>
+      <textarea id="ct-buff" rows="2" placeholder="예: 응결 피해 +25%, 공명 해방 피해 +30%"></textarea>
+    </div>
+    <div class="form-row">
+      <label>단계별 등장 몹 — 한 줄에 하나씩 "단계명: 몹1, 몹2" 형식</label>
+      <textarea id="ct-stages" rows="5" placeholder="위험 구역 1층: 무관자, 폭풍 메피스&#10;위험 구역 2층: 만가의 용"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="ghost-btn" data-close>취소</button>
+      <button type="submit" class="primary-btn">저장</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ================= 모달: 스킬 재료 수정 ================= -->
+<dialog id="mat-modal">
+  <h3 id="mat-modal-title">스킬 재료 수정</h3>
+  <form class="form-grid" id="mat-form" method="dialog">
+    <div class="form-row">
+      <label>포지(합성) 재료 계열</label>
+      <select id="mat-forge"></select>
+    </div>
+    <div class="form-row">
+      <label>일반 몹 드랍 계열</label>
+      <select id="mat-drop"></select>
+    </div>
+    <div class="form-row">
+      <label>주간 보스 재료</label>
+      <input type="text" id="mat-weekly" maxlength="30" placeholder="예: 무명(드림리스) 주간 재료">
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="ghost-btn" data-close>취소</button>
+      <button type="submit" class="primary-btn">저장</button>
+    </div>
+  </form>
 </dialog>
 
 <!-- ================= 모달: 커스텀 캐릭터 ================= -->

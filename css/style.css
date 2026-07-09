@@ -309,6 +309,82 @@ table.banner-table { width: 100%; border-collapse: collapse; font-size: 0.85rem;
 .luck-bar .fill { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: linear-gradient(90deg, #1c5cab, var(--blue)); min-width: 2px; }
 .luck-bar-lbl { font-size: 0.7rem; color: var(--muted); margin-top: 4px; }
 
+/* ---------- 컨텐츠 (탑/해역/매트릭스) ---------- */
+.content-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.content-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 12px;
+}
+.content-head { display: flex; align-items: center; gap: 10px; }
+.content-head .ct-icon {
+  width: 42px; height: 42px; border-radius: 11px; display: grid; place-items: center;
+  font-size: 1.3rem; background: var(--surface-2); border: 1px solid var(--border); flex: none;
+}
+.content-head .t { flex: 1; min-width: 0; }
+.content-head .t b { font-size: 1rem; display: block; }
+.content-head .t small { color: var(--muted); font-size: 0.74rem; }
+.reset-badge {
+  text-align: center; padding: 10px 8px; border-radius: 10px;
+  background: var(--surface-2); border: 1px solid var(--border);
+}
+.reset-badge .dd { font-size: 1.3rem; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; }
+.reset-badge .dd.soon-reset { color: var(--serious); }
+.reset-badge .sub { color: var(--muted); font-size: 0.72rem; margin-top: 1px; }
+.reset-bar { position: relative; height: 6px; background: var(--grid); border-radius: 3px; margin-top: 8px; }
+.reset-bar .fill { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: linear-gradient(90deg, #8a6d1f, var(--accent)); min-width: 2px; }
+.ct-block h4 {
+  margin: 0 0 6px; font-size: 0.76rem; color: var(--muted); font-weight: 700;
+  display: flex; align-items: center; gap: 6px;
+}
+.ct-buff {
+  background: rgba(230, 193, 90, 0.07); border: 1px solid rgba(230, 193, 90, 0.25);
+  border-radius: 10px; padding: 10px 12px; font-size: 0.84rem; color: var(--ink-2); white-space: pre-wrap;
+}
+.stage-row {
+  display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--grid);
+  font-size: 0.83rem; align-items: baseline;
+}
+.stage-row:last-child { border-bottom: none; }
+.stage-row .sn { flex: none; min-width: 84px; font-weight: 700; color: var(--accent); font-size: 0.78rem; }
+.stage-row .mobs { color: var(--ink-2); }
+.mob-chip {
+  display: inline-block; background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 999px; padding: 2px 10px; margin: 2px 3px 2px 0; font-size: 0.76rem; color: var(--ink-2);
+}
+.ct-foot { margin-top: auto; display: flex; justify-content: flex-end; }
+
+/* ---------- 스킬 재료 ---------- */
+.mat-char-strip-wrap { padding: 12px; margin-bottom: 16px; }
+.mat-char-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(62px, 1fr)); gap: 10px; }
+.mat-char {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  background: transparent; border: none; padding: 6px 2px; border-radius: 10px; cursor: pointer;
+}
+.mat-char:hover { background: var(--surface-2); }
+.mat-char.selected { background: var(--surface-2); outline: 2px solid rgba(230, 193, 90, 0.5); }
+.mat-char .nm { font-size: 0.68rem; color: var(--ink-2); max-width: 62px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mat-detail-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
+.mat-detail-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+.mat-detail-head .who { flex: 1; min-width: 160px; }
+.mat-detail-head .who b { font-size: 1.15rem; display: block; }
+.mat-detail-head .who .chips { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
+.mat-section { margin-bottom: 14px; }
+.mat-section h4 { margin: 0 0 8px; font-size: 0.8rem; color: var(--muted); font-weight: 700; }
+.mat-rows { display: grid; gap: 6px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+.mat-row {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 8px 12px; font-size: 0.82rem;
+}
+.mat-row .tier-dot {
+  width: 26px; height: 26px; border-radius: 8px; flex: none;
+  display: grid; place-items: center; font-size: 0.62rem; font-weight: 800; color: #0d0d0d;
+}
+.mat-row .mn { flex: 1; color: var(--ink-2); min-width: 0; }
+.mat-row .cnt { font-weight: 800; font-variant-numeric: tabular-nums; }
+.mat-note { color: var(--muted); font-size: 0.74rem; margin-top: 10px; }
+.mat-empty { text-align: center; padding: 40px 16px; }
+
 /* ---------- 확률 정보 ---------- */
 .rate-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
 .rate-card h3 { margin: 0 0 10px; font-size: 0.98rem; color: var(--accent); }

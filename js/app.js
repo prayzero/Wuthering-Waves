@@ -10,6 +10,8 @@ const defaultState = () => ({
   schedules: [],        // {id, charId, name, start, end, saved, goal, memo}
   parties: [{ id: uid(), name: '파티 1', members: [null, null, null] }],
   records: [],          // {id, season, type, charId, weaponName, copy, pulls, lost}
+  contents: JSON.parse(JSON.stringify(CONTENT_DEFAULTS)), // 탑/해역/매트릭스 로테이션
+  matOverrides: {},     // charId -> {forge, drop, weekly}
 });
 
 let state = loadState();
@@ -704,6 +706,222 @@ document.getElementById('record-form').addEventListener('submit', e => {
 });
 
 /* ================================================================
+   4.5 엔드 컨텐츠 (탑 / 해역 / 매트릭스)
+   ================================================================ */
+
+// 이번 주기의 시작일·리셋일 계산 (start를 기준으로 period일마다 반복)
+function cycleInfo(c) {
+  const t = new Date(today());
+  const start = new Date(c.start);
+  const period = Math.max(1, +c.period || 1);
+  const dayMs = 86400000;
+  let cycleStart;
+  if (t < start) {
+    cycleStart = start; // 아직 첫 주기 전 — 시작일까지 카운트
+    return { next: start, left: Math.round((start - t) / dayMs), progress: 0, upcoming: true };
+  }
+  const elapsed = Math.floor((t - start) / dayMs);
+  const into = elapsed % period;
+  cycleStart = new Date(start.getTime() + (elapsed - into) * dayMs);
+  const next = new Date(cycleStart.getTime() + period * dayMs);
+  return { next, left: period - into, progress: into / period, upcoming: false };
+}
+
+function fmtShort(d) {
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+function renderContents() {
+  const grid = document.getElementById('content-grid');
+  grid.innerHTML = state.contents.map(c => {
+    const info = cycleInfo(c);
+    const stages = (c.stages || []).map(s => `
+      <div class="stage-row">
+        <span class="sn">${esc(s.name)}</span>
+        <span class="mobs">${s.mobs.split(',').map(m => m.trim()).filter(Boolean)
+          .map(m => `<span class="mob-chip">${esc(m)}</span>`).join('')}</span>
+      </div>`).join('');
+    return `
+    <div class="content-card">
+      <div class="content-head">
+        <span class="ct-icon">${c.icon || '📌'}</span>
+        <div class="t">
+          <b>${esc(c.name)}</b>
+          <small>${c.period}일 주기 · 이번 주기 ${fmtShort(new Date(new Date(info.next).getTime() - c.period * 86400000))} ~ ${fmtShort(new Date(info.next))}</small>
+        </div>
+        <button class="icon-btn" data-edit-content="${c.id}">수정</button>
+      </div>
+      <div class="reset-badge">
+        <div class="dd ${info.left <= 3 ? 'soon-reset' : ''}">${info.upcoming ? '시작까지' : '리셋까지'} D-${info.left}</div>
+        <div class="sub">${fmtShort(new Date(info.next))} 리셋</div>
+        <div class="reset-bar"><div class="fill" style="width:${(info.progress * 100).toFixed(1)}%"></div></div>
+      </div>
+      <div class="ct-block">
+        <h4>✨ 이번 주기 버프</h4>
+        <div class="ct-buff">${esc(c.buff || '버프 미입력')}</div>
+      </div>
+      <div class="ct-block">
+        <h4>👹 등장 몹</h4>
+        ${stages || '<div class="empty-note" style="padding:14px">단계를 추가해 주세요</div>'}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+let editingContentId = null;
+
+document.getElementById('content-grid').addEventListener('click', e => {
+  const btn = e.target.closest('[data-edit-content]');
+  if (!btn) return;
+  editingContentId = btn.dataset.editContent;
+  const c = state.contents.find(x => x.id === editingContentId);
+  document.getElementById('content-modal-title').textContent = `${c.name} — 정보 수정`;
+  document.getElementById('ct-name').value = c.name;
+  document.getElementById('ct-start').value = c.start;
+  document.getElementById('ct-period').value = c.period;
+  document.getElementById('ct-buff').value = c.buff || '';
+  document.getElementById('ct-stages').value = (c.stages || []).map(s => `${s.name}: ${s.mobs}`).join('\n');
+  document.getElementById('content-modal').showModal();
+});
+
+document.getElementById('content-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const c = state.contents.find(x => x.id === editingContentId);
+  if (!c) return;
+  c.name = document.getElementById('ct-name').value.trim() || c.name;
+  c.start = document.getElementById('ct-start').value;
+  c.period = Math.max(1, +document.getElementById('ct-period').value || c.period);
+  c.buff = document.getElementById('ct-buff').value.trim();
+  c.stages = document.getElementById('ct-stages').value.split('\n')
+    .map(line => line.trim()).filter(Boolean)
+    .map(line => {
+      const i = line.indexOf(':');
+      return i === -1
+        ? { name: '단계', mobs: line }
+        : { name: line.slice(0, i).trim(), mobs: line.slice(i + 1).trim() };
+    });
+  save(); renderContents();
+  document.getElementById('content-modal').close();
+  toast('컨텐츠 정보를 저장했어요');
+});
+
+/* ================================================================
+   4.6 캐릭터별 스킬 재료
+   ================================================================ */
+
+let selectedMatChar = null;
+
+// 캐릭터의 재료 구성 (기본값 + 사용자 수정 병합)
+function charMats(c) {
+  const ov = state.matOverrides[c.id] || {};
+  const forge = ov.forge || WEAPON_FORGE[c.weapon] || 'cadence';
+  const isRinascita = c.ver && parseFloat(c.ver) >= 2.0;
+  const drop = ov.drop || (isRinascita ? 'polygon' : 'whisperin');
+  const weekly = ov.weekly || '';
+  return { forge, drop, weekly };
+}
+
+function renderMatStrip() {
+  const strip = document.getElementById('mat-char-strip');
+  strip.innerHTML = allChars().map(c => `
+    <button class="mat-char ${selectedMatChar === c.id ? 'selected' : ''}" data-mat-char="${c.id}">
+      ${avatarHTML(c, { small: true })}
+      <span class="nm">${esc(c.name)}</span>
+    </button>`).join('');
+}
+
+function renderMatDetail() {
+  const wrap = document.getElementById('mat-detail');
+  const c = selectedMatChar ? charById(selectedMatChar) : null;
+  if (!c) {
+    wrap.innerHTML = `<div class="empty-note mat-empty">위에서 캐릭터를 선택하면 스킬(포르테) 육성 재료가 표시돼요.</div>`;
+    return;
+  }
+  const m = charMats(c);
+  const forgeFam = FORGE_FAMILIES[m.forge];
+  const dropFam = DROP_FAMILIES[m.drop];
+  const tierRow = (label, i, cnt) => `
+    <div class="mat-row">
+      <span class="tier-dot" style="background:${TIER_COLORS[i]}">T${i + 1}</span>
+      <span class="mn">${esc(label)}</span>
+      <span class="cnt">×${cnt}</span>
+    </div>`;
+  wrap.innerHTML = `
+  <div class="mat-detail-card">
+    <div class="mat-detail-head">
+      ${avatarHTML(c)}
+      <div class="who">
+        <b>${esc(c.name)}</b>
+        <div class="chips">
+          <span class="pill">${ELEMENTS[c.element]?.name ?? '?'}</span>
+          <span class="pill">${WEAPONS[c.weapon] ?? '무기 미지정'}</span>
+          <span class="pill copy">${c.rarity}성</span>
+          ${c.ver ? `<span class="pill">Ver ${c.ver}</span>` : ''}
+        </div>
+      </div>
+      <button class="ghost-btn" id="edit-mats-btn">재료 수정</button>
+    </div>
+    <div class="mat-section">
+      <h4>🔨 포지 재료 — ${esc(forgeFam.name)} 계열</h4>
+      <div class="mat-rows">${forgeFam.tiers.map((t, i) => tierRow(t, i, FORTE_TOTALS.forge[i])).join('')}</div>
+    </div>
+    <div class="mat-section">
+      <h4>👹 일반 몹 드랍 — ${esc(dropFam.name)} 계열</h4>
+      <div class="mat-rows">${dropFam.tiers.map((t, i) => tierRow(t, i, FORTE_TOTALS.drop[i])).join('')}</div>
+    </div>
+    <div class="mat-section">
+      <h4>🗓 주간 보스 & 기타</h4>
+      <div class="mat-rows">
+        <div class="mat-row">
+          <span class="tier-dot" style="background:${TIER_COLORS[3]}">주간</span>
+          <span class="mn">${m.weekly ? esc(m.weekly) : '<i>미입력 — [재료 수정]에서 입력</i>'}</span>
+          <span class="cnt">×${FORTE_TOTALS.weekly}</span>
+        </div>
+        <div class="mat-row">
+          <span class="tier-dot" style="background:#8f8d85">💰</span>
+          <span class="mn">쉘 크레딧</span>
+          <span class="cnt">${FORTE_TOTALS.credits}</span>
+        </div>
+      </div>
+    </div>
+    <p class="mat-note">※ 수량은 포르테 트리 풀업(스킬 5종 Lv.10 + 스탯 노드) 기준 근사치입니다. 재료 종류 기본값은 무기 타입 기반 추정이므로 게임과 다르면 [재료 수정]으로 바꿔주세요.</p>
+  </div>`;
+
+  document.getElementById('edit-mats-btn').addEventListener('click', () => openMatModal(c));
+}
+
+document.getElementById('mat-char-strip').addEventListener('click', e => {
+  const btn = e.target.closest('[data-mat-char]');
+  if (!btn) return;
+  selectedMatChar = btn.dataset.matChar;
+  renderMatStrip(); renderMatDetail();
+});
+
+function openMatModal(c) {
+  const m = charMats(c);
+  document.getElementById('mat-modal-title').textContent = `${c.name} — 스킬 재료 수정`;
+  document.getElementById('mat-forge').innerHTML = Object.entries(FORGE_FAMILIES)
+    .map(([k, f]) => `<option value="${k}" ${k === m.forge ? 'selected' : ''}>${f.name} (${f.tiers[0]} 계열)</option>`).join('');
+  document.getElementById('mat-drop').innerHTML = Object.entries(DROP_FAMILIES)
+    .map(([k, f]) => `<option value="${k}" ${k === m.drop ? 'selected' : ''}>${f.name}</option>`).join('');
+  document.getElementById('mat-weekly').value = m.weekly;
+  document.getElementById('mat-modal').showModal();
+}
+
+document.getElementById('mat-form').addEventListener('submit', e => {
+  e.preventDefault();
+  if (!selectedMatChar) return;
+  state.matOverrides[selectedMatChar] = {
+    forge: document.getElementById('mat-forge').value,
+    drop: document.getElementById('mat-drop').value,
+    weekly: document.getElementById('mat-weekly').value.trim(),
+  };
+  save(); renderMatDetail();
+  document.getElementById('mat-modal').close();
+  toast('재료 정보를 저장했어요');
+});
+
+/* ================================================================
    5. 확률 정보 — 누적 확률 곡선 (SVG)
    ================================================================ */
 
@@ -883,6 +1101,9 @@ function renderAll() {
   renderRoster();
   renderBannerTable();
   renderRecords();
+  renderContents();
+  renderMatStrip();
+  renderMatDetail();
 }
 
 renderAll();

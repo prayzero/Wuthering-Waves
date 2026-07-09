@@ -13,49 +13,54 @@ const ELEMENTS = {
   havoc:   { name: '인멸', color: '#e64fa0' },
 };
 
+// 무기 타입
+const WEAPONS = {
+  broadblade: '대검', sword: '한손검', pistols: '권총', gauntlets: '너클', rectifier: '증폭기',
+};
+
 // group: 'limited'(한정 5성) | 'standard'(상시 5성) | 'four'(4성)
 const CHARACTERS = [
   // ---- 한정 5성 (출시순) ----
-  { id: 'jiyan',       name: '기염',       rarity: 5, element: 'aero',    group: 'limited', ver: '1.0' },
-  { id: 'yinlin',      name: '음림',       rarity: 5, element: 'electro', group: 'limited', ver: '1.0' },
-  { id: 'jinhsi',      name: '금희',       rarity: 5, element: 'spectro', group: 'limited', ver: '1.1' },
-  { id: 'changli',     name: '장리',       rarity: 5, element: 'fusion',  group: 'limited', ver: '1.1' },
-  { id: 'zhezhi',      name: '절지',       rarity: 5, element: 'glacio',  group: 'limited', ver: '1.2' },
-  { id: 'xiangliyao',  name: '상리요',     rarity: 5, element: 'electro', group: 'limited', ver: '1.2' },
-  { id: 'shorekeeper', name: '수안인',     rarity: 5, element: 'spectro', group: 'limited', ver: '1.3' },
-  { id: 'camellya',    name: '카멜리아',   rarity: 5, element: 'havoc',   group: 'limited', ver: '1.4' },
-  { id: 'carlotta',    name: '카를로타',   rarity: 5, element: 'glacio',  group: 'limited', ver: '2.0' },
-  { id: 'roccia',      name: '로치아',     rarity: 5, element: 'havoc',   group: 'limited', ver: '2.0' },
-  { id: 'phoebe',      name: '피비',       rarity: 5, element: 'spectro', group: 'limited', ver: '2.1' },
-  { id: 'brant',       name: '브란트',     rarity: 5, element: 'fusion',  group: 'limited', ver: '2.1' },
-  { id: 'cantarella',  name: '칸타렐라',   rarity: 5, element: 'havoc',   group: 'limited', ver: '2.2' },
-  { id: 'zani',        name: '자니',       rarity: 5, element: 'spectro', group: 'limited', ver: '2.3' },
-  { id: 'ciaccona',    name: '시아코나',   rarity: 5, element: 'aero',    group: 'limited', ver: '2.3' },
-  { id: 'cartethyia',  name: '카르테시아', rarity: 5, element: 'aero',    group: 'limited', ver: '2.4' },
-  { id: 'lupa',        name: '루파',       rarity: 5, element: 'fusion',  group: 'limited', ver: '2.4' },
-  { id: 'phrolova',    name: '프롤로바',   rarity: 5, element: 'havoc',   group: 'limited', ver: '2.5' },
-  { id: 'augusta',     name: '아우구스타', rarity: 5, element: 'electro', group: 'limited', ver: '2.6' },
-  { id: 'iuno',        name: '유노',       rarity: 5, element: 'aero',    group: 'limited', ver: '2.7' },
-  { id: 'galbrena',    name: '갈브레나',   rarity: 5, element: 'fusion',  group: 'limited', ver: '2.7' },
+  { id: 'jiyan',       name: '기염',       rarity: 5, element: 'aero',    group: 'limited', ver: '1.0', weapon: 'broadblade' },
+  { id: 'yinlin',      name: '음림',       rarity: 5, element: 'electro', group: 'limited', ver: '1.0', weapon: 'rectifier' },
+  { id: 'jinhsi',      name: '금희',       rarity: 5, element: 'spectro', group: 'limited', ver: '1.1', weapon: 'broadblade' },
+  { id: 'changli',     name: '장리',       rarity: 5, element: 'fusion',  group: 'limited', ver: '1.1', weapon: 'sword' },
+  { id: 'zhezhi',      name: '절지',       rarity: 5, element: 'glacio',  group: 'limited', ver: '1.2', weapon: 'rectifier' },
+  { id: 'xiangliyao',  name: '상리요',     rarity: 5, element: 'electro', group: 'limited', ver: '1.2', weapon: 'gauntlets' },
+  { id: 'shorekeeper', name: '수안인',     rarity: 5, element: 'spectro', group: 'limited', ver: '1.3', weapon: 'rectifier' },
+  { id: 'camellya',    name: '카멜리아',   rarity: 5, element: 'havoc',   group: 'limited', ver: '1.4', weapon: 'sword' },
+  { id: 'carlotta',    name: '카를로타',   rarity: 5, element: 'glacio',  group: 'limited', ver: '2.0', weapon: 'pistols' },
+  { id: 'roccia',      name: '로치아',     rarity: 5, element: 'havoc',   group: 'limited', ver: '2.0', weapon: 'gauntlets' },
+  { id: 'phoebe',      name: '피비',       rarity: 5, element: 'spectro', group: 'limited', ver: '2.1', weapon: 'rectifier' },
+  { id: 'brant',       name: '브란트',     rarity: 5, element: 'fusion',  group: 'limited', ver: '2.1', weapon: 'sword' },
+  { id: 'cantarella',  name: '칸타렐라',   rarity: 5, element: 'havoc',   group: 'limited', ver: '2.2', weapon: 'rectifier' },
+  { id: 'zani',        name: '자니',       rarity: 5, element: 'spectro', group: 'limited', ver: '2.3', weapon: 'gauntlets' },
+  { id: 'ciaccona',    name: '시아코나',   rarity: 5, element: 'aero',    group: 'limited', ver: '2.3', weapon: 'pistols' },
+  { id: 'cartethyia',  name: '카르테시아', rarity: 5, element: 'aero',    group: 'limited', ver: '2.4', weapon: 'sword' },
+  { id: 'lupa',        name: '루파',       rarity: 5, element: 'fusion',  group: 'limited', ver: '2.4', weapon: 'broadblade' },
+  { id: 'phrolova',    name: '프롤로바',   rarity: 5, element: 'havoc',   group: 'limited', ver: '2.5', weapon: 'rectifier' },
+  { id: 'augusta',     name: '아우구스타', rarity: 5, element: 'electro', group: 'limited', ver: '2.6', weapon: 'broadblade' },
+  { id: 'iuno',        name: '유노',       rarity: 5, element: 'aero',    group: 'limited', ver: '2.7', weapon: 'gauntlets' },
+  { id: 'galbrena',    name: '갈브레나',   rarity: 5, element: 'fusion',  group: 'limited', ver: '2.7', weapon: 'rectifier' },
   // ---- 상시 5성 ----
-  { id: 'rover',       name: '방랑자',     rarity: 5, element: 'spectro', group: 'standard' },
-  { id: 'calcharo',    name: '카카로',     rarity: 5, element: 'electro', group: 'standard' },
-  { id: 'lingyang',    name: '능양',       rarity: 5, element: 'glacio',  group: 'standard' },
-  { id: 'jianxin',     name: '감심',       rarity: 5, element: 'aero',    group: 'standard' },
-  { id: 'encore',      name: '앙코',       rarity: 5, element: 'fusion',  group: 'standard' },
-  { id: 'verina',      name: '버디나',     rarity: 5, element: 'spectro', group: 'standard' },
+  { id: 'rover',       name: '방랑자',     rarity: 5, element: 'spectro', group: 'standard', weapon: 'sword' },
+  { id: 'calcharo',    name: '카카로',     rarity: 5, element: 'electro', group: 'standard', weapon: 'broadblade' },
+  { id: 'lingyang',    name: '능양',       rarity: 5, element: 'glacio',  group: 'standard', weapon: 'gauntlets' },
+  { id: 'jianxin',     name: '감심',       rarity: 5, element: 'aero',    group: 'standard', weapon: 'gauntlets' },
+  { id: 'encore',      name: '앙코',       rarity: 5, element: 'fusion',  group: 'standard', weapon: 'rectifier' },
+  { id: 'verina',      name: '버디나',     rarity: 5, element: 'spectro', group: 'standard', weapon: 'rectifier' },
   // ---- 4성 ----
-  { id: 'chixia',      name: '치샤',       rarity: 4, element: 'fusion',  group: 'four' },
-  { id: 'sanhua',      name: '산화',       rarity: 4, element: 'glacio',  group: 'four' },
-  { id: 'baizhi',      name: '백지',       rarity: 4, element: 'glacio',  group: 'four' },
-  { id: 'yangyang',    name: '양양',       rarity: 4, element: 'aero',    group: 'four' },
-  { id: 'taoqi',       name: '도기',       rarity: 4, element: 'havoc',   group: 'four' },
-  { id: 'danjin',      name: '단진',       rarity: 4, element: 'havoc',   group: 'four' },
-  { id: 'mortefi',     name: '모르테피',   rarity: 4, element: 'fusion',  group: 'four' },
-  { id: 'aalto',       name: '아토',       rarity: 4, element: 'aero',    group: 'four' },
-  { id: 'yuanwu',      name: '원무',       rarity: 4, element: 'electro', group: 'four' },
-  { id: 'youhu',       name: '유호',       rarity: 4, element: 'glacio',  group: 'four' },
-  { id: 'lumi',        name: '루미',       rarity: 4, element: 'electro', group: 'four' },
+  { id: 'chixia',      name: '치샤',       rarity: 4, element: 'fusion',  group: 'four', weapon: 'pistols' },
+  { id: 'sanhua',      name: '산화',       rarity: 4, element: 'glacio',  group: 'four', weapon: 'sword' },
+  { id: 'baizhi',      name: '백지',       rarity: 4, element: 'glacio',  group: 'four', weapon: 'rectifier' },
+  { id: 'yangyang',    name: '양양',       rarity: 4, element: 'aero',    group: 'four', weapon: 'sword' },
+  { id: 'taoqi',       name: '도기',       rarity: 4, element: 'havoc',   group: 'four', weapon: 'broadblade' },
+  { id: 'danjin',      name: '단진',       rarity: 4, element: 'havoc',   group: 'four', weapon: 'sword' },
+  { id: 'mortefi',     name: '모르테피',   rarity: 4, element: 'fusion',  group: 'four', weapon: 'pistols' },
+  { id: 'aalto',       name: '아토',       rarity: 4, element: 'aero',    group: 'four', weapon: 'pistols' },
+  { id: 'yuanwu',      name: '원무',       rarity: 4, element: 'electro', group: 'four', weapon: 'gauntlets' },
+  { id: 'youhu',       name: '유호',       rarity: 4, element: 'glacio',  group: 'four', weapon: 'rectifier' },
+  { id: 'lumi',        name: '루미',       rarity: 4, element: 'electro', group: 'four', weapon: 'broadblade' },
 ];
 
 // 역대 픽업 배너 (신규 캐릭터 기준, 날짜는 대략적인 글로벌 서버 기준)
@@ -157,6 +162,93 @@ function luckGrade(top) {
   if (top < 85)  return { label: '아쉬움',  cls: 'luck-bad' };
   return { label: '눈물의 천장', cls: 'luck-worst' };
 }
+
+/* ================================================================
+   스킬(포르테) 육성 재료
+   기본 매칭은 무기 타입 기반 추정치 — 캐릭터 상세에서 직접 수정 가능
+   ================================================================ */
+
+// 포지(합성) 재료 계열 — 4단계 등급
+const FORGE_FAMILIES = {
+  helix:      { name: '헬릭스',       tiers: ['렌토 헬릭스', '아다지오 헬릭스', '안단테 헬릭스', '프레스토 헬릭스'] },
+  cadence:    { name: '카덴스',       tiers: ['카덴스 씨앗', '카덴스 새싹', '카덴스 잎', '카덴스 만개'] },
+  drip:       { name: '금속 드립',    tiers: ['불활성 금속 드립', '반응성 금속 드립', '편광 금속 드립', '이질화 금속 드립'] },
+  phlogiston: { name: '플로지스톤',   tiers: ['불순한 플로지스톤', '저주파 플로지스톤', '고주파 플로지스톤', '완전한 플로지스톤'] },
+  residue:    { name: '물결무늬 잔철', tiers: ['물결무늬 잔철 210', '물결무늬 잔철 226', '물결무늬 잔철 235', '물결무늬 잔철 239'] },
+};
+
+// 무기 타입 → 기본 포지 재료 계열 (추정 기본값)
+const WEAPON_FORGE = {
+  broadblade: 'helix',
+  sword: 'cadence',
+  pistols: 'drip',
+  gauntlets: 'residue',
+  rectifier: 'phlogiston',
+};
+
+// 일반 몹 드랍 계열 — 4단계 등급
+const DROP_FAMILIES = {
+  whisperin: { name: '위스퍼링 코어', tiers: ['LF 위스퍼링 코어', 'MF 위스퍼링 코어', 'HF 위스퍼링 코어', 'FF 위스퍼링 코어'] },
+  howler:    { name: '하울러 코어',   tiers: ['LF 하울러 코어', 'MF 하울러 코어', 'HF 하울러 코어', 'FF 하울러 코어'] },
+  ring:      { name: '링(무리부 병사)', tiers: ['조잡한 링', '기본 링', '개량된 링', '정교한 링'] },
+  mask:      { name: '가면(기이한 자)', tiers: ['구속의 가면', '왜곡의 가면', '침식의 가면', '광기의 가면'] },
+  polygon:   { name: '폴리곤 코어(리나시타)', tiers: ['LF 폴리곤 코어', 'MF 폴리곤 코어', 'HF 폴리곤 코어', 'FF 폴리곤 코어'] },
+};
+
+// 재료 등급 색 (T1~T4: 초록/파랑/보라/금)
+const TIER_COLORS = ['#3fae5c', '#3987e5', '#9a6ee8', '#e6c15a'];
+
+// 포르테(스킬) 풀업 기준 총 필요량 — 커뮤니티 정리 수치 기반 근사치
+const FORTE_TOTALS = {
+  forge: [25, 28, 55, 67],   // 포지 재료 T1~T4
+  drop:  [25, 28, 40, 57],   // 몹 드랍 T1~T4
+  weekly: 26,                // 주간 보스 재료
+  credits: '약 200만',       // 쉘 크레딧
+};
+
+/* ================================================================
+   엔드 컨텐츠 (탑 / 해역 / 매트릭스) 기본값
+   주기·버프·몹은 게임 내 로테이션에 맞춰 직접 수정해서 사용
+   ================================================================ */
+const CONTENT_DEFAULTS = [
+  {
+    id: 'tower',
+    icon: '🗼',
+    name: '탑 (역경의 탑)',
+    period: 14,
+    start: '2026-06-29',
+    buff: '이번 주기 잔향 버프를 입력하세요 (예: 회절 피해 +25%, 스킬 피해 +30%)',
+    stages: [
+      { name: '안정 구역', mobs: '예시) 무관자, 각성 무리부 병사' },
+      { name: '실험 구역', mobs: '예시) 폭풍 메피스, 업화의 라이더' },
+      { name: '위험 구역', mobs: '예시) 만가의 용, 무상의 헤론' },
+    ],
+  },
+  {
+    id: 'sea',
+    icon: '🌊',
+    name: '해역',
+    period: 28,
+    start: '2026-06-16',
+    buff: '이번 주기 버프를 입력하세요',
+    stages: [
+      { name: '1구역', mobs: '등장 몹을 입력하세요' },
+      { name: '2구역', mobs: '등장 몹을 입력하세요' },
+    ],
+  },
+  {
+    id: 'matrix',
+    icon: '🧩',
+    name: '매트릭스',
+    period: 28,
+    start: '2026-06-30',
+    buff: '이번 주기 버프를 입력하세요',
+    stages: [
+      { name: '1단계', mobs: '등장 몹을 입력하세요' },
+      { name: '2단계', mobs: '등장 몹을 입력하세요' },
+    ],
+  },
+];
 
 const COPY_LABELS = ['명함', '1돌', '2돌', '3돌', '4돌', '5돌', '6돌'];
 const WEAPON_COPY_LABELS = ['1개(1재련)', '2개(2재련)', '3개(3재련)', '4개(4재련)', '5개(5재련)'];
