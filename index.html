@@ -6,6 +6,13 @@
 <title>WuWa 픽업 플래너 — 명조 가챠 계획 &amp; 파티 편성</title>
 <meta name="description" content="명조: 워더링 웨이브 픽업 일정 관리, 파티 편성, 뽑기 기록과 운 퍼센트 분석 도구">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23e6c15a'/><text x='50' y='68' font-size='52' text-anchor='middle' font-family='sans-serif' font-weight='bold' fill='%230d0d0d'>鳴</text></svg>">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0d0d0d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WuWa 플래너">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -23,6 +30,7 @@
       <button class="tab-btn" data-tab="rates">확률 정보</button>
     </nav>
     <div class="header-actions">
+      <button class="icon-btn install-btn" id="install-btn" hidden title="홈 화면에 앱으로 설치">⬇ 앱 설치</button>
       <button class="icon-btn" id="export-btn" title="데이터 백업(JSON 다운로드)">내보내기</button>
       <button class="icon-btn" id="import-btn" title="백업 JSON 불러오기">가져오기</button>
       <input type="file" id="import-file" accept="application/json" hidden>

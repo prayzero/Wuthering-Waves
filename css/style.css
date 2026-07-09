@@ -74,6 +74,7 @@ input, select, textarea { font: inherit; }
   border-radius: 8px; padding: 6px 10px; font-size: 0.8rem;
 }
 .icon-btn:hover { background: var(--surface-2); color: var(--ink); }
+.install-btn { color: var(--accent); border-color: rgba(230, 193, 90, 0.45); font-weight: 700; }
 
 /* ---------- 레이아웃 ---------- */
 main { max-width: 1080px; margin: 0 auto; padding: 20px 16px 80px; }

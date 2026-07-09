@@ -841,6 +841,39 @@ document.querySelectorAll('dialog').forEach(d => {
   d.addEventListener('click', e => { if (e.target === d) d.close(); });
 });
 
+/* ================================================================
+   7. PWA — 서비스 워커 등록 & 앱 설치 버튼
+   ================================================================ */
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => { /* http 환경 등에서는 무시 */ });
+  });
+}
+
+let deferredInstall = null;
+const installBtn = document.getElementById('install-btn');
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstall = e;
+  installBtn.hidden = false;
+});
+
+installBtn.addEventListener('click', async () => {
+  if (!deferredInstall) return;
+  deferredInstall.prompt();
+  const { outcome } = await deferredInstall.userChoice;
+  if (outcome === 'accepted') toast('앱이 설치됐어요! 홈 화면에서 실행할 수 있어요');
+  deferredInstall = null;
+  installBtn.hidden = true;
+});
+
+window.addEventListener('appinstalled', () => {
+  installBtn.hidden = true;
+  toast('설치 완료! 홈 화면에서 WuWa 플래너를 실행하세요');
+});
+
 /* ---------------- 초기 렌더 ---------------- */
 
 function renderAll() {
