@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WuWa 픽업 플래너 — 명조 가챠 계획 &amp; 파티 편성</title>
+<meta name="description" content="명조: 워더링 웨이브 픽업 일정 관리, 파티 편성, 뽑기 기록과 운 퍼센트 분석 도구">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23e6c15a'/><text x='50' y='68' font-size='52' text-anchor='middle' font-family='sans-serif' font-weight='bold' fill='%230d0d0d'>鳴</text></svg>">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="brand">
+      <span class="logo">鳴</span>
+      <span>WuWa 픽업 플래너 <small>명조: 워더링 웨이브</small></span>
+    </div>
+    <nav class="tabs" id="tabs">
+      <button class="tab-btn active" data-tab="planner">홈 · 플래너</button>
+      <button class="tab-btn" data-tab="roster">보유 캐릭터</button>
+      <button class="tab-btn" data-tab="history">픽업 기록</button>
+      <button class="tab-btn" data-tab="rates">확률 정보</button>
+    </nav>
+    <div class="header-actions">
+      <button class="icon-btn" id="export-btn" title="데이터 백업(JSON 다운로드)">내보내기</button>
+      <button class="icon-btn" id="import-btn" title="백업 JSON 불러오기">가져오기</button>
+      <input type="file" id="import-file" accept="application/json" hidden>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ================= 홈 · 플래너 ================= -->
+  <section class="tab-panel active" id="tab-planner">
+
+    <div class="section">
+      <div class="section-head">
+        <h2>픽업 일정</h2>
+        <span class="spacer"></span>
+        <button class="primary-btn" id="add-schedule-btn">+ 일정 추가</button>
+        <p class="desc">뽑을 캐릭터의 픽업 일정을 등록하면 진행 중인 일정이 맨 앞에 표시됩니다. 모아둔 뽑기 수로 천장(160뽑)까지의 진행도를 확인하세요.</p>
+      </div>
+      <div class="schedule-list" id="schedule-list"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <h2>파티 편성</h2>
+        <span class="spacer"></span>
+        <button class="primary-btn" id="add-party-btn">+ 파티 추가</button>
+        <p class="desc">보유 중인 캐릭터를 원하는 슬롯으로 드래그 &amp; 드롭하거나, 빈 슬롯을 클릭해 추가하세요. 파티는 최대 3명입니다.</p>
+      </div>
+      <div class="roster-strip-wrap">
+        <div class="roster-strip" id="roster-strip"></div>
+        <p class="strip-hint">보유 캐릭터만 표시됩니다. <a id="goto-roster">보유 캐릭터 탭</a>에서 캐릭터를 클릭해 보유 처리하면 여기에 나타나요.</p>
+      </div>
+      <div class="party-list" id="party-list"></div>
+    </div>
+
+  </section>
+
+  <!-- ================= 보유 캐릭터 ================= -->
+  <section class="tab-panel" id="tab-roster">
+    <div class="section">
+      <div class="section-head">
+        <h2>보유 캐릭터</h2>
+        <span class="spacer"></span>
+        <button class="ghost-btn" id="add-custom-btn">+ 신규 캐릭터 직접 추가</button>
+        <p class="desc">카드를 클릭하면 흑백 ↔ 컬러로 전환되며 보유 상태가 저장됩니다. 보유한 캐릭터만 파티 편성에 사용할 수 있어요.</p>
+      </div>
+      <div class="filter-row" id="roster-filter">
+        <button class="chip active" data-filter="all">전체</button>
+        <button class="chip" data-filter="limited">한정 5성</button>
+        <button class="chip" data-filter="standard">상시 5성</button>
+        <button class="chip" data-filter="four">4성</button>
+        <button class="chip" data-filter="owned">보유만</button>
+      </div>
+      <p class="own-summary" id="own-summary"></p>
+      <div id="roster-grid"></div>
+    </div>
+  </section>
+
+  <!-- ================= 픽업 기록 ================= -->
+  <section class="tab-panel" id="tab-history">
+
+    <div class="section">
+      <div class="section-head">
+        <h2>역대 픽업 배너</h2>
+        <p class="desc">신규 캐릭터 픽업 기준 목록입니다. 날짜는 대략적인 일정이며 복각 배너는 생략했어요.</p>
+      </div>
+      <div class="card banner-table-wrap">
+        <table class="banner-table" id="banner-table"></table>
+        <p class="approx-note">※ 날짜는 근사치입니다. 3.0 이후 신규 캐릭터는 [보유 캐릭터] 탭에서 직접 추가할 수 있어요.</p>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <h2>나의 뽑기 기록</h2>
+        <span class="spacer"></span>
+        <button class="primary-btn" id="add-record-btn">+ 기록 추가</button>
+        <p class="desc">픽업별로 몇 뽑에 획득했는지 기록하세요. 캐릭터는 명함~6돌, 전무는 획득 개수를 함께 기록할 수 있고, 공식 확률 기반으로 운 퍼센트를 추산해 보여줍니다.</p>
+      </div>
+      <div class="stat-tiles" id="record-stats"></div>
+      <div class="record-list" id="record-list"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <h2>시즌별 나의 운</h2>
+        <p class="desc">같은 배너(시즌)에 기록된 뽑기들의 운 퍼센트 평균입니다. 막대가 길수록 운이 좋았던 시즌이에요.</p>
+      </div>
+      <div class="season-list" id="season-list"></div>
+    </div>
+
+  </section>
+
+  <!-- ================= 확률 정보 ================= -->
+  <section class="tab-panel" id="tab-rates">
+    <div class="section">
+      <div class="section-head">
+        <h2>공식 확률 &amp; 천장 시스템</h2>
+        <p class="desc">명조 공식 공개 확률 기준입니다. 운 퍼센트 추산에도 아래 수치를 사용해요.</p>
+      </div>
+      <div class="rate-grid">
+        <div class="card rate-card">
+          <h3>캐릭터 이벤트 픽업 (음향 조율)</h3>
+          <table>
+            <tr><td>5성 기본 확률</td><td>0.8%</td></tr>
+            <tr><td>5성 종합 확률 (천장 포함)</td><td>1.8%</td></tr>
+            <tr><td>5성 확정 (하드 천장)</td><td>80뽑 이내</td></tr>
+            <tr><td>픽업 캐릭터 확률 (5성 획득 시)</td><td>50%</td></tr>
+            <tr><td>반천장 — 픽뚫 가능</td><td>80뽑</td></tr>
+            <tr><td>천장 — 픽업 확정</td><td>최대 160뽑</td></tr>
+            <tr><td>4성 기본 / 종합 확률</td><td>6% / 약 12%</td></tr>
+            <tr><td>4성 이상 확정</td><td>10뽑 이내</td></tr>
+          </table>
+          <ul class="note-list">
+            <li>5성에서 픽업 캐릭터를 뽑지 못하면(픽뚫) 다음 5성은 <b>픽업 확정</b>.</li>
+            <li>픽업 캐릭터 획득 시 천장 카운트와 확정 상태가 <b>리셋</b>됩니다.</li>
+            <li>천장 카운트는 같은 종류의 다음 픽업 배너로 <b>이월</b>됩니다.</li>
+          </ul>
+        </div>
+        <div class="card rate-card">
+          <h3>무기 이벤트 픽업 (전무)</h3>
+          <table>
+            <tr><td>5성 기본 확률</td><td>0.8%</td></tr>
+            <tr><td>5성 종합 확률 (천장 포함)</td><td>약 1.8%</td></tr>
+            <tr><td>픽업 무기 확률 (5성 획득 시)</td><td>100%</td></tr>
+            <tr><td>천장 — 픽업 전무 확정</td><td>80뽑</td></tr>
+          </table>
+          <ul class="note-list">
+            <li>무기 배너는 <b>픽뚫이 없어</b> 80뽑 안에 반드시 픽업 전무를 획득합니다.</li>
+            <li>픽업 전무 획득 시 천장 카운트가 <b>리셋</b>됩니다.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card chart-card">
+        <h3>누적 획득 확률 곡선 (추산)</h3>
+        <p class="chart-desc">N뽑 안에 픽업을 확보할 누적 확률. 66뽑부터 5성 확률이 상승하는 소프트 천장은 공식 미공개라 커뮤니티 추정 모델을 사용했어요. 곡선에 마우스를 올리면 정확한 수치가 보입니다.</p>
+        <div class="chart-legend">
+          <span><span class="k" style="background:#3987e5"></span>픽업 캐릭터 (50% + 픽뚫 보정, 최대 160뽑)</span>
+          <span><span class="k" style="background:#c98500"></span>픽업 전무 (확정, 최대 80뽑)</span>
+        </div>
+        <svg id="pity-chart" viewBox="0 0 720 300" role="img" aria-label="뽑기 수에 따른 픽업 획득 누적 확률 곡선"></svg>
+      </div>
+
+      <div class="card chart-card">
+        <h3>운 퍼센트는 이렇게 계산해요</h3>
+        <ul class="note-list">
+          <li>위 확률 모델로 "픽업 획득까지 필요한 뽑기 수"의 확률 분포를 계산합니다.</li>
+          <li>내가 쓴 뽑기 수보다 <b>더 적게 쓰고 획득할 확률</b>이 곧 "상위 몇 %"인지가 됩니다. 예: 상위 10% = 플레이어 100명 중 10등 안에 드는 운.</li>
+          <li>기대값(평균)은 캐릭터 약 <b id="exp-char">-</b>뽑, 전무 약 <b id="exp-weapon">-</b>뽑입니다.</li>
+          <li>소프트 천장 구간의 정확한 상승폭은 공식 미공개이므로 결과는 <b>추정치</b>입니다.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  비공식 팬 제작 도구입니다. 게임 데이터 및 확률 정보의 출처는 명조: 워더링 웨이브 (KURO GAMES) 공식 공지이며, 소프트 천장 곡선은 커뮤니티 추정치입니다.
+  모든 기록은 이 브라우저의 로컬 저장소에만 보관됩니다.
+</footer>
+
+<!-- ================= 모달: 픽업 일정 ================= -->
+<dialog id="schedule-modal">
+  <h3 id="schedule-modal-title">픽업 일정 추가</h3>
+  <form class="form-grid" id="schedule-form" method="dialog">
+    <div class="form-row">
+      <label>픽업 캐릭터</label>
+      <select id="sch-char"></select>
+    </div>
+    <div class="form-row">
+      <label>배너 이름 (선택)</label>
+      <input type="text" id="sch-name" placeholder="예: 3.1 1페이즈 픽업">
+    </div>
+    <div class="form-2col">
+      <div class="form-row">
+        <label>시작일</label>
+        <input type="date" id="sch-start" required>
+      </div>
+      <div class="form-row">
+        <label>종료일</label>
+        <input type="date" id="sch-end" required>
+      </div>
+    </div>
+    <div class="form-2col">
+      <div class="form-row">
+        <label>모아둔 뽑기 수</label>
+        <input type="number" id="sch-saved" min="0" max="9999" value="0">
+      </div>
+      <div class="form-row">
+        <label>목표</label>
+        <select id="sch-goal">
+          <option value="명함">명함</option><option value="1돌">1돌</option>
+          <option value="2돌">2돌</option><option value="3돌">3돌</option>
+          <option value="4돌">4돌</option><option value="5돌">5돌</option>
+          <option value="6돌">6돌</option>
+          <option value="명함+전무">명함 + 전무</option>
+          <option value="전무만">전무만</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <label>메모</label>
+      <textarea id="sch-memo" rows="2" placeholder="예: 무조건 확보! 전무는 상황 봐서"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="ghost-btn" data-close>취소</button>
+      <button type="submit" class="primary-btn">저장</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ================= 모달: 뽑기 기록 ================= -->
+<dialog id="record-modal">
+  <h3>뽑기 기록 추가</h3>
+  <form class="form-grid" id="record-form" method="dialog">
+    <div class="form-row">
+      <label>배너 / 시즌</label>
+      <select id="rec-banner"></select>
+    </div>
+    <div class="form-row" id="rec-banner-custom-row" hidden>
+      <label>시즌 이름 직접 입력</label>
+      <input type="text" id="rec-banner-custom" placeholder="예: 3.0 츠바키 픽업">
+    </div>
+    <div class="form-row">
+      <label>종류</label>
+      <select id="rec-type">
+        <option value="char">캐릭터</option>
+        <option value="weapon">전무 (무기)</option>
+      </select>
+    </div>
+    <div class="form-row" id="rec-char-row">
+      <label>획득 캐릭터</label>
+      <select id="rec-char"></select>
+    </div>
+    <div class="form-row" id="rec-weapon-row" hidden>
+      <label>전무 이름</label>
+      <input type="text" id="rec-weapon-name" placeholder="예: 카르테시아 전무">
+    </div>
+    <div class="form-2col">
+      <div class="form-row" id="rec-copy-row">
+        <label>몇 번째 획득? (돌파)</label>
+        <select id="rec-copy"></select>
+      </div>
+      <div class="form-row">
+        <label>소모한 뽑기 수</label>
+        <input type="number" id="rec-pulls" min="1" max="160" required placeholder="예: 74">
+      </div>
+    </div>
+    <div class="check-row" id="rec-lost-row">
+      <input type="checkbox" id="rec-lost">
+      <label for="rec-lost">픽뚫 당했어요 (반천장에서 상시 5성 등장)</label>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="ghost-btn" data-close>취소</button>
+      <button type="submit" class="primary-btn">기록 저장</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ================= 모달: 파티 캐릭터 선택 ================= -->
+<dialog id="picker-modal">
+  <h3>캐릭터 선택</h3>
+  <div class="picker-grid" id="picker-grid"></div>
+  <p class="picker-note">흐리게 표시된 캐릭터는 미보유 상태예요. [보유 캐릭터] 탭에서 클릭해 보유 처리하면 선택할 수 있어요.</p>
+  <div class="modal-actions">
+    <button type="button" class="ghost-btn" data-close>닫기</button>
+  </div>
+</dialog>
+
+<!-- ================= 모달: 커스텀 캐릭터 ================= -->
+<dialog id="custom-modal">
+  <h3>신규 캐릭터 직접 추가</h3>
+  <form class="form-grid" id="custom-form" method="dialog">
+    <div class="form-row">
+      <label>이름</label>
+      <input type="text" id="cus-name" required maxlength="12" placeholder="예: 츠바키">
+    </div>
+    <div class="form-2col">
+      <div class="form-row">
+        <label>레어도</label>
+        <select id="cus-rarity">
+          <option value="5">5성 (한정)</option>
+          <option value="4">4성</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>속성</label>
+        <select id="cus-element">
+          <option value="fusion">용융</option><option value="glacio">응결</option>
+          <option value="electro">전도</option><option value="aero">기류</option>
+          <option value="spectro">회절</option><option value="havoc">인멸</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="ghost-btn" data-close>취소</button>
+      <button type="submit" class="primary-btn">추가</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast"></div>
+<div class="chart-tip" id="chart-tip"></div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
