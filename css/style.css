@@ -307,6 +307,47 @@ table.banner-table { width: 100%; border-collapse: collapse; font-size: 0.85rem;
 .luck-bar .fill { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: linear-gradient(90deg, #1c5cab, var(--blue)); min-width: 2px; }
 .luck-bar-lbl { font-size: 0.7rem; color: var(--muted); margin-top: 4px; }
 
+/* ---------- 픽업 배너 카드 (기록 통합) ---------- */
+.banner-cards { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); }
+.bc-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.bc-head { display: flex; align-items: center; gap: 8px; }
+.bc-head .bc-dates { color: var(--muted); font-size: 0.78rem; flex: 1; text-align: right; font-variant-numeric: tabular-nums; }
+.bc-chars { display: flex; gap: 10px; justify-content: center; }
+.bc-char { flex: 1; max-width: 120px; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+.bc-char .nm { font-weight: 700; font-size: 0.88rem; }
+.bc-char .el { font-size: 0.72rem; color: var(--ink-2); display: flex; align-items: center; gap: 4px; }
+.bc-char .el .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.bc-records { display: flex; flex-direction: column; gap: 6px; }
+.bc-rec {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 9px; padding: 7px 10px; font-size: 0.8rem;
+}
+.bc-rec .what { flex: 1; min-width: 120px; color: var(--ink-2); }
+.bc-rec .what b { color: var(--ink); }
+.bc-rec .lk { font-weight: 800; font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+.bc-empty { color: var(--muted); font-size: 0.78rem; text-align: center; padding: 6px 0; }
+.bc-add {
+  display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+  border-top: 1px solid var(--grid); padding-top: 12px;
+}
+.bc-add select, .bc-add input[type="number"] {
+  background: var(--surface-2); border: 1px solid var(--border); color: var(--ink);
+  border-radius: 8px; padding: 7px 8px; font-size: 0.8rem;
+}
+.bc-add .bc-target { flex: 1 1 110px; min-width: 0; }
+.bc-add .bc-copy { flex: 0 1 88px; }
+.bc-add .bc-pulls { width: 78px; }
+.bc-add .bc-lost { display: flex; align-items: center; gap: 4px; font-size: 0.74rem; color: var(--ink-2); white-space: nowrap; }
+.bc-add .bc-save { padding: 7px 14px; font-size: 0.8rem; }
+.bc-luck { border-top: 1px solid var(--grid); padding-top: 10px; margin-top: auto; }
+.bc-luck .t { display: flex; justify-content: space-between; gap: 8px; font-size: 0.78rem; color: var(--ink-2); }
+.bc-luck .t b { font-variant-numeric: tabular-nums; }
+
 /* ---------- 컨텐츠 (탑/해역/매트릭스) ---------- */
 .content-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
 .content-card {

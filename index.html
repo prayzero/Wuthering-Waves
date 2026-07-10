@@ -121,32 +121,28 @@
 
     <div class="section">
       <div class="section-head">
-        <h2>역대 픽업 배너</h2>
-        <p class="desc">신규 캐릭터 픽업 기준 목록입니다. 날짜는 대략적인 일정이며 복각 배너는 생략했어요.</p>
-      </div>
-      <div class="card banner-table-wrap">
-        <table class="banner-table" id="banner-table"></table>
-        <p class="approx-note">※ 날짜는 근사치입니다. 3.0 이후 신규 캐릭터는 [보유 캐릭터] 탭에서 직접 추가할 수 있어요.</p>
-      </div>
-    </div>
-
-    <div class="section">
-      <div class="section-head">
-        <h2>나의 뽑기 기록</h2>
-        <span class="spacer"></span>
-        <button class="primary-btn" id="add-record-btn">+ 기록 추가</button>
-        <p class="desc">픽업별로 몇 뽑에 획득했는지 기록하세요. 캐릭터는 명함~6돌, 전무는 획득 개수를 함께 기록할 수 있고, 공식 확률 기반으로 운 퍼센트를 추산해 보여줍니다.</p>
+        <h2>나의 뽑기 통계</h2>
+        <p class="desc">아래 픽업 카드에 기록한 모든 뽑기의 합산 통계입니다.</p>
       </div>
       <div class="stat-tiles" id="record-stats"></div>
-      <div class="record-list" id="record-list"></div>
     </div>
 
     <div class="section">
       <div class="section-head">
-        <h2>시즌별 나의 운</h2>
-        <p class="desc">같은 배너(시즌)에 기록된 뽑기들의 운 퍼센트 평균입니다. 막대가 길수록 운이 좋았던 시즌이에요.</p>
+        <h2>역대 픽업 &amp; 나의 기록</h2>
+        <p class="desc">픽업 시즌마다 카드가 하나씩 있어요. 카드 안에서 명함~6돌 / 전무를 골라 몇 뽑에 획득했는지 입력하면 공식 확률 기반으로 내 운을 바로 계산해 줍니다. (기간은 대략적인 일정, 복각 생략)</p>
       </div>
-      <div class="season-list" id="season-list"></div>
+      <div class="banner-cards" id="banner-cards"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <h2>기타 시즌 기록</h2>
+        <span class="spacer"></span>
+        <button class="primary-btn" id="add-record-btn">+ 직접 기록 추가</button>
+        <p class="desc">3.0 이후 배너 등 위 목록에 없는 시즌은 여기에 직접 기록할 수 있어요.</p>
+      </div>
+      <div class="record-list" id="record-list"></div>
     </div>
 
   </section>

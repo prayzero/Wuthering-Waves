@@ -511,21 +511,143 @@ document.getElementById('custom-form').addEventListener('submit', e => {
    4. 픽업 기록
    ================================================================ */
 
-function renderBannerTable() {
-  const tbl = document.getElementById('banner-table');
-  tbl.innerHTML = `
-    <tr><th>버전</th><th>배너</th><th>캐릭터</th><th>속성</th><th>기간 (대략)</th></tr>
-    ${BANNERS.map(b => {
-      const c = charById(b.charId);
-      return `<tr>
-        <td>${b.ver}</td>
-        <td>${esc(b.name)}</td>
-        <td class="cname"><span class="cname">${esc(c ? c.name : '?')}</span></td>
-        <td>${c ? ELEMENTS[c.element].name : ''}</td>
-        <td>${fmtDate(b.start)} ~ ${fmtDate(b.end)}</td>
-      </tr>`;
-    }).join('')}`;
+// 같은 기간(페이즈)의 픽업을 하나의 카드로 묶기 (예: 자니 + 시아코나)
+function bannerGroups() {
+  const map = new Map();
+  BANNERS.forEach(b => {
+    const key = `${b.ver}|${b.start}`;
+    if (!map.has(key)) map.set(key, { key, ver: b.ver, start: b.start, end: b.end, banners: [] });
+    map.get(key).banners.push(b);
+  });
+  return [...map.values()].reverse(); // 최신 시즌부터
 }
+
+const BANNER_NAME_SET = new Set(BANNERS.map(b => b.name));
+
+function bcRecordRow(r) {
+  const top = recordLuck(r);
+  const g = luckGrade(top);
+  const label = r.type === 'char'
+    ? `<b>${esc(charById(r.charId)?.name ?? '?')}</b> · ${COPY_LABELS[r.copy] ?? '명함'}${r.lost ? ' · <span style="color:var(--serious)">픽뚫</span>' : ''}`
+    : `<b>${esc(r.weaponName || '전무')}</b> · ${WEAPON_COPY_LABELS[r.copy] ?? '1개'}`;
+  return `
+  <div class="bc-rec">
+    <span class="what">${label} · ${r.pulls}뽑</span>
+    <span class="lk ${g.cls}"><span class="pct">상위 ${top.toFixed(1)}%</span></span>
+    <button class="record-del" data-del-record="${r.id}" title="삭제">✕</button>
+  </div>`;
+}
+
+function renderBannerCards() {
+  const wrap = document.getElementById('banner-cards');
+  wrap.innerHTML = bannerGroups().map(gr => {
+    const chars = gr.banners.map(b => charById(b.charId)).filter(Boolean);
+    const seasonNames = new Set(gr.banners.map(b => b.name));
+    const recs = state.records.filter(r => seasonNames.has(r.season));
+
+    // 대상 선택지: 캐릭터들 + 각 캐릭터의 전무
+    const targetOpts =
+      gr.banners.map(b => {
+        const c = charById(b.charId);
+        return `<option value="char|${b.charId}|${esc(b.name)}">${esc(c ? c.name : '?')} (캐릭터)</option>`;
+      }).join('') +
+      gr.banners.map(b => {
+        const c = charById(b.charId);
+        return `<option value="weapon|${b.charId}|${esc(b.name)}">${esc(c ? c.name : '?')} 전무</option>`;
+      }).join('');
+
+    let luckFoot = `<div class="t"><span>이 시즌 내 운</span><b style="color:var(--muted)">기록 없음</b></div>`;
+    if (recs.length) {
+      const avg = recs.reduce((a, r) => a + recordLuck(r), 0) / recs.length;
+      const g = luckGrade(avg);
+      const pulls = recs.reduce((a, r) => a + r.pulls, 0);
+      luckFoot = `
+        <div class="t">
+          <span>이 시즌 내 운 · ${recs.length}건 · ${pulls}뽑</span>
+          <b class="${g.cls}"><span class="pct">평균 상위 ${avg.toFixed(1)}% (${g.label})</span></b>
+        </div>
+        <div class="luck-bar"><div class="fill" style="width:${(100 - avg).toFixed(1)}%"></div></div>`;
+    }
+
+    return `
+    <div class="bc-card" data-group="${gr.key}">
+      <div class="bc-head">
+        <span class="pill copy">Ver ${gr.ver}</span>
+        <span class="bc-dates">${fmtDate(gr.start)} ~ ${fmtDate(gr.end)}</span>
+      </div>
+      <div class="bc-chars">
+        ${chars.map(c => `
+        <div class="bc-char">
+          ${avatarHTML(c)}
+          <span class="nm">${esc(c.name)}</span>
+          <span class="el"><span class="dot" style="background:${ELEMENTS[c.element].color}"></span>${ELEMENTS[c.element].name}</span>
+        </div>`).join('')}
+      </div>
+      <div class="bc-records">
+        ${recs.length ? recs.map(bcRecordRow).join('') : '<div class="bc-empty">아직 기록이 없어요 — 아래에서 바로 추가!</div>'}
+      </div>
+      <div class="bc-add">
+        <select class="bc-target">${targetOpts}</select>
+        <select class="bc-copy"></select>
+        <input class="bc-pulls" type="number" min="1" max="${GACHA.CHAR_MAX}" placeholder="몇 뽑?">
+        <label class="bc-lost"><input type="checkbox" class="bc-lost-chk"> 픽뚫</label>
+        <button class="bc-save primary-btn">기록</button>
+      </div>
+      <div class="bc-luck">${luckFoot}</div>
+    </div>`;
+  }).join('');
+
+  // 카드별 획득 회차 선택지 초기화
+  wrap.querySelectorAll('.bc-card').forEach(card => refreshBcCopy(card));
+}
+
+function refreshBcCopy(card) {
+  const type = card.querySelector('.bc-target').value.split('|')[0];
+  const labels = type === 'weapon' ? WEAPON_COPY_LABELS : COPY_LABELS;
+  card.querySelector('.bc-copy').innerHTML = labels.map((l, i) => `<option value="${i}">${l}</option>`).join('');
+  card.querySelector('.bc-lost').style.display = type === 'weapon' ? 'none' : '';
+  card.querySelector('.bc-pulls').max = type === 'weapon' ? GACHA.WEAPON_MAX : GACHA.CHAR_MAX;
+}
+
+const bannerCardsEl = document.getElementById('banner-cards');
+
+bannerCardsEl.addEventListener('change', e => {
+  if (e.target.classList.contains('bc-target')) refreshBcCopy(e.target.closest('.bc-card'));
+});
+
+bannerCardsEl.addEventListener('click', e => {
+  const btn = e.target.closest('.bc-save');
+  if (!btn) return;
+  const card = btn.closest('.bc-card');
+  const [type, charId, season] = card.querySelector('.bc-target').value.split('|');
+  const pulls = +card.querySelector('.bc-pulls').value;
+  const maxP = type === 'weapon' ? GACHA.WEAPON_MAX : GACHA.CHAR_MAX;
+  if (!pulls || pulls < 1 || pulls > maxP) {
+    toast(`뽑기 수는 1~${maxP} 사이로 입력해주세요 (천장 ${maxP}뽑)`);
+    return;
+  }
+  const rec = {
+    id: uid(),
+    season,
+    type,
+    copy: +card.querySelector('.bc-copy').value,
+    pulls,
+    lost: type === 'char' && card.querySelector('.bc-lost-chk').checked,
+  };
+  if (type === 'char') {
+    rec.charId = charId;
+    if (!isOwned(charId)) {
+      state.owned[charId] = true;
+      renderRoster(); renderRosterStrip();
+    }
+  } else {
+    rec.weaponName = `${charById(charId)?.name ?? ''} 전무`.trim();
+  }
+  state.records.push(rec);
+  save(); renderRecords();
+  const top = recordLuck(rec);
+  toast(`기록 완료! 상위 ${top.toFixed(1)}%의 운이었어요`);
+});
 
 const CHAR_PMF = charPickupPmf();
 const WEAPON_PMF = weaponPickupPmf();
@@ -536,31 +658,35 @@ function recordLuck(r) {
 }
 
 function renderRecords() {
-  const wrap = document.getElementById('record-list');
   const stats = document.getElementById('record-stats');
   const recs = state.records;
 
+  // 통계 타일 (전체 기록 합산)
   if (!recs.length) {
-    wrap.innerHTML = `<div class="empty-note">아직 뽑기 기록이 없어요. [+ 기록 추가]로 첫 픽업 결과를 기록해 보세요!</div>`;
-    stats.innerHTML = '';
-    renderSeasons();
-    return;
+    stats.innerHTML = `<div class="empty-note" style="grid-column:1/-1">아래 픽업 카드에서 첫 뽑기 결과를 기록하면 통계가 표시돼요.</div>`;
+  } else {
+    const totalPulls = recs.reduce((a, r) => a + r.pulls, 0);
+    const avgLuck = recs.reduce((a, r) => a + recordLuck(r), 0) / recs.length;
+    const grade = luckGrade(avgLuck);
+    const charRecs = recs.filter(r => r.type === 'char');
+    const weaponRecs = recs.filter(r => r.type === 'weapon');
+    stats.innerHTML = `
+      <div class="stat-tile"><div class="lbl">총 소모 뽑기</div><div class="val">${totalPulls.toLocaleString()}뽑</div><div class="sub">약 ${(totalPulls * 160).toLocaleString()} 성운의 조각</div></div>
+      <div class="stat-tile"><div class="lbl">획득 기록</div><div class="val">${recs.length}건</div><div class="sub">캐릭터 ${charRecs.length} · 전무 ${weaponRecs.length}</div></div>
+      <div class="stat-tile"><div class="lbl">평균 운 (상위 %)</div><div class="val">${avgLuck.toFixed(1)}%</div><div class="sub"><span class="${grade.cls}"><span class="grade">${grade.label}</span></span></div></div>
+      <div class="stat-tile"><div class="lbl">픽뚫 횟수</div><div class="val">${charRecs.filter(r => r.lost).length}회</div><div class="sub">캐릭터 기록 기준</div></div>`;
   }
 
-  // 통계 타일
-  const totalPulls = recs.reduce((a, r) => a + r.pulls, 0);
-  const avgLuck = recs.reduce((a, r) => a + recordLuck(r), 0) / recs.length;
-  const grade = luckGrade(avgLuck);
-  const charRecs = recs.filter(r => r.type === 'char');
-  const weaponRecs = recs.filter(r => r.type === 'weapon');
-  stats.innerHTML = `
-    <div class="stat-tile"><div class="lbl">총 소모 뽑기</div><div class="val">${totalPulls.toLocaleString()}뽑</div><div class="sub">약 ${(totalPulls * 160).toLocaleString()} 성운의 조각</div></div>
-    <div class="stat-tile"><div class="lbl">획득 기록</div><div class="val">${recs.length}건</div><div class="sub">캐릭터 ${charRecs.length} · 전무 ${weaponRecs.length}</div></div>
-    <div class="stat-tile"><div class="lbl">평균 운 (상위 %)</div><div class="val">${avgLuck.toFixed(1)}%</div><div class="sub"><span class="${grade.cls}"><span class="grade">${grade.label}</span></span></div></div>
-    <div class="stat-tile"><div class="lbl">픽뚫 횟수</div><div class="val">${charRecs.filter(r => r.lost).length}회</div><div class="sub">캐릭터 기록 기준</div></div>`;
+  renderBannerCards();
 
-  // 기록 목록 (최신순)
-  wrap.innerHTML = [...recs].reverse().map(r => {
+  // 기타 시즌 기록 (역대 배너 목록에 없는 시즌)
+  const wrap = document.getElementById('record-list');
+  const customs = recs.filter(r => !BANNER_NAME_SET.has(r.season));
+  if (!customs.length) {
+    wrap.innerHTML = `<div class="empty-note">목록에 없는 시즌 기록은 [+ 직접 기록 추가]로 등록할 수 있어요.</div>`;
+    return;
+  }
+  wrap.innerHTML = [...customs].reverse().map(r => {
     const top = recordLuck(r);
     const g = luckGrade(top);
     const ch = r.type === 'char' ? charById(r.charId) : null;
@@ -581,40 +707,10 @@ function renderRecords() {
       <button class="record-del" data-del-record="${r.id}" title="기록 삭제">✕</button>
     </div>`;
   }).join('');
-
-  renderSeasons();
 }
 
-function renderSeasons() {
-  const wrap = document.getElementById('season-list');
-  const recs = state.records;
-  if (!recs.length) {
-    wrap.innerHTML = `<div class="empty-note">기록을 추가하면 시즌별 운 통계가 표시돼요.</div>`;
-    return;
-  }
-  const bySeason = new Map();
-  recs.forEach(r => {
-    if (!bySeason.has(r.season)) bySeason.set(r.season, []);
-    bySeason.get(r.season).push(r);
-  });
-  wrap.innerHTML = [...bySeason.entries()].map(([season, list]) => {
-    const avg = list.reduce((a, r) => a + recordLuck(r), 0) / list.length;
-    const g = luckGrade(avg);
-    const pulls = list.reduce((a, r) => a + r.pulls, 0);
-    const score = 100 - avg; // 막대: 길수록 운이 좋음
-    return `
-    <div class="season-row">
-      <div class="top">
-        <b>${esc(season)}</b>
-        <span class="r">${list.length}건 · ${pulls}뽑 · <span class="${g.cls}"><span class="grade">평균 상위 ${avg.toFixed(1)}% (${g.label})</span></span></span>
-      </div>
-      <div class="luck-bar"><div class="fill" style="width:${score.toFixed(1)}%"></div></div>
-      <div class="luck-bar-lbl">운 지수 ${score.toFixed(1)} / 100 (100에 가까울수록 행운)</div>
-    </div>`;
-  }).join('');
-}
-
-document.getElementById('record-list').addEventListener('click', e => {
+// 기록 삭제 — 배너 카드와 기타 목록 양쪽에서 동작
+document.addEventListener('click', e => {
   const del = e.target.closest('[data-del-record]');
   if (!del) return;
   state.records = state.records.filter(r => r.id !== del.dataset.delRecord);
@@ -1099,7 +1195,6 @@ function renderAll() {
   renderRosterStrip();
   renderParties();
   renderRoster();
-  renderBannerTable();
   renderRecords();
   renderContents();
   renderMatStrip();
