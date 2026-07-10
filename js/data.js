@@ -213,46 +213,126 @@ function luckGrade(top) {
 }
 
 /* ================================================================
-   스킬(포르테) 육성 재료
-   기본 매칭은 무기 타입 기반 추정치 — 캐릭터 상세에서 직접 수정 가능
+   스킬(포르테) 육성 재료 — 검증 데이터 (Game8 전 캐릭터 표 기준, 2026-07-10)
+   재료명은 영어 공식 명칭 사용 (한국어 게임 내 명칭 미확인분 임의 번역 방지)
    ================================================================ */
 
-// 포지(합성) 재료 계열 — 4단계 등급
+// 단조(합성) 재료 세트 — 4단계 등급 (무기 종류 × 출신 지역별 세트)
 const FORGE_FAMILIES = {
-  helix:      { name: '헬릭스',       tiers: ['렌토 헬릭스', '아다지오 헬릭스', '안단테 헬릭스', '프레스토 헬릭스'] },
-  cadence:    { name: '카덴스',       tiers: ['카덴스 씨앗', '카덴스 새싹', '카덴스 잎', '카덴스 만개'] },
-  drip:       { name: '금속 드립',    tiers: ['불활성 금속 드립', '반응성 금속 드립', '편광 금속 드립', '이질화 금속 드립'] },
-  phlogiston: { name: '플로지스톤',   tiers: ['불순한 플로지스톤', '저주파 플로지스톤', '고주파 플로지스톤', '완전한 플로지스톤'] },
-  residue:    { name: '물결무늬 잔철', tiers: ['물결무늬 잔철 210', '물결무늬 잔철 226', '물결무늬 잔철 235', '물결무늬 잔철 239'] },
+  drip:       { name: 'Metallic Drip (직검)',       tiers: ['Inert Metallic Drip', 'Reactive Metallic Drip', 'Polarized Metallic Drip', 'Heterized Metallic Drip'] },
+  residue:    { name: 'Waveworn Residue (대검)',    tiers: ['Waveworn Residue 210', 'Waveworn Residue 226', 'Waveworn Residue 235', 'Waveworn Residue 239'] },
+  phlogiston: { name: 'Phlogiston (권총)',          tiers: ['Impure Phlogiston', 'Extracted Phlogiston', 'Refined Phlogiston', 'Flawless Phlogiston'] },
+  cadence:    { name: 'Cadence (권갑)',             tiers: ['Cadence Seed', 'Cadence Bud', 'Cadence Leaf', 'Cadence Blossom'] },
+  helix:      { name: 'Helix (증폭기)',             tiers: ['Lento Helix', 'Adagio Helix', 'Andante Helix', 'Presto Helix'] },
+  polarizer:  { name: 'Polarizer (직검·3.x)',       tiers: ['Broken Wing Polarizer', 'Monowing Polarizer', 'Polywing Polarizer', 'Layered Wing Polarizer'] },
+  crystal:    { name: 'Carved Crystal (대검·3.x)',  tiers: ['LF Carved Crystal', 'MF Carved Crystal', 'HF Carved Crystal', 'FF Carved Crystal'] },
+  combustor:  { name: 'Combustor (권총·3.x)',       tiers: ['Incomplete Combustor', 'Aftertune Combustor', 'Remnant Combustor', 'Reverb Combustor'] },
+  shard:      { name: 'Waveworn Shard (권갑·3.x)',  tiers: ['LF Waveworn Shard', 'MF Waveworn Shard', 'HF Waveworn Shard', 'FF Waveworn Shard'] },
+  string:     { name: 'String (증폭기·3.x)',        tiers: ['Spliced String', 'Broken String', 'Solidified String', 'Melodic String'] },
 };
 
-// 무기 타입 → 기본 포지 재료 계열 (추정 기본값)
+// 무기 타입 → 단조 세트 (황룡/검은 해안/리나시타 계열 — 직접 추가한 캐릭터의 기본값)
 const WEAPON_FORGE = {
-  broadblade: 'helix',
-  sword: 'cadence',
-  pistols: 'drip',
-  gauntlets: 'residue',
-  rectifier: 'phlogiston',
+  sword: 'drip',
+  broadblade: 'residue',
+  pistols: 'phlogiston',
+  gauntlets: 'cadence',
+  rectifier: 'helix',
 };
 
-// 일반 몹 드랍 계열 — 4단계 등급
+// 일반 몹 드랍 계열 — 4단계 등급 (등급명 미확인 세트는 I~IV 표기)
 const DROP_FAMILIES = {
-  whisperin: { name: '위스퍼링 코어', tiers: ['LF 위스퍼링 코어', 'MF 위스퍼링 코어', 'HF 위스퍼링 코어', 'FF 위스퍼링 코어'] },
-  howler:    { name: '하울러 코어',   tiers: ['LF 하울러 코어', 'MF 하울러 코어', 'HF 하울러 코어', 'FF 하울러 코어'] },
-  ring:      { name: '링(무리부 병사)', tiers: ['조잡한 링', '기본 링', '개량된 링', '정교한 링'] },
-  mask:      { name: '가면(기이한 자)', tiers: ['구속의 가면', '왜곡의 가면', '침식의 가면', '광기의 가면'] },
-  polygon:   { name: '폴리곤 코어(리나시타)', tiers: ['LF 폴리곤 코어', 'MF 폴리곤 코어', 'HF 폴리곤 코어', 'FF 폴리곤 코어'] },
+  whisperin:  { name: 'Whisperin Core',   tiers: ['LF Whisperin Core', 'MF Whisperin Core', 'HF Whisperin Core', 'FF Whisperin Core'] },
+  howler:     { name: 'Howler Core',      tiers: ['LF Howler Core', 'MF Howler Core', 'HF Howler Core', 'FF Howler Core'] },
+  ring:       { name: 'Ring (유배자 드랍)', tiers: ['Crude Ring', 'Basic Ring', 'Improved Ring', 'Tailored Ring'] },
+  polygon:    { name: 'Polygon Core',     tiers: ['LF Polygon Core', 'MF Polygon Core', 'HF Polygon Core', 'FF Polygon Core'] },
+  tidal:      { name: 'Tidal Residuum',   tiers: ['Tidal Residuum I', 'Tidal Residuum II', 'Tidal Residuum III', 'Tidal Residuum IV'] },
+  exoswarm:   { name: 'Exoswarm Core',    tiers: ['Exoswarm Core I', 'Exoswarm Core II', 'Exoswarm Core III', 'Exoswarm Core IV'] },
+  mech:       { name: 'Mech Core',        tiers: ['Mech Core I', 'Mech Core II', 'Mech Core III', 'Mech Core IV'] },
+  pendant:    { name: 'Exoswarm Pendant', tiers: ['Exoswarm Pendant I', 'Exoswarm Pendant II', 'Exoswarm Pendant III', 'Exoswarm Pendant IV'] },
+  autopuppet: { name: 'Autopuppet Kernel', tiers: ['Autopuppet Kernel I', 'Autopuppet Kernel II', 'Autopuppet Kernel III', 'Autopuppet Kernel IV'] },
+};
+
+// 주간 보스 재료 → 드랍 보스 (등장 시기)
+const WEEKLY_BOSS_MATS = {
+  'Unending Destruction':   '스카 (1.0 황룡)',
+  'Dreamless Feather':      '무명 · Dreamless (1.0 황룡)',
+  'Monument Bell':          '종배 거북 (1.0 황룡)',
+  "Sentinel's Dagger":      '수호자 각 · Jué (1.1 황룡)',
+  "The Netherworld's Stare": '리나시타 주간 보스 (2.0)',
+  'When Irises Bloom':      '리나시타 주간 보스 (2.2)',
+  'Curse of the Abyss':     'Threnodian: Leviathan (2.7)',
+  'Gold in Memory':         'Sigillum (3.1 라하이로이)',
+  'We Who Question':        'Denia 주간 보스판 (3.3)',
+  'Skyward Glazed Heart':   'Thousand-Puppet Pavilion (3.5)',
+};
+
+// 캐릭터별 스킬 재료 [단조 세트, 몹 드랍, 주간 보스 재료] — Game8 검증 데이터
+const CHAR_MATS = {
+  jiyan:       ['residue',    'howler',     'Monument Bell'],
+  yinlin:      ['helix',      'whisperin',  'Dreamless Feather'],
+  jinhsi:      ['residue',    'howler',     "Sentinel's Dagger"],
+  changli:     ['drip',       'ring',       "Sentinel's Dagger"],
+  zhezhi:      ['helix',      'howler',     'Monument Bell'],
+  xiangliyao:  ['cadence',    'whisperin',  'Unending Destruction'],
+  shorekeeper: ['helix',      'whisperin',  "Sentinel's Dagger"],
+  camellya:    ['drip',       'whisperin',  'Dreamless Feather'],
+  carlotta:    ['phlogiston', 'polygon',    "The Netherworld's Stare"],
+  roccia:      ['cadence',    'tidal',      "The Netherworld's Stare"],
+  phoebe:      ['helix',      'whisperin',  "Sentinel's Dagger"],
+  brant:       ['drip',       'tidal',      "The Netherworld's Stare"],
+  cantarella:  ['helix',      'polygon',    'When Irises Bloom'],
+  zani:        ['cadence',    'polygon',    "The Netherworld's Stare"],
+  ciaccona:    ['phlogiston', 'tidal',      'When Irises Bloom'],
+  cartethyia:  ['drip',       'tidal',      'When Irises Bloom'],
+  lupa:        ['residue',    'howler',     "The Netherworld's Stare"],
+  phrolova:    ['helix',      'polygon',    "The Netherworld's Stare"],
+  augusta:     ['residue',    'tidal',      'When Irises Bloom'],
+  iuno:        ['cadence',    'polygon',    "The Netherworld's Stare"],
+  galbrena:    ['phlogiston', 'tidal',      'Curse of the Abyss'],
+  qiuyuan:     ['drip',       'whisperin',  'Curse of the Abyss'],
+  chisa:       ['residue',    'polygon',    'When Irises Bloom'],
+  lynae:       ['combustor',  'exoswarm',   'Dreamless Feather'],
+  mornye:      ['crystal',    'mech',       "The Netherworld's Stare"],
+  aemeath:     ['polarizer',  'exoswarm',   'Gold in Memory'],
+  luukherssen: ['shard',      'pendant',    'Gold in Memory'],
+  sigrika:     ['shard',      'pendant',    'Gold in Memory'],
+  hiyuki:      ['polarizer',  'exoswarm',   'We Who Question'],
+  denia:       ['string',     'mech',       'We Who Question'],
+  lucy:        ['combustor',  'exoswarm',   'Gold in Memory'],
+  rebecca:     ['combustor',  'mech',       ''],  // 위클리 재료 확인 불가
+  lucilla:     ['string',     'mech',       'We Who Question'],
+  xuanling:    ['polarizer',  'autopuppet', 'Skyward Glazed Heart'],
+  suisui:      ['string',     'autopuppet', 'Skyward Glazed Heart'],
+  rover:       ['drip',       'whisperin',  'Unending Destruction'], // 회절 기준 (인멸: Dreamless Feather, 기류: When Irises Bloom)
+  calcharo:    ['residue',    'ring',       'Monument Bell'],
+  lingyang:    ['cadence',    'whisperin',  'Unending Destruction'],
+  jianxin:     ['cadence',    'whisperin',  'Unending Destruction'],
+  encore:      ['helix',      'whisperin',  'Unending Destruction'],
+  verina:      ['helix',      'howler',     'Monument Bell'],
+  yangyang:    ['drip',       'ring',       'Unending Destruction'],
+  chixia:      ['phlogiston', 'whisperin',  'Monument Bell'],
+  baizhi:      ['helix',      'howler',     'Monument Bell'],
+  sanhua:      ['drip',       'whisperin',  'Unending Destruction'],
+  taoqi:       ['residue',    'howler',     'Dreamless Feather'],
+  danjin:      ['drip',       'ring',       'Dreamless Feather'],
+  aalto:       ['phlogiston', 'howler',     'Monument Bell'],
+  mortefi:     ['phlogiston', 'whisperin',  'Monument Bell'],
+  yuanwu:      ['cadence',    'ring',       'Unending Destruction'],
+  lumi:        ['residue',    'howler',     "Sentinel's Dagger"],
+  youhu:       ['cadence',    'ring',       'Monument Bell'],
+  buling:      ['helix',      'whisperin',  'Curse of the Abyss'],
 };
 
 // 재료 등급 색 (T1~T4: 초록/파랑/보라/금)
 const TIER_COLORS = ['#3fae5c', '#3987e5', '#9a6ee8', '#e6c15a'];
 
-// 포르테(스킬) 풀업 기준 총 필요량 — 커뮤니티 정리 수치 기반 근사치
+// 포르테(스킬) 풀강(전 노드) 기준 총 필요량 — 전 캐릭터 공통 표준 수치
 const FORTE_TOTALS = {
-  forge: [25, 28, 55, 67],   // 포지 재료 T1~T4
-  drop:  [25, 28, 40, 57],   // 몹 드랍 T1~T4
-  weekly: 26,                // 주간 보스 재료
-  credits: '약 200만',       // 쉘 크레딧
+  forge: [25, 28, 55, 67],       // 단조 재료 T1~T4
+  drop:  [25, 28, 40, 57],       // 몹 드랍 T1~T4 (포르테분, 돌파분 별도)
+  weekly: 26,                    // 주간 보스 재료 (주 3회 보상 제한)
+  credits: '2,030,000',          // 쉘 크레딧
 };
 
 /* ================================================================

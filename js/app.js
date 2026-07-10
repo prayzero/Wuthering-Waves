@@ -946,14 +946,15 @@ document.getElementById('content-form').addEventListener('submit', e => {
 
 let selectedMatChar = null;
 
-// 캐릭터의 재료 구성 (기본값 + 사용자 수정 병합)
+// 캐릭터의 재료 구성 (검증 데이터 + 사용자 수정 병합, 커스텀 캐릭터는 무기 기반 기본값)
 function charMats(c) {
   const ov = state.matOverrides[c.id] || {};
-  const forge = ov.forge || WEAPON_FORGE[c.weapon] || 'cadence';
-  const isRinascita = c.ver && parseFloat(c.ver) >= 2.0;
-  const drop = ov.drop || (isRinascita ? 'polygon' : 'whisperin');
-  const weekly = ov.weekly || '';
-  return { forge, drop, weekly };
+  const base = CHAR_MATS[c.id] || [WEAPON_FORGE[c.weapon] || 'drip', 'whisperin', ''];
+  return {
+    forge: ov.forge || base[0],
+    drop: ov.drop || base[1],
+    weekly: ov.weekly !== undefined && ov.weekly !== '' ? ov.weekly : base[2],
+  };
 }
 
 function renderMatStrip() {
@@ -998,11 +999,11 @@ function renderMatDetail() {
       <button class="ghost-btn" id="edit-mats-btn">재료 수정</button>
     </div>
     <div class="mat-section">
-      <h4>🔨 포지 재료 — ${esc(forgeFam.name)} 계열</h4>
+      <h4>🔨 단조 재료 — ${esc(forgeFam.name)}</h4>
       <div class="mat-rows">${forgeFam.tiers.map((t, i) => tierRow(t, i, FORTE_TOTALS.forge[i])).join('')}</div>
     </div>
     <div class="mat-section">
-      <h4>👹 일반 몹 드랍 — ${esc(dropFam.name)} 계열</h4>
+      <h4>👹 일반 몹 드랍 — ${esc(dropFam.name)}</h4>
       <div class="mat-rows">${dropFam.tiers.map((t, i) => tierRow(t, i, FORTE_TOTALS.drop[i])).join('')}</div>
     </div>
     <div class="mat-section">
@@ -1010,7 +1011,9 @@ function renderMatDetail() {
       <div class="mat-rows">
         <div class="mat-row">
           <span class="tier-dot" style="background:${TIER_COLORS[3]}">주간</span>
-          <span class="mn">${m.weekly ? esc(m.weekly) : '<i>미입력 — [재료 수정]에서 입력</i>'}</span>
+          <span class="mn">${m.weekly
+            ? `${esc(m.weekly)}${WEEKLY_BOSS_MATS[m.weekly] ? ` <small style="color:var(--muted)">— ${esc(WEEKLY_BOSS_MATS[m.weekly])}</small>` : ''}`
+            : '<i>확인 불가 — [재료 수정]에서 입력</i>'}</span>
           <span class="cnt">×${FORTE_TOTALS.weekly}</span>
         </div>
         <div class="mat-row">
@@ -1020,10 +1023,20 @@ function renderMatDetail() {
         </div>
       </div>
     </div>
-    <p class="mat-note">※ 수량은 포르테 트리 풀업(스킬 5종 Lv.10 + 스탯 노드) 기준 근사치입니다. 재료 종류 기본값은 무기 타입 기반 추정이므로 게임과 다르면 [재료 수정]으로 바꿔주세요.</p>
+    <p class="mat-note">※ 수량은 포르테 풀강(전 노드) 기준 공통 수치이며, 재료 매칭은 검증된 데이터(2026-07-10, Game8 기준)입니다. 등급명이 미확인인 몹 드랍 세트는 I~IV로 표기했어요. 레벨 돌파 재료(보스 드랍·특산물)는 미포함.</p>
   </div>`;
 
   document.getElementById('edit-mats-btn').addEventListener('click', () => openMatModal(c));
+}
+
+// 주간 보스 재료 참고표 & 자동완성 목록
+function renderWeeklyTable() {
+  document.getElementById('weekly-table').innerHTML =
+    `<tr><th>재료</th><th>드랍 보스 (등장 시기)</th></tr>` +
+    Object.entries(WEEKLY_BOSS_MATS).map(([mat, boss]) =>
+      `<tr><td class="cname">${esc(mat)}</td><td>${esc(boss)}</td></tr>`).join('');
+  document.getElementById('weekly-mats').innerHTML =
+    Object.keys(WEEKLY_BOSS_MATS).map(m => `<option value="${esc(m)}">`).join('');
 }
 
 document.getElementById('mat-char-strip').addEventListener('click', e => {
@@ -1239,6 +1252,7 @@ function renderAll() {
   renderContents();
   renderMatStrip();
   renderMatDetail();
+  renderWeeklyTable();
 }
 
 renderAll();
