@@ -2,7 +2,7 @@
    앱 셸을 캐시해서 오프라인/설치형(PWA)으로 동작하게 합니다.
    배포 시 CACHE_VERSION을 올리면 이전 캐시가 정리됩니다. */
 
-const CACHE_VERSION = 'wuwa-planner-v4';
+const CACHE_VERSION = 'wuwa-planner-v5';
 const APP_SHELL = [
   './',
   './index.html',
@@ -10,9 +10,9 @@ const APP_SHELL = [
   './js/data.js',
   './js/app.js',
   './manifest.webmanifest',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/icon-180.png',
+  './icons/app-192.v2.png',
+  './icons/app-512.v2.png',
+  './icons/app-180.v2.png',
 ];
 
 self.addEventListener('install', e => {
