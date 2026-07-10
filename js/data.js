@@ -379,5 +379,18 @@ const CONTENT_DEFAULTS = [
   },
 ];
 
+/* ---- 재화 ----
+   1뽑 = 아스트라이트 160. 달빛살(Lunite)은 1:1로 아스트라이트 전환.
+   팩 가격은 대략적인 KR 스토어 기준 (최고가 팩 11만원은 사용자 확인값). */
+const ASTRITE_PER_PULL = 160;
+const LUNITE_PACKS = [
+  { price: 1500,   base: 60,   bonus: 8 },
+  { price: 7500,   base: 300,  bonus: 30 },
+  { price: 25000,  base: 980,  bonus: 110 },
+  { price: 50000,  base: 1980, bonus: 260 },
+  { price: 79000,  base: 3280, bonus: 600 },
+  { price: 110000, base: 6480, bonus: 1600 },
+];
+
 const COPY_LABELS = ['명함', '1돌', '2돌', '3돌', '4돌', '5돌', '6돌'];
 const WEAPON_COPY_LABELS = ['1개(1재련)', '2개(2재련)', '3개(3재련)', '4개(4재련)', '5개(5재련)'];

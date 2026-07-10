@@ -8,10 +8,12 @@ const defaultState = () => ({
   owned: {},            // charId -> true
   customChars: [],      // {id, name, rarity, element, group}
   schedules: [],        // {id, charId, name, start, end, saved, goal, memo}
-  parties: [{ id: uid(), name: '파티 1', members: [null, null, null] }],
+  parties: [{ id: uid(), name: '파티 1', members: [null, null, null], tag: '' }],
   records: [],          // {id, season, type, charId, weaponName, copy, pulls, lost}
   contents: JSON.parse(JSON.stringify(CONTENT_DEFAULTS)), // 탑/해역/매트릭스 로테이션
   matOverrides: {},     // charId -> {forge, drop, weekly}
+  pity: { charCount: 0, charGuaranteed: false, weaponCount: 0 },
+  calc: { astrite: 0, lunite: 0, charTickets: 0, weaponTickets: 0 },
 });
 
 let state = loadState();
@@ -25,7 +27,11 @@ function loadState() {
     const raw = localStorage.getItem(STORE_KEY);
     if (!raw) return defaultState();
     const s = JSON.parse(raw);
-    return Object.assign(defaultState(), s);
+    const merged = Object.assign(defaultState(), s);
+    // 중첩 객체는 기본값 위에 병합 (구버전 백업 호환)
+    merged.pity = Object.assign(defaultState().pity, s.pity || {});
+    merged.calc = Object.assign(defaultState().calc, s.calc || {});
+    return merged;
   } catch {
     return defaultState();
   }
@@ -179,7 +185,7 @@ document.getElementById('schedule-list').addEventListener('click', e => {
   if (editBtn) openScheduleModal(editBtn.dataset.editSchedule);
   if (delBtn) {
     state.schedules = state.schedules.filter(s => s.id !== delBtn.dataset.delSchedule);
-    save(); renderSchedules(); toast('일정을 삭제했어요');
+    save(); renderSchedules(); renderPityCalc(); toast('일정을 삭제했어요');
   }
 });
 
@@ -224,10 +230,192 @@ document.getElementById('schedule-form').addEventListener('submit', e => {
   } else {
     state.schedules.push(Object.assign({ id: uid() }, data));
   }
-  save(); renderSchedules();
+  save(); renderSchedules(); renderPityCalc();
   document.getElementById('schedule-modal').close();
   toast('픽업 일정을 저장했어요');
 });
+
+/* ================================================================
+   1.5 천장 현황 & 재화 계산기
+   ================================================================ */
+
+function renderPityCalc() {
+  const wrap = document.getElementById('pity-calc');
+  const p = state.pity;
+  const c = state.calc;
+
+  const charLeft5 = GACHA.HARD - Math.min(p.charCount, GACHA.HARD - 1);
+  const charLeftPickup = p.charGuaranteed ? charLeft5 : charLeft5 + GACHA.HARD;
+  const weaponLeft = GACHA.WEAPON_MAX - Math.min(p.weaponCount, GACHA.WEAPON_MAX - 1);
+
+  const pool = Math.max(0, +c.astrite || 0) + Math.max(0, +c.lunite || 0);
+  const poolPulls = Math.floor(pool / ASTRITE_PER_PULL);
+  const poolRemain = pool % ASTRITE_PER_PULL;
+  const charPulls = poolPulls + Math.max(0, +c.charTickets || 0);
+  const weaponPulls = poolPulls + Math.max(0, +c.weaponTickets || 0);
+
+  const schedOpts = state.schedules.map(s => {
+    const ch = charById(s.charId);
+    return `<option value="${s.id}">${esc(s.name || (ch ? ch.name + ' 픽업' : '일정'))}</option>`;
+  }).join('');
+
+  const topPack = LUNITE_PACKS[LUNITE_PACKS.length - 1];
+  const topTotal = topPack.base + topPack.bonus;
+
+  wrap.innerHTML = `
+  <div class="card pity-card">
+    <h3>🎯 캐릭터 배너 천장</h3>
+    <div class="pity-count">
+      <input type="number" id="pity-char-count" min="0" max="${GACHA.HARD - 1}" value="${p.charCount}">
+      <span class="max">/ ${GACHA.HARD}</span>
+    </div>
+    <button class="chip ${p.charGuaranteed ? 'active' : ''}" id="pity-guaranteed">
+      ${p.charGuaranteed ? '★ 픽업 확정 상태 (픽뚫 이후)' : '반반 상태 (픽뚫 가능)'}
+    </button>
+    <div class="pity-info">
+      다음 5성까지 최대 <b>${charLeft5}뽑</b><br>
+      픽업 확보까지 최대 <b>${charLeftPickup}뽑</b> ${p.charGuaranteed ? '(확정)' : '(픽뚫 시 기준)'}
+    </div>
+    <div class="pity-btns">
+      <button class="ghost-btn" data-pity="char:1">+1</button>
+      <button class="ghost-btn" data-pity="char:10">+10</button>
+      <button class="ghost-btn danger-btn" data-pity="char:reset">초기화</button>
+    </div>
+    <p class="pity-note">픽업 기록 저장 시 자동으로 리셋돼요.</p>
+  </div>
+
+  <div class="card pity-card">
+    <h3>⚔ 전무 배너 천장</h3>
+    <div class="pity-count">
+      <input type="number" id="pity-weapon-count" min="0" max="${GACHA.WEAPON_MAX - 1}" value="${p.weaponCount}">
+      <span class="max">/ ${GACHA.WEAPON_MAX}</span>
+    </div>
+    <div class="pity-info">
+      픽업 전무 확보까지 최대 <b>${weaponLeft}뽑</b> (픽뚫 없음 · 확정)
+    </div>
+    <div class="pity-btns">
+      <button class="ghost-btn" data-pity="weapon:1">+1</button>
+      <button class="ghost-btn" data-pity="weapon:10">+10</button>
+      <button class="ghost-btn danger-btn" data-pity="weapon:reset">초기화</button>
+    </div>
+    <p class="pity-note">전무 기록 저장 시 자동으로 리셋돼요.</p>
+  </div>
+
+  <div class="card calc-card">
+    <h3>💎 재화 계산기</h3>
+    <div class="calc-rows">
+      <label>아스트라이트 <input type="number" id="calc-astrite" min="0" value="${c.astrite}"></label>
+      <label>달빛살 (루나이트) <input type="number" id="calc-lunite" min="0" value="${c.lunite}"></label>
+      <label>한정 캐릭터 뽑기권 <input type="number" id="calc-chart" min="0" value="${c.charTickets}"></label>
+      <label>전무 뽑기권 <input type="number" id="calc-weapont" min="0" value="${c.weaponTickets}"></label>
+    </div>
+    <div class="calc-quick">
+      <button class="ghost-btn" data-addlunite="${topTotal}">+11만원 팩 (${topTotal.toLocaleString()})</button>
+      <button class="ghost-btn" data-addlunite="${topPack.base * 2}">+첫구매 2배 (${(topPack.base * 2).toLocaleString()})</button>
+    </div>
+    <div class="calc-result">
+      <div>캐릭터 뽑기 가능: <b>${charPulls}뽑</b> <small>(석 ${poolPulls}뽑 + 뽑기권 ${Math.max(0, +c.charTickets || 0)} · 잔여 ${poolRemain}석)</small></div>
+      <div>전무 뽑기 가능: <b>${weaponPulls}뽑</b> <small>(석은 캐릭터와 공용)</small></div>
+    </div>
+    ${state.schedules.length ? `
+    <div class="calc-apply">
+      <select id="calc-schedule">${schedOpts}</select>
+      <button class="ghost-btn" id="calc-apply-btn">일정에 반영</button>
+    </div>` : '<p class="pity-note">픽업 일정을 추가하면 계산 결과를 일정 게이지에 바로 반영할 수 있어요.</p>'}
+    <details class="pack-details">
+      <summary>달빛살 팩 → 뽑 환산표</summary>
+      <table class="banner-table">
+        <tr><th>가격(대략)</th><th>달빛살</th><th>환산</th><th>뽑당 가격</th></tr>
+        ${LUNITE_PACKS.map(pk => {
+          const total = pk.base + pk.bonus;
+          const pulls = total / ASTRITE_PER_PULL;
+          return `<tr>
+            <td>₩${pk.price.toLocaleString()}</td>
+            <td>${pk.base.toLocaleString()} +${pk.bonus.toLocaleString()}</td>
+            <td>${pulls.toFixed(1)}뽑</td>
+            <td>₩${Math.round(pk.price / pulls).toLocaleString()}</td>
+          </tr>`;
+        }).join('')}
+      </table>
+      <p class="pity-note">첫 구매는 보너스 대신 기본량 2배 (11만원 팩 = 12,960 = 81뽑). 가격은 스토어에 따라 다를 수 있어요.</p>
+    </details>
+  </div>`;
+}
+
+document.getElementById('pity-calc').addEventListener('click', e => {
+  const pityBtn = e.target.closest('[data-pity]');
+  if (pityBtn) {
+    const [kind, act] = pityBtn.dataset.pity.split(':');
+    if (kind === 'char') {
+      if (act === 'reset') { state.pity.charCount = 0; state.pity.charGuaranteed = false; }
+      else state.pity.charCount = Math.min(GACHA.HARD - 1, state.pity.charCount + +act);
+    } else {
+      state.pity.weaponCount = act === 'reset' ? 0 : Math.min(GACHA.WEAPON_MAX - 1, state.pity.weaponCount + +act);
+    }
+    save(); renderPityCalc();
+    return;
+  }
+  if (e.target.closest('#pity-guaranteed')) {
+    state.pity.charGuaranteed = !state.pity.charGuaranteed;
+    save(); renderPityCalc();
+    return;
+  }
+  const addBtn = e.target.closest('[data-addlunite]');
+  if (addBtn) {
+    state.calc.lunite = Math.max(0, +state.calc.lunite || 0) + +addBtn.dataset.addlunite;
+    save(); renderPityCalc();
+    return;
+  }
+  if (e.target.closest('#calc-apply-btn')) {
+    const sel = document.getElementById('calc-schedule');
+    const s = state.schedules.find(x => x.id === sel.value);
+    if (!s) return;
+    const pool = Math.max(0, +state.calc.astrite || 0) + Math.max(0, +state.calc.lunite || 0);
+    const pulls = Math.floor(pool / ASTRITE_PER_PULL) + Math.max(0, +state.calc.charTickets || 0);
+    s.saved = pulls;
+    save(); renderSchedules(); renderPityCalc();
+    toast(`일정의 모아둔 뽑기를 ${pulls}뽑으로 반영했어요`);
+  }
+});
+
+document.getElementById('pity-calc').addEventListener('change', e => {
+  const id = e.target.id;
+  const v = Math.max(0, +e.target.value || 0);
+  if (id === 'pity-char-count') state.pity.charCount = Math.min(GACHA.HARD - 1, v);
+  else if (id === 'pity-weapon-count') state.pity.weaponCount = Math.min(GACHA.WEAPON_MAX - 1, v);
+  else if (id === 'calc-astrite') state.calc.astrite = v;
+  else if (id === 'calc-lunite') state.calc.lunite = v;
+  else if (id === 'calc-chart') state.calc.charTickets = v;
+  else if (id === 'calc-weapont') state.calc.weaponTickets = v;
+  else return;
+  save(); renderPityCalc();
+});
+
+// 기록 저장 시 공통 후처리: 천장 리셋 + 같은 캐릭터 일정에서 뽑기 차감
+function applyRecordSideEffects(rec) {
+  const notes = [];
+  if (rec.type === 'char') {
+    if (state.pity.charCount > 0 || state.pity.charGuaranteed) notes.push('캐릭터 천장 리셋');
+    state.pity.charCount = 0;
+    state.pity.charGuaranteed = false;
+  } else {
+    if (state.pity.weaponCount > 0) notes.push('전무 천장 리셋');
+    state.pity.weaponCount = 0;
+  }
+  if (rec.charId) {
+    const order = { ongoing: 0, upcoming: 1, past: 2 };
+    const sched = state.schedules
+      .filter(s => s.charId === rec.charId && s.saved > 0)
+      .sort((a, b) => order[scheduleStatus(a)] - order[scheduleStatus(b)])[0];
+    if (sched) {
+      const before = sched.saved;
+      sched.saved = Math.max(0, sched.saved - rec.pulls);
+      notes.push(`일정 뽑기 ${before} → ${sched.saved}`);
+    }
+  }
+  renderSchedules(); renderPityCalc();
+  return notes.length ? ` (${notes.join(' · ')})` : '';
+}
 
 /* ================================================================
    2. 파티 편성 (드래그 & 드롭)
@@ -257,6 +445,10 @@ function renderParties() {
     <div class="party-card" data-party="${p.id}">
       <div class="party-head">
         <input class="party-name" value="${esc(p.name)}" maxlength="16" data-party-name="${p.id}">
+        <select class="party-tag" data-party-tag="${p.id}" title="용도 라벨 — 컨텐츠 탭에 연결돼요">
+          <option value="">라벨 없음</option>
+          ${state.contents.map(c => `<option value="${c.id}" ${p.tag === c.id ? 'selected' : ''}>${c.icon || ''} ${esc(c.name)}</option>`).join('')}
+        </select>
         <button class="icon-btn danger-btn" data-del-party="${p.id}" title="파티 삭제">✕</button>
       </div>
       <div class="party-slots">
@@ -278,7 +470,7 @@ function renderParties() {
 }
 
 document.getElementById('add-party-btn').addEventListener('click', () => {
-  state.parties.push({ id: uid(), name: `파티 ${state.parties.length + 1}`, members: [null, null, null] });
+  state.parties.push({ id: uid(), name: `파티 ${state.parties.length + 1}`, members: [null, null, null], tag: '' });
   save(); renderParties();
 });
 
@@ -308,7 +500,16 @@ partyList.addEventListener('change', e => {
   if (input) {
     const p = state.parties.find(x => x.id === input.dataset.partyName);
     p.name = input.value.trim() || p.name;
-    save();
+    save(); renderContents();
+    return;
+  }
+  const tagSel = e.target.closest('[data-party-tag]');
+  if (tagSel) {
+    const p = state.parties.find(x => x.id === tagSel.dataset.partyTag);
+    p.tag = tagSel.value;
+    save(); renderContents();
+    const ct = state.contents.find(c => c.id === tagSel.value);
+    if (ct) toast(`"${p.name}" 파티를 ${ct.name}에 연결했어요`);
   }
 });
 
@@ -666,12 +867,12 @@ bannerCardsEl.addEventListener('click', e => {
     id: uid(),
     season,
     type,
+    charId,
     copy: +card.querySelector('.bc-copy').value,
     pulls,
     lost: type === 'char' && card.querySelector('.bc-lost-chk').checked,
   };
   if (type === 'char') {
-    rec.charId = charId;
     if (!isOwned(charId)) {
       state.owned[charId] = true;
       renderRoster(); renderRosterStrip();
@@ -680,9 +881,10 @@ bannerCardsEl.addEventListener('click', e => {
     rec.weaponName = `${charById(charId)?.name ?? ''} 전무`.trim();
   }
   state.records.push(rec);
+  const extra = applyRecordSideEffects(rec);
   save(); renderRecords();
   const top = recordLuck(rec);
-  toast(`기록 완료! 상위 ${top.toFixed(1)}%의 운이었어요`);
+  toast(`기록 완료! 상위 ${top.toFixed(1)}%의 운이었어요${extra}`);
 });
 
 const CHAR_PMF = charPickupPmf();
@@ -834,10 +1036,11 @@ document.getElementById('record-form').addEventListener('submit', e => {
     rec.weaponName = document.getElementById('rec-weapon-name').value.trim() || '픽업 전무';
   }
   state.records.push(rec);
+  const extra = applyRecordSideEffects(rec);
   save(); renderRecords();
   document.getElementById('record-modal').close();
   const top = recordLuck(rec);
-  toast(`기록 완료! 이번 뽑기는 상위 ${top.toFixed(1)}%의 운이었어요`);
+  toast(`기록 완료! 이번 뽑기는 상위 ${top.toFixed(1)}%의 운이었어요${extra}`);
 });
 
 /* ================================================================
@@ -899,6 +1102,21 @@ function renderContents() {
         <h4>👹 등장 몹</h4>
         ${stages || '<div class="empty-note" style="padding:14px">단계를 추가해 주세요</div>'}
       </div>
+      ${(() => {
+        const linked = state.parties.filter(p => p.tag === c.id);
+        if (!linked.length) return '';
+        return `<div class="ct-block">
+          <h4>🧑‍🤝‍🧑 연결된 파티</h4>
+          ${linked.map(p => `
+          <div class="ct-party">
+            <span class="ct-party-nm">${esc(p.name)}</span>
+            ${p.members.filter(Boolean).map(id => {
+              const ch = charById(id);
+              return ch ? avatarHTML(ch, { small: true }) : '';
+            }).join('') || '<span class="pity-note">멤버 없음</span>'}
+          </div>`).join('')}
+        </div>`;
+      })()}
     </div>`;
   }).join('');
 }
@@ -1253,6 +1471,7 @@ function renderAll() {
   renderMatStrip();
   renderMatDetail();
   renderWeeklyTable();
+  renderPityCalc();
 }
 
 renderAll();
