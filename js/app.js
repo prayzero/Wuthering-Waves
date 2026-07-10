@@ -59,7 +59,11 @@ function avatarHTML(char, { small = false, gray = false } = {}) {
   const el = ELEMENTS[char.element] || { name: '?', color: '#888' };
   const initial = char.name.slice(0, 2);
   const cls = ['avatar', small ? 'small' : '', char.rarity === 5 ? 'r5' : '', gray ? 'gray' : ''].join(' ');
-  return `<span class="${cls}" style="--el:${el.color}" title="${esc(char.name)} · ${el.name} ${char.rarity}성">${esc(initial)}<span class="el-dot"></span></span>`;
+  const title = `${char.name} · ${el.name} ${char.rarity}성${char.role ? ' · ' + char.role : ''}`;
+  const photo = char.img
+    ? `<img src="${esc(char.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`
+    : '';
+  return `<span class="${cls}" style="--el:${el.color}" title="${esc(title)}">${esc(initial)}${photo}<span class="el-dot"></span></span>`;
 }
 
 let toastTimer = null;
@@ -511,18 +515,24 @@ document.getElementById('custom-form').addEventListener('submit', e => {
    4. 픽업 기록
    ================================================================ */
 
-// 같은 기간(페이즈)의 픽업을 하나의 카드로 묶기 (예: 자니 + 시아코나)
-function bannerGroups() {
-  const map = new Map();
-  BANNERS.forEach(b => {
-    const key = `${b.ver}|${b.start}`;
-    if (!map.has(key)) map.set(key, { key, ver: b.ver, start: b.start, end: b.end, banners: [] });
-    map.get(key).banners.push(b);
-  });
-  return [...map.values()].reverse(); // 최신 시즌부터
+// 배너(페이즈) 식별 키 & 기록 시즌 매칭
+function bannerKey(b) {
+  return `${b.ver}-${b.phase}`;
 }
 
-const BANNER_NAME_SET = new Set(BANNERS.map(b => b.name));
+// 이 배너에 귀속되는 시즌 이름들 (키 + 예전 "OO 픽업" 형식 + 개명 전 이름 호환)
+function bannerSeasonNames(b) {
+  const names = [bannerKey(b)];
+  (b.pickup || []).forEach(id => {
+    const c = charById(id);
+    if (!c) return;
+    names.push(`${c.name} 픽업`);
+    if (OLD_NAME_ALIASES[c.name]) names.push(`${OLD_NAME_ALIASES[c.name]} 픽업`);
+  });
+  return names;
+}
+
+const ALL_BANNER_SEASONS = new Set(BANNERS.flatMap(b => (b.leaked ? [] : bannerSeasonNames(b))));
 
 function bcRecordRow(r) {
   const top = recordLuck(r);
@@ -540,21 +550,35 @@ function bcRecordRow(r) {
 
 function renderBannerCards() {
   const wrap = document.getElementById('banner-cards');
-  wrap.innerHTML = bannerGroups().map(gr => {
-    const chars = gr.banners.map(b => charById(b.charId)).filter(Boolean);
-    const seasonNames = new Set(gr.banners.map(b => b.name));
-    const recs = state.records.filter(r => seasonNames.has(r.season));
+  const t = today();
+  wrap.innerHTML = [...BANNERS].reverse().map(b => {
+    const key = bannerKey(b);
+    const label = `Ver ${b.ver} · ${b.phase}`;
 
-    // 대상 선택지: 캐릭터들 + 각 캐릭터의 전무
+    // 유출(미확정) 배너는 정보 카드로만 표시
+    if (b.leaked) {
+      return `
+      <div class="bc-card bc-leak">
+        <div class="bc-head">
+          <span class="pill lost">${esc(label)}</span>
+          <span class="bc-dates">일정 미정</span>
+        </div>
+        <div class="bc-empty" style="padding:14px 0">${(b.leakNames || []).map(esc).join(' · ')}</div>
+        ${b.note ? `<p class="bc-note">⚠ ${esc(b.note)}</p>` : ''}
+      </div>`;
+    }
+
+    const live = b.start <= t && t <= b.end;
+    const pickupChars = (b.pickup || []).map(charById).filter(Boolean);
+    const rerunChars = (b.rerun || []).map(charById).filter(Boolean);
+    const seasons = new Set(bannerSeasonNames(b));
+    const recs = state.records.filter(r => seasons.has(r.season));
+
+    // 대상 선택지: 신규 → 복각 → 전무(신규/복각 순)
+    const allChars = [...pickupChars.map(c => ({ c, tag: '신규' })), ...rerunChars.map(c => ({ c, tag: '복각' }))];
     const targetOpts =
-      gr.banners.map(b => {
-        const c = charById(b.charId);
-        return `<option value="char|${b.charId}|${esc(b.name)}">${esc(c ? c.name : '?')} (캐릭터)</option>`;
-      }).join('') +
-      gr.banners.map(b => {
-        const c = charById(b.charId);
-        return `<option value="weapon|${b.charId}|${esc(b.name)}">${esc(c ? c.name : '?')} 전무</option>`;
-      }).join('');
+      allChars.map(({ c, tag }) => `<option value="char|${c.id}|${key}">${esc(c.name)} (${tag})</option>`).join('') +
+      allChars.map(({ c }) => `<option value="weapon|${c.id}|${key}">${esc(c.name)} 전무</option>`).join('');
 
     let luckFoot = `<div class="t"><span>이 시즌 내 운</span><b style="color:var(--muted)">기록 없음</b></div>`;
     if (recs.length) {
@@ -570,19 +594,31 @@ function renderBannerCards() {
     }
 
     return `
-    <div class="bc-card" data-group="${gr.key}">
+    <div class="bc-card ${live ? 'bc-live' : ''}" data-banner="${key}">
       <div class="bc-head">
-        <span class="pill copy">Ver ${gr.ver}</span>
-        <span class="bc-dates">${fmtDate(gr.start)} ~ ${fmtDate(gr.end)}</span>
+        <span class="pill copy">${esc(label)}</span>
+        ${live ? '<span class="badge live">진행 중</span>' : ''}
+        <span class="bc-dates">${fmtDate(b.start)} ~ ${fmtDate(b.end)}</span>
       </div>
+      ${pickupChars.length ? `
       <div class="bc-chars">
-        ${chars.map(c => `
+        ${pickupChars.map(c => `
         <div class="bc-char">
           ${avatarHTML(c)}
           <span class="nm">${esc(c.name)}</span>
-          <span class="el"><span class="dot" style="background:${ELEMENTS[c.element].color}"></span>${ELEMENTS[c.element].name}</span>
+          <span class="el"><span class="dot" style="background:${ELEMENTS[c.element].color}"></span>${ELEMENTS[c.element].name} · ${WEAPONS[c.weapon] ?? ''}</span>
         </div>`).join('')}
-      </div>
+      </div>` : ''}
+      ${rerunChars.length ? `
+      <div class="bc-rerun">
+        <span class="bc-rerun-lbl">복각</span>
+        ${rerunChars.map(c => `
+        <span class="bc-rerun-chip" title="${esc(c.name)}">
+          ${avatarHTML(c, { small: true })}
+          <span class="rn">${esc(c.name)}</span>
+        </span>`).join('')}
+      </div>` : ''}
+      ${b.note ? `<p class="bc-note">${esc(b.note)}</p>` : ''}
       <div class="bc-records">
         ${recs.length ? recs.map(bcRecordRow).join('') : '<div class="bc-empty">아직 기록이 없어요 — 아래에서 바로 추가!</div>'}
       </div>
@@ -598,7 +634,7 @@ function renderBannerCards() {
   }).join('');
 
   // 카드별 획득 회차 선택지 초기화
-  wrap.querySelectorAll('.bc-card').forEach(card => refreshBcCopy(card));
+  wrap.querySelectorAll('.bc-card:not(.bc-leak)').forEach(card => refreshBcCopy(card));
 }
 
 function refreshBcCopy(card) {
@@ -681,7 +717,7 @@ function renderRecords() {
 
   // 기타 시즌 기록 (역대 배너 목록에 없는 시즌)
   const wrap = document.getElementById('record-list');
-  const customs = recs.filter(r => !BANNER_NAME_SET.has(r.season));
+  const customs = recs.filter(r => !ALL_BANNER_SEASONS.has(r.season));
   if (!customs.length) {
     wrap.innerHTML = `<div class="empty-note">목록에 없는 시즌 기록은 [+ 직접 기록 추가]로 등록할 수 있어요.</div>`;
     return;
@@ -721,7 +757,10 @@ document.addEventListener('click', e => {
 
 function refreshRecordFormOptions() {
   const bannerSel = document.getElementById('rec-banner');
-  const opts = [...BANNERS].reverse().map(b => `<option value="${esc(b.name)}">${b.ver} · ${esc(b.name)}</option>`);
+  const opts = [...BANNERS].filter(b => !b.leaked).reverse().map(b => {
+    const names = (b.pickup || []).map(id => charById(id)?.name).filter(Boolean).join('/') || '복각';
+    return `<option value="${esc(bannerKey(b))}">${b.ver} ${b.phase} · ${esc(names)}</option>`;
+  });
   const scheduleOpts = state.schedules.map(s => {
     const c = charById(s.charId);
     const label = s.name || `${c ? c.name : '?'} 픽업`;
@@ -952,6 +991,7 @@ function renderMatDetail() {
           <span class="pill">${ELEMENTS[c.element]?.name ?? '?'}</span>
           <span class="pill">${WEAPONS[c.weapon] ?? '무기 미지정'}</span>
           <span class="pill copy">${c.rarity}성</span>
+          ${c.role ? `<span class="pill">${esc(c.role)}</span>` : ''}
           ${c.ver ? `<span class="pill">Ver ${c.ver}</span>` : ''}
         </div>
       </div>
