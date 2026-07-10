@@ -2,16 +2,16 @@
    WuWa 픽업 플래너 — 스타일 (다크 테마)
    ================================================================ */
 :root {
-  --page: #0d0d0d;
-  --surface: #1a1a19;
-  --surface-2: #232322;
+  --page: #0a0e18;
+  --surface: #131a28;
+  --surface-2: #1b2436;
   --ink: #ffffff;
   --ink-2: #c3c2b7;
   --muted: #898781;
-  --grid: #2c2c2a;
-  --baseline: #383835;
+  --grid: #263045;
+  --baseline: #35425e;
   --border: rgba(255, 255, 255, 0.10);
-  --accent: #e6c15a;          /* WuWa 골드 */
+  --accent: #9cc8f0;          /* 파수인 아이스블루 */
   --blue: #3987e5;            /* 게이지/링크 */
   --good: #0ca30c;
   --warning: #fab219;
@@ -36,7 +36,7 @@ input, select, textarea { font: inherit; }
 /* ---------- 헤더 / 탭 ---------- */
 .site-header {
   position: sticky; top: 0; z-index: 50;
-  background: rgba(13, 13, 13, 0.92);
+  background: rgba(10, 14, 24, 0.92);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--border);
 }
@@ -49,10 +49,8 @@ input, select, textarea { font: inherit; }
   font-weight: 700; font-size: 1.05rem; letter-spacing: 0.02em;
 }
 .brand .logo {
-  width: 30px; height: 30px; border-radius: 8px;
-  display: grid; place-items: center;
-  background: linear-gradient(135deg, #e6c15a, #8a6d1f);
-  color: #0d0d0d; font-size: 0.85rem; font-weight: 800;
+  width: 32px; height: 32px; border-radius: 8px; object-fit: cover;
+  border: 1px solid rgba(156, 200, 240, 0.5);
 }
 .brand small { color: var(--muted); font-weight: 500; }
 
@@ -74,7 +72,7 @@ input, select, textarea { font: inherit; }
   border-radius: 8px; padding: 6px 10px; font-size: 0.8rem;
 }
 .icon-btn:hover { background: var(--surface-2); color: var(--ink); }
-.install-btn { color: var(--accent); border-color: rgba(230, 193, 90, 0.45); font-weight: 700; }
+.install-btn { color: var(--accent); border-color: rgba(156, 200, 240, 0.45); font-weight: 700; }
 
 /* ---------- 레이아웃 ---------- */
 main { max-width: 1080px; margin: 0 auto; padding: 20px 16px 80px; }
@@ -124,7 +122,7 @@ main { max-width: 1080px; margin: 0 auto; padding: 20px 16px 80px; }
   width: 58px; height: 58px; border-radius: 12px; position: relative;
   display: grid; place-items: center; flex: none;
   background:
-    radial-gradient(120% 120% at 20% 15%, color-mix(in srgb, var(--el) 55%, #1a1a19), #141413 72%);
+    radial-gradient(120% 120% at 20% 15%, color-mix(in srgb, var(--el) 55%, #131a28), #0f1522 72%);
   border: 2px solid color-mix(in srgb, var(--el) 70%, transparent);
   color: #fff; font-weight: 800; font-size: 1.15rem;
   text-shadow: 0 1px 3px rgba(0,0,0,0.6);
@@ -147,7 +145,7 @@ main { max-width: 1080px; margin: 0 auto; padding: 20px 16px 80px; }
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 14px 16px;
 }
-.schedule-card.ongoing { border-color: rgba(230, 193, 90, 0.55); }
+.schedule-card.ongoing { border-color: rgba(156, 200, 240, 0.55); }
 .schedule-card .info { flex: 1; min-width: 0; }
 .schedule-title {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
@@ -157,7 +155,7 @@ main { max-width: 1080px; margin: 0 auto; padding: 20px 16px 80px; }
   font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 999px;
   border: 1px solid var(--border); color: var(--ink-2);
 }
-.badge.live { background: rgba(230,193,90,0.15); color: var(--accent); border-color: rgba(230,193,90,0.4); }
+.badge.live { background: rgba(156, 200, 240,0.15); color: var(--accent); border-color: rgba(156, 200, 240,0.4); }
 .badge.soon { background: rgba(57,135,229,0.15); color: #7db3f0; border-color: rgba(57,135,229,0.4); }
 .badge.done-b { color: var(--muted); }
 .schedule-meta { color: var(--ink-2); font-size: 0.82rem; margin-top: 2px; }
@@ -219,7 +217,7 @@ main { max-width: 1080px; margin: 0 auto; padding: 20px 16px 80px; }
   transition: border-color 0.15s, background 0.15s;
   min-width: 0;
 }
-.party-slot.drag-over { border-color: var(--accent); background: rgba(230, 193, 90, 0.08); }
+.party-slot.drag-over { border-color: var(--accent); background: rgba(156, 200, 240, 0.08); }
 .party-slot.filled { border-style: solid; border-color: var(--grid); background: var(--surface-2); cursor: grab; }
 .party-slot .nm { font-size: 0.75rem; color: var(--ink); font-weight: 600; max-width: 92%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .party-slot .plus { font-size: 1.5rem; line-height: 1; color: var(--baseline); }
@@ -236,7 +234,7 @@ main { max-width: 1080px; margin: 0 auto; padding: 20px 16px 80px; }
   border: 1px solid var(--border); background: transparent; color: var(--ink-2);
   padding: 5px 12px; border-radius: 999px; font-size: 0.8rem;
 }
-.chip.active { background: var(--surface-2); color: var(--accent); border-color: rgba(230,193,90,0.4); font-weight: 700; }
+.chip.active { background: var(--surface-2); color: var(--accent); border-color: rgba(156, 200, 240,0.4); font-weight: 700; }
 .own-summary { color: var(--muted); font-size: 0.82rem; margin-bottom: 12px; }
 .char-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 12px; }
 .char-cell {
@@ -245,7 +243,7 @@ main { max-width: 1080px; margin: 0 auto; padding: 20px 16px 80px; }
   padding: 12px 6px 9px; cursor: pointer; transition: transform 0.12s, border-color 0.12s;
 }
 .char-cell:hover { transform: translateY(-2px); border-color: var(--baseline); }
-.char-cell.owned { border-color: rgba(230, 193, 90, 0.4); }
+.char-cell.owned { border-color: rgba(156, 200, 240, 0.4); }
 .char-cell .nm { font-size: 0.76rem; color: var(--ink-2); text-align: center; }
 .char-cell.owned .nm { color: var(--ink); font-weight: 600; }
 .char-cell .tag { font-size: 0.64rem; color: var(--muted); }
@@ -283,7 +281,7 @@ table.banner-table { width: 100%; border-collapse: collapse; font-size: 0.85rem;
   font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 999px;
   border: 1px solid var(--border); color: var(--ink-2);
 }
-.pill.copy { color: var(--accent); border-color: rgba(230,193,90,0.4); }
+.pill.copy { color: var(--accent); border-color: rgba(156, 200, 240,0.4); }
 .pill.weapon { color: #7db3f0; border-color: rgba(57,135,229,0.4); }
 .pill.lost { color: var(--serious); border-color: rgba(236,131,90,0.4); }
 .luck-badge {
@@ -331,13 +329,13 @@ table.banner-table { width: 100%; border-collapse: collapse; font-size: 0.85rem;
 .reset-badge .dd.soon-reset { color: var(--serious); }
 .reset-badge .sub { color: var(--muted); font-size: 0.72rem; margin-top: 1px; }
 .reset-bar { position: relative; height: 6px; background: var(--grid); border-radius: 3px; margin-top: 8px; }
-.reset-bar .fill { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: linear-gradient(90deg, #8a6d1f, var(--accent)); min-width: 2px; }
+.reset-bar .fill { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: linear-gradient(90deg, #3e6ea8, var(--accent)); min-width: 2px; }
 .ct-block h4 {
   margin: 0 0 6px; font-size: 0.76rem; color: var(--muted); font-weight: 700;
   display: flex; align-items: center; gap: 6px;
 }
 .ct-buff {
-  background: rgba(230, 193, 90, 0.07); border: 1px solid rgba(230, 193, 90, 0.25);
+  background: rgba(156, 200, 240, 0.07); border: 1px solid rgba(156, 200, 240, 0.25);
   border-radius: 10px; padding: 10px 12px; font-size: 0.84rem; color: var(--ink-2); white-space: pre-wrap;
 }
 .stage-row {
@@ -361,7 +359,7 @@ table.banner-table { width: 100%; border-collapse: collapse; font-size: 0.85rem;
   background: transparent; border: none; padding: 6px 2px; border-radius: 10px; cursor: pointer;
 }
 .mat-char:hover { background: var(--surface-2); }
-.mat-char.selected { background: var(--surface-2); outline: 2px solid rgba(230, 193, 90, 0.5); }
+.mat-char.selected { background: var(--surface-2); outline: 2px solid rgba(156, 200, 240, 0.5); }
 .mat-char .nm { font-size: 0.68rem; color: var(--ink-2); max-width: 62px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mat-detail-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
 .mat-detail-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
