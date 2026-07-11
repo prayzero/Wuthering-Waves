@@ -31,6 +31,12 @@ function loadState() {
     // 중첩 객체는 기본값 위에 병합 (구버전 백업 호환)
     merged.pity = Object.assign(defaultState().pity, s.pity || {});
     merged.calc = Object.assign(defaultState().calc, s.calc || {});
+    // 컨텐츠: 사용자가 버프를 입력하지 않은 항목은 최신 기본값으로 자동 갱신
+    merged.contents = CONTENT_DEFAULTS.map(def => {
+      const cur = (s.contents || []).find(x => x.id === def.id);
+      if (!cur || !cur.buff || cur.buff.includes('입력하세요')) return JSON.parse(JSON.stringify(def));
+      return Object.assign({ rules: def.rules }, cur);
+    });
     return merged;
   } catch {
     return defaultState();
@@ -779,7 +785,7 @@ function renderBannerCards() {
     const allChars = [...pickupChars.map(c => ({ c, tag: '신규' })), ...rerunChars.map(c => ({ c, tag: '복각' }))];
     const targetOpts =
       allChars.map(({ c, tag }) => `<option value="char|${c.id}|${key}">${esc(c.name)} (${tag})</option>`).join('') +
-      allChars.map(({ c }) => `<option value="weapon|${c.id}|${key}">${esc(c.name)} 전무</option>`).join('');
+      allChars.map(({ c }) => `<option value="weapon|${c.id}|${key}">${esc(c.name)} 전무${SIG_WEAPONS[c.id] ? ` · ${esc(SIG_WEAPONS[c.id])}` : ''}</option>`).join('');
 
     let luckFoot = `<div class="t"><span>이 시즌 내 운</span><b style="color:var(--muted)">기록 없음</b></div>`;
     if (recs.length) {
@@ -878,7 +884,10 @@ bannerCardsEl.addEventListener('click', e => {
       renderRoster(); renderRosterStrip();
     }
   } else {
-    rec.weaponName = `${charById(charId)?.name ?? ''} 전무`.trim();
+    const cname = charById(charId)?.name ?? '';
+    rec.weaponName = SIG_WEAPONS[charId]
+      ? `${cname} 전무 (${SIG_WEAPONS[charId]})`
+      : `${cname} 전무`.trim();
   }
   state.records.push(rec);
   const extra = applyRecordSideEffects(rec);
@@ -1094,6 +1103,7 @@ function renderContents() {
         <div class="sub">${fmtShort(new Date(info.next))} 리셋</div>
         <div class="reset-bar"><div class="fill" style="width:${(info.progress * 100).toFixed(1)}%"></div></div>
       </div>
+      ${c.rules ? `<p class="ct-rules">${esc(c.rules)}</p>` : ''}
       <div class="ct-block">
         <h4>✨ 이번 주기 버프</h4>
         <div class="ct-buff">${esc(c.buff || '버프 미입력')}</div>
@@ -1132,6 +1142,7 @@ document.getElementById('content-grid').addEventListener('click', e => {
   document.getElementById('ct-name').value = c.name;
   document.getElementById('ct-start').value = c.start;
   document.getElementById('ct-period').value = c.period;
+  document.getElementById('ct-rules').value = c.rules || '';
   document.getElementById('ct-buff').value = c.buff || '';
   document.getElementById('ct-stages').value = (c.stages || []).map(s => `${s.name}: ${s.mobs}`).join('\n');
   document.getElementById('content-modal').showModal();
@@ -1144,6 +1155,7 @@ document.getElementById('content-form').addEventListener('submit', e => {
   c.name = document.getElementById('ct-name').value.trim() || c.name;
   c.start = document.getElementById('ct-start').value;
   c.period = Math.max(1, +document.getElementById('ct-period').value || c.period);
+  c.rules = document.getElementById('ct-rules').value.trim();
   c.buff = document.getElementById('ct-buff').value.trim();
   c.stages = document.getElementById('ct-stages').value.split('\n')
     .map(line => line.trim()).filter(Boolean)
@@ -1194,6 +1206,7 @@ function renderMatDetail() {
   const m = charMats(c);
   const forgeFam = FORGE_FAMILIES[m.forge];
   const dropFam = DROP_FAMILIES[m.drop];
+  const asc = ASC_MATS[c.id] || [null, null];
   const tierRow = (label, i, cnt) => `
     <div class="mat-row">
       <span class="tier-dot" style="background:${TIER_COLORS[i]}">T${i + 1}</span>
@@ -1212,6 +1225,7 @@ function renderMatDetail() {
           <span class="pill copy">${c.rarity}성</span>
           ${c.role ? `<span class="pill">${esc(c.role)}</span>` : ''}
           ${c.ver ? `<span class="pill">Ver ${c.ver}</span>` : ''}
+          ${SIG_WEAPONS[c.id] !== undefined ? `<span class="pill weapon">전무: ${SIG_WEAPONS[c.id] ? esc(SIG_WEAPONS[c.id]) : '확인 불가'}</span>` : ''}
         </div>
       </div>
       <button class="ghost-btn" id="edit-mats-btn">재료 수정</button>
@@ -1241,7 +1255,32 @@ function renderMatDetail() {
         </div>
       </div>
     </div>
-    <p class="mat-note">※ 수량은 포르테 풀강(전 노드) 기준 공통 수치이며, 재료 매칭은 검증된 데이터(2026-07-10, Game8 기준)입니다. 등급명이 미확인인 몹 드랍 세트는 I~IV로 표기했어요. 레벨 돌파 재료(보스 드랍·특산물)는 미포함.</p>
+    <div class="mat-section">
+      <h4>⛰ 돌파 재료 (Lv.1→90 · 스킬 재료와 별도)</h4>
+      <div class="mat-rows">
+        <div class="mat-row">
+          <span class="tier-dot" style="background:${TIER_COLORS[0]}">특산</span>
+          <span class="mn">${asc[0] ? esc(asc[0]) : '<i>확인 불가 (3.5 신규 지역)</i>'}</span>
+          <span class="cnt">×${ASC_TOTALS.specialty}</span>
+        </div>
+        <div class="mat-row">
+          <span class="tier-dot" style="background:${TIER_COLORS[2]}">보스</span>
+          <span class="mn">${asc[1] ? esc(asc[1]) : '<i>확인 불가 (3.5 신규 보스)</i>'}</span>
+          <span class="cnt">×${ASC_TOTALS.boss}</span>
+        </div>
+        <div class="mat-row">
+          <span class="tier-dot" style="background:${TIER_COLORS[1]}">몹</span>
+          <span class="mn">${esc(dropFam.name)} T1~T4</span>
+          <span class="cnt">×${ASC_TOTALS.enemy.join('/')}</span>
+        </div>
+        <div class="mat-row">
+          <span class="tier-dot" style="background:#8f8d85">💰</span>
+          <span class="mn">쉘 크레딧</span>
+          <span class="cnt">${ASC_TOTALS.credits}</span>
+        </div>
+      </div>
+    </div>
+    <p class="mat-note">※ 수량은 포르테 풀강(전 노드) / 돌파(Lv.1→90) 기준 공통 수치이며, 재료 매칭은 검증된 데이터(2026-07-10, Game8 기준)입니다. 등급명이 미확인인 몹 드랍 세트는 I~IV로 표기했어요.</p>
   </div>`;
 
   document.getElementById('edit-mats-btn').addEventListener('click', () => openMatModal(c));

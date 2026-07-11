@@ -122,11 +122,11 @@ const BANNERS = [
   { ver: '3.2', phase: '후반', start: '2026-04-09', end: '2026-04-30', pickup: [],              rerun: ['lynae', 'zani', 'phoebe'], note: '신규 없음' },
   { ver: '3.3', phase: '전반', start: '2026-04-30', end: '2026-05-21', pickup: ['hiyuki'],      rerun: ['mornye', 'iuno'], note: '2주년' },
   { ver: '3.3', phase: '후반', start: '2026-05-21', end: '2026-06-08', pickup: ['denia'],       rerun: ['chisa', 'phrolova'], note: '종료일 소스별 상이 (06-07~06-11)' },
-  { ver: '3.4', phase: '콜라보', start: '2026-06-08', end: '2026-07-09', pickup: ['lucy'],      rerun: [], note: '사이버펑크: 엣지러너 콜라보 · 별도 슬롯/천장 · 레베카 무료 배포' },
-  { ver: '3.4', phase: '일반',  start: '2026-06-13', end: '2026-07-09', pickup: ['lucilla'],    rerun: ['cartethyia'], note: '카르티시아 복각은 06-18부터' },
-  { ver: '3.5', phase: '전반', start: '2026-07-09', end: '2026-07-30', pickup: ['xuanling'],    rerun: ['lynae', 'luukherssen'], note: '최초의 기존 4성(양양) 5성 승격판' },
+  { ver: '3.4', phase: '콜라보', start: '2026-06-08', end: '2026-07-10', pickup: ['lucy'],      rerun: [], note: '사이버펑크: 엣지러너 콜라보 · 별도 슬롯/천장 · 레베카 무료 배포' },
+  { ver: '3.4', phase: '일반',  start: '2026-06-13', end: '2026-07-10', pickup: ['lucilla'],    rerun: ['cartethyia'], note: '카르티시아 복각은 06-18부터' },
+  { ver: '3.5', phase: '전반', start: '2026-07-10', end: '2026-07-30', pickup: ['xuanling'],    rerun: ['lynae', 'luukherssen'], note: '3.5는 KR 공식 공지 기준 07-10 시작(약 41일) · 최초의 기존 4성(양양) 5성 승격판' },
   { ver: '3.5', phase: '후반', start: '2026-07-30', end: '2026-08-19', pickup: ['suisui'],      rerun: ['aemeath'], note: '공식 일정 공개됨' },
-  { ver: '3.5', phase: '선택형', start: '2026-07-09', end: '2026-08-19', pickup: [],            rerun: ['jiyan', 'yinlin', 'jinhsi', 'changli', 'zhezhi', 'xiangliyao'], note: '택1 선택형 복각 배너 · 변경 가능 · 첫 10회 무료 · 천장 별도' },
+  { ver: '3.5', phase: '선택형', start: '2026-07-10', end: '2026-08-19', pickup: [],            rerun: ['jiyan', 'yinlin', 'jinhsi', 'changli', 'zhezhi', 'xiangliyao'], note: '택1 선택형 복각 배너 · 변경 가능 · 첫 10회 무료 · 천장 별도' },
   { ver: '3.6', phase: '유출', start: null, end: null, pickup: [], rerun: [], leaked: true,
     leakNames: ['청소(칭샤오)', '경연'], note: '2026년 9월경 추정 — 공식 미발표 유출 정보, 변경 가능' },
 ];
@@ -324,6 +324,86 @@ const CHAR_MATS = {
   buling:      ['helix',      'whisperin',  'Curse of the Abyss'],
 };
 
+// 전용 무기(전무) 이름 — 영어 공식명, null = 확인 불가 (2026-07-10 조사 기준)
+const SIG_WEAPONS = {
+  jiyan: 'Verdant Summit', yinlin: 'Stringmaster', jinhsi: 'Ages of Harvest',
+  changli: 'Blazing Brilliance', zhezhi: 'Rime-Draped Sprouts', xiangliyao: "Verity's Handle",
+  shorekeeper: 'Stellar Symphony', camellya: 'Red Spring', carlotta: 'The Last Dance',
+  roccia: 'Tragicomedy', phoebe: 'Luminous Hymn', brant: 'Unflickering Valor',
+  cantarella: 'Whispers of Sirens', zani: 'Blazing Justice', ciaccona: 'Woodland Aria',
+  cartethyia: "Defier's Thorn", lupa: 'Wildfire Mark', phrolova: 'Lethean Elegy',
+  augusta: 'Thunderflare Dominion', iuno: "Moongazer's Sigil", galbrena: null,
+  qiuyuan: null, chisa: 'Kumokiri', lynae: 'Starfield Calibrator', mornye: null,
+  aemeath: 'Everbright Polestar', luukherssen: null, sigrika: null,
+  hiyuki: 'Frostburn', denia: null, lucy: null, rebecca: null,
+  lucilla: 'Forged Dwarf Star', xuanling: 'Azure Oath', suisui: "Firstlight's Herald",
+};
+
+// 돌파(레벨업) 재료 [지역 특산물, 필드 보스 드랍] — 몹 드랍은 스킬과 같은 계열, null = 확인 불가
+const ASC_MATS = {
+  jiyan:       ['Pecok Flower', 'Roaring Rock Fist'],
+  yinlin:      ['Coriolus', 'Group Abomination Tacet Core'],
+  jinhsi:      ["Loong's Pearl", 'Elegy Tacet Core'],
+  changli:     ['Pavo Plum', 'Rage Tacet Core'],
+  zhezhi:      ['Lanternberry', 'Sound-Keeping Tacet Core'],
+  xiangliyao:  ['Violet Coral', 'Hidden Thunder Tacet Core'],
+  shorekeeper: ['Nova', 'Topological Confinement'],
+  camellya:    ['Nova', 'Topological Confinement'],
+  carlotta:    ['Sword Acorus', 'Platinum Core'],
+  roccia:      ['Firecracker Jewelweed', 'Cleansing Conch'],
+  phoebe:      ['Firecracker Jewelweed', 'Cleansing Conch'],
+  brant:       ['Golden Fleece', 'Blazing Bone'],
+  cantarella:  ['Seaside Cendrelis', 'Cleansing Conch'],
+  zani:        ['Sword Acorus', 'Platinum Core'],
+  ciaccona:    ['Golden Fleece', 'Blazing Bone'],
+  cartethyia:  ['Bamboo Iris', 'Unfading Glory'],
+  lupa:        ['Bloodleaf Viburnum', 'Unfading Glory'],
+  phrolova:    ['Afterlife', 'Truth in Lies'],
+  augusta:     ['Luminous Calendula', 'Blighted Crown of Puppet King'],
+  iuno:        ['Sliverglow Bloom', 'Abyssal Husk'],
+  galbrena:    ['Stone Rose', 'Blighted Crown of Puppet King'],
+  qiuyuan:     ['Wintry Bell', 'Truth in Lies'],
+  chisa:       ['Summer Flower', 'Abyssal Husk'],
+  lynae:       ['Rimewisp', "Suncoveter's Reach"],
+  mornye:      ['Gemini Spore', 'Burning Judgment'],
+  aemeath:     ['Moss Amber', 'Our Choice'],
+  luukherssen: ['Edelschnee', "Suncoveter's Reach"],
+  sigrika:     ['Arithmetic Shell', 'Our Choice'],
+  hiyuki:      ['Redbell', 'Our Choice'],
+  denia:       ['Stargrail', 'Burning Judgment'],
+  lucy:        ['Past Reveries', 'Nightmare Flashdrive'],
+  rebecca:     [null, null],
+  lucilla:     ['Forget-Me-Not', "Suncoveter's Reach"],
+  xuanling:    [null, null], // 3.5 멍저우 신규 특산물/보스 — 확인 불가
+  suisui:      ['Flowborne Dream', "Solidarity's Loneflame"],
+  rover:       ['Pecok Flower', 'Mysterious Code'],
+  calcharo:    ['Iris', 'Thundering Tacet Core'],
+  lingyang:    ['Coriolus', 'Sound-Keeping Tacet Core'],
+  jianxin:     ['Lanternberry', 'Roaring Rock Fist'],
+  encore:      ['Pecok Flower', 'Rage Tacet Core'],
+  verina:      ['Belle Poppy', 'Elegy Tacet Core'],
+  yangyang:    ['Wintry Bell', 'Roaring Rock Fist'],
+  chixia:      ['Belle Poppy', 'Rage Tacet Core'],
+  baizhi:      ['Lanternberry', 'Sound-Keeping Tacet Core'],
+  sanhua:      ['Wintry Bell', 'Sound-Keeping Tacet Core'],
+  taoqi:       ['Iris', 'Gold-Dissolving Feather'],
+  danjin:      ['Belle Poppy', 'Strife Tacet Core'],
+  aalto:       ['Wintry Bell', 'Roaring Rock Fist'],
+  mortefi:     ['Coriolus', 'Rage Tacet Core'],
+  yuanwu:      ['Terraspawn Fungus', 'Hidden Thunder Tacet Core'],
+  lumi:        ['Terraspawn Fungus', 'Thundering Tacet Core'],
+  youhu:       ['Violet Coral', 'Topological Confinement'],
+  buling:      ['Pecok Flower', 'Blighted Crown of Puppet King'],
+};
+
+// 돌파 공통 수량 (Lv.1→90 풀돌파)
+const ASC_TOTALS = {
+  specialty: 60,
+  boss: 46,
+  enemy: [4, 12, 12, 4],
+  credits: '170,000',
+};
+
 // 재료 등급 색 (T1~T4: 초록/파랑/보라/금)
 const TIER_COLORS = ['#3fae5c', '#3987e5', '#9a6ee8', '#e6c15a'];
 
@@ -339,42 +419,43 @@ const FORTE_TOTALS = {
    엔드 컨텐츠 (탑 / 해역 / 매트릭스) 기본값
    주기·버프·몹은 게임 내 로테이션에 맞춰 직접 수정해서 사용
    ================================================================ */
+/* 주기·규칙은 2026-07-10 조사 데이터 기준.
+   탑: 아카라이브 공지 3개 주기로 28일 격자 도출 / 해역: 앵커 1개 기반 추정 / 매트릭스: 버전 단위 */
 const CONTENT_DEFAULTS = [
   {
     id: 'tower',
     icon: '🗼',
-    name: '탑 (역경의 탑)',
-    period: 14,
-    start: '2026-06-29',
-    buff: '이번 주기 잔향 버프를 입력하세요 (예: 회절 피해 +25%, 스킬 피해 +30%)',
+    name: '역경의 탑 (심경 구역)',
+    period: 28,
+    start: '2026-06-22', // 검증된 주기 3개(25-10-13, 26-03-30, 26-05-25)의 28일 격자 도출
+    rules: '스테이지·심경 간섭은 28일마다 전면 교체, 도전·보상은 14일마다 초기화(중간 리셋 — 이번 주기: 7/6). 심경 구역 피로도 40, 잔향·울림의 탑 층당 1/2/3/4, 심연의 탑 층당 5.',
+    buff: '이번 주기(6/22~7/20) 심경 간섭 버프 미확인 — 인게임 확인 후 입력하세요',
     stages: [
-      { name: '안정 구역', mobs: '예시) 무관자, 각성 무리부 병사' },
-      { name: '실험 구역', mobs: '예시) 폭풍 메피스, 업화의 라이더' },
-      { name: '위험 구역', mobs: '예시) 만가의 용, 무상의 헤론' },
+      { name: '층별 몹', mobs: '미확인 — 인게임 역경의 탑 화면 확인 후 입력하세요' },
     ],
   },
   {
     id: 'sea',
     icon: '🌊',
-    name: '해역',
+    name: '해역 (죽음의 노래와 바닷속 폐허)',
     period: 28,
-    start: '2026-06-16',
-    buff: '이번 주기 버프를 입력하세요',
+    start: '2026-07-06', // 2025-03-17 첫 시즌 초기화 앵커의 28일 격자 [추정]
+    rules: '4주 시즌제 (일정은 추정 — 인게임 표기로 확인 요망). 시즌 리셋 시 재생 해역(해곡·급류)만 초기화되고 금기의 해역은 유지. 2파티 동시 편성, 시즌마다 버프 세트 교체.',
+    buff: '이번 시즌 버프 미확인 — 인게임 확인 후 입력하세요',
     stages: [
-      { name: '1구역', mobs: '등장 몹을 입력하세요' },
-      { name: '2구역', mobs: '등장 몹을 입력하세요' },
+      { name: '재생 해역', mobs: '미확인 — 인게임 확인 후 입력하세요' },
     ],
   },
   {
     id: 'matrix',
     icon: '🧩',
-    name: '매트릭스',
-    period: 28,
-    start: '2026-06-30',
-    buff: '이번 주기 버프를 입력하세요',
+    name: '매트릭스 더블 폰스',
+    period: 41,
+    start: '2026-07-10', // 3.5 업데이트일(KR 공식 공지) — 시즌은 버전 단위(약 41일)
+    rules: '시즌이 버전 단위로 운영 (3.5: 7/10 ~ 3.6 업데이트 전). 안정 프로토콜 최대 3파티 + 특이점 확장 무제한. 출전당 피로도 1(서포터 계열 2), 무기·에코는 캐릭터 귀속(돌려쓰기 불가), 방랑자는 속성 무관 1회.',
+    buff: '3.5 시즌 캐릭터 강화 목록 미확인 — 인게임 매트릭스 화면 확인 후 입력하세요',
     stages: [
-      { name: '1단계', mobs: '등장 몹을 입력하세요' },
-      { name: '2단계', mobs: '등장 몹을 입력하세요' },
+      { name: '보스', mobs: '미확인 — 인게임 확인 후 입력하세요' },
     ],
   },
 ];
