@@ -1280,7 +1280,7 @@ function renderMatDetail() {
         </div>
       </div>
     </div>
-    <p class="mat-note">※ 수량은 포르테 풀강(전 노드) / 돌파(0→6돌파, Lv.90 상한) 기준 공통 수치. 주간 재료는 스킬 1개 1→10에 ×4씩. Lv.90 경험치까지 포함하면 ${esc(ASC_TOTALS.exp)} + 클램 코인 총 ${ASC_TOTALS.creditsWithExp}이 추가로 들어요. 등급명 미확인 몹 드랍 세트는 I~IV로 표기.</p>
+    <p class="mat-note">※ 수량은 포르테 풀강(전 노드) / 돌파(0→6돌파, Lv.90 상한) 기준 공통 수치. 주간 재료는 스킬 1개 1→10에 ×4씩. Lv.90 경험치까지 포함하면 ${esc(ASC_TOTALS.exp)} + 클램 코인 총 ${ASC_TOTALS.creditsWithExp}이 추가로 들어요. 재료명은 한국어 정식 명칭(2026-07-11 DB 대조) 기준.</p>
   </div>`;
 
   document.getElementById('edit-mats-btn').addEventListener('click', () => openMatModal(c));
