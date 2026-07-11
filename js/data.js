@@ -47,10 +47,10 @@ const CHARACTERS = [
   { id: 'augusta',     name: '아우구스타', rarity: 5, element: 'electro', group: 'limited', ver: '2.6', weapon: 'broadblade', role: '딜러',            img: WG('51_UI') },
   { id: 'iuno',        name: '유노',       rarity: 5, element: 'aero',    group: 'limited', ver: '2.6', weapon: 'gauntlets',  role: '힐러/서브딜러',   img: WG('48_UI') },
   { id: 'galbrena',    name: '갈브레나',   rarity: 5, element: 'fusion',  group: 'limited', ver: '2.7', weapon: 'pistols',    role: '딜러',            img: WG('55_UI') },
-  { id: 'qiuyuan',     name: '추원',       rarity: 5, element: 'aero',    group: 'limited', ver: '2.7', weapon: 'sword',      role: '서브딜러/서포터', img: WG('56_UI') },
+  { id: 'qiuyuan',     name: '구원',       rarity: 5, element: 'aero',    group: 'limited', ver: '2.7', weapon: 'sword',      role: '서브딜러/서포터', img: WG('56_UI') },
   { id: 'chisa',       name: '치사',       rarity: 5, element: 'havoc',   group: 'limited', ver: '2.8', weapon: 'broadblade', role: '서포터',          img: WG('57_UI') },
   { id: 'lynae',       name: '리네',       rarity: 5, element: 'spectro', group: 'limited', ver: '3.0', weapon: 'pistols',    role: '버퍼/서포터',     img: WG('60_UI') },
-  { id: 'mornye',      name: '모르네',     rarity: 5, element: 'fusion',  group: 'limited', ver: '3.0', weapon: 'broadblade', role: '서포터/서브딜러', img: WG('61_UI') },
+  { id: 'mornye',      name: '모니에',     rarity: 5, element: 'fusion',  group: 'limited', ver: '3.0', weapon: 'broadblade', role: '서포터/서브딜러', img: WG('61_UI') },
   { id: 'aemeath',     name: '에메스',     rarity: 5, element: 'fusion',  group: 'limited', ver: '3.1', weapon: 'sword',      role: '딜러',            img: WG('53_UI') },
   { id: 'luukherssen', name: '루크 헤르센', rarity: 5, element: 'spectro', group: 'limited', ver: '3.1', weapon: 'gauntlets', role: '딜러',            img: WG('54_UI') },
   { id: 'sigrika',     name: '시그리카',   rarity: 5, element: 'aero',    group: 'limited', ver: '3.2', weapon: 'gauntlets',  role: '딜러',            img: WG('65_UI') },
@@ -128,12 +128,12 @@ const BANNERS = [
   { ver: '3.5', phase: '후반', start: '2026-07-30', end: '2026-08-19', pickup: ['suisui'],      rerun: ['aemeath'], note: '공식 일정 공개됨' },
   { ver: '3.5', phase: '선택형', start: '2026-07-10', end: '2026-08-19', pickup: [],            rerun: ['jiyan', 'yinlin', 'jinhsi', 'changli', 'zhezhi', 'xiangliyao'], note: '택1 선택형 복각 배너 · 변경 가능 · 첫 10회 무료 · 천장 별도' },
   { ver: '3.6', phase: '유출', start: null, end: null, pickup: [], rerun: [], leaked: true,
-    leakNames: ['청소(칭샤오)', '경연'], note: '2026년 9월경 추정 — 공식 미발표 유출 정보, 변경 가능' },
+    leakNames: ['청초', '경연'], note: '이름·외형은 2026-06-15 공식 공개. 실장 버전·등급·속성·무기는 미발표 (유출·추정 단계)' },
 ];
 
 // 캐릭터명 변경 전 기록과의 호환용 (구 표기 → 현 표기)
 const OLD_NAME_ALIASES = {
-  '샤코나': '시아코나', '카르티시아': '카르테시아', '카카루': '카카로',
+  '샤코나': '시아코나', '구원': '추원', '모니에': '모르네', '카르티시아': '카르테시아', '카카루': '카카로',
   '버리나': '버디나', '알토': '아토', '위안우': '원무', '단근': '단진', '파수인': '수안인',
 };
 
@@ -217,18 +217,18 @@ function luckGrade(top) {
    재료명은 영어 공식 명칭 사용 (한국어 게임 내 명칭 미확인분 임의 번역 방지)
    ================================================================ */
 
-// 단조(합성) 재료 세트 — 4단계 등급 (무기 종류 × 출신 지역별 세트)
+// 단조(합성) 재료 세트 — 4단계 등급, 한국어 정식 명칭 (wuthering.gg KR DB 대조, 2026-07-11)
 const FORGE_FAMILIES = {
-  drip:       { name: 'Metallic Drip (직검)',       tiers: ['Inert Metallic Drip', 'Reactive Metallic Drip', 'Polarized Metallic Drip', 'Heterized Metallic Drip'] },
-  residue:    { name: 'Waveworn Residue (대검)',    tiers: ['Waveworn Residue 210', 'Waveworn Residue 226', 'Waveworn Residue 235', 'Waveworn Residue 239'] },
-  phlogiston: { name: 'Phlogiston (권총)',          tiers: ['Impure Phlogiston', 'Extracted Phlogiston', 'Refined Phlogiston', 'Flawless Phlogiston'] },
-  cadence:    { name: 'Cadence (권갑)',             tiers: ['Cadence Seed', 'Cadence Bud', 'Cadence Leaf', 'Cadence Blossom'] },
-  helix:      { name: 'Helix (증폭기)',             tiers: ['Lento Helix', 'Adagio Helix', 'Andante Helix', 'Presto Helix'] },
-  polarizer:  { name: 'Polarizer (직검·3.x)',       tiers: ['Broken Wing Polarizer', 'Monowing Polarizer', 'Polywing Polarizer', 'Layered Wing Polarizer'] },
-  crystal:    { name: 'Carved Crystal (대검·3.x)',  tiers: ['LF Carved Crystal', 'MF Carved Crystal', 'HF Carved Crystal', 'FF Carved Crystal'] },
-  combustor:  { name: 'Combustor (권총·3.x)',       tiers: ['Incomplete Combustor', 'Aftertune Combustor', 'Remnant Combustor', 'Reverb Combustor'] },
-  shard:      { name: 'Waveworn Shard (권갑·3.x)',  tiers: ['LF Waveworn Shard', 'MF Waveworn Shard', 'HF Waveworn Shard', 'FF Waveworn Shard'] },
-  string:     { name: 'String (증폭기·3.x)',        tiers: ['Spliced String', 'Broken String', 'Solidified String', 'Melodic String'] },
+  drip:       { name: '금속 액적 — 직검 (Metallic Drip)',            tiers: ['비활성 금속 액적', '활성 금속 액적', '분극 금속 액적', '이성질화 금속 액적'] },
+  residue:    { name: '비명 이상 키메라 — 대검 (Waveworn Residue)',  tiers: ['비명 이상 키메라 210', '비명 이상 키메라 226', '비명 이상 키메라 235', '비명 이상 키메라 239'] },
+  phlogiston: { name: '결정화 연소 — 권총 (Phlogiston)',             tiers: ['헤테로 결정화 연소', '조추출 결정화 연소', '정류 결정화 연소', '고순도 결정화 연소'] },
+  cadence:    { name: '음률 — 권갑 (Cadence)',                       tiers: ['음률의 배주', '음률의 새싹', '음률의 새잎', '음률의 꽃망울'] },
+  helix:      { name: '와전류 — 증폭기 (Helix)',                     tiers: ['렌토 와전류', '아다지오 와전류', '안단테 와전류', '프레스토 와전류'] },
+  polarizer:  { name: '날개 편광체 — 직검·3.x (Polarizer)',          tiers: ['손상 날개 편광체', '한쪽 날개 편광체', '여러 날개 편광체', '중첩 날개 편광체'] },
+  crystal:    { name: '절단된 결정 — 대검·3.x (Carved Crystal)',     tiers: ['저주파수 절단된 결정', '중주파수 절단된 결정', '고주파수 절단된 결정', '전주파수 절단된 결정'] },
+  combustor:  { name: '응집 연소체 — 권총·3.x (Combustor)',          tiers: ['결손 응집 연소체', '잔음 응집 연소체', '잔향 응집 연소체', '울림 응집 연소체'] },
+  shard:      { name: '비명 이상 결정 조각 — 권갑·3.x (Waveworn Shard)', tiers: ['저주파수 비명 이상 결정 조각', '중주파수 비명 이상 결정 조각', '고주파수 비명 이상 결정 조각', '전주파수 비명 이상 결정 조각'] },
+  string:     { name: '현 — 증폭기·3.x (String)',                    tiers: ['긁어모은 현', '끊어진 현', '응고된 현', '노래하는 현'] },
 };
 
 // 무기 타입 → 단조 세트 (황룡/검은 해안/리나시타 계열 — 직접 추가한 캐릭터의 기본값)
@@ -242,158 +242,184 @@ const WEAPON_FORGE = {
 
 // 일반 몹 드랍 계열 — 4단계 등급 (등급명 미확인 세트는 I~IV 표기)
 const DROP_FAMILIES = {
-  whisperin:  { name: 'Whisperin Core',   tiers: ['LF Whisperin Core', 'MF Whisperin Core', 'HF Whisperin Core', 'FF Whisperin Core'] },
-  howler:     { name: 'Howler Core',      tiers: ['LF Howler Core', 'MF Howler Core', 'HF Howler Core', 'FF Howler Core'] },
-  ring:       { name: 'Ring (유배자 드랍)', tiers: ['Crude Ring', 'Basic Ring', 'Improved Ring', 'Tailored Ring'] },
-  polygon:    { name: 'Polygon Core',     tiers: ['LF Polygon Core', 'MF Polygon Core', 'HF Polygon Core', 'FF Polygon Core'] },
-  tidal:      { name: 'Tidal Residuum',   tiers: ['Tidal Residuum I', 'Tidal Residuum II', 'Tidal Residuum III', 'Tidal Residuum IV'] },
-  exoswarm:   { name: 'Exoswarm Core',    tiers: ['Exoswarm Core I', 'Exoswarm Core II', 'Exoswarm Core III', 'Exoswarm Core IV'] },
-  mech:       { name: 'Mech Core',        tiers: ['Mech Core I', 'Mech Core II', 'Mech Core III', 'Mech Core IV'] },
-  pendant:    { name: 'Exoswarm Pendant', tiers: ['Exoswarm Pendant I', 'Exoswarm Pendant II', 'Exoswarm Pendant III', 'Exoswarm Pendant IV'] },
+  whisperin:  { name: '의음 성핵 (Whisperin Core)',      tiers: ['저주파수 의음 성핵', '중주파수 의음 성핵', '고주파수 의음 성핵', '전주파수 의음 성핵'] },
+  howler:     { name: '포효 성핵 (Howler Core)',         tiers: ['저주파수 포효 성핵', '중주파수 포효 성핵', '고주파수 포효 성핵', '전주파수 포효 성핵'] },
+  ring:       { name: '구속팔찌 — 추방자 드랍 (Ring)',    tiers: ['낡은 구속팔찌', '보통 구속팔찌', '개량 구속팔찌', '특제 구속팔찌'] },
+  polygon:    { name: '취합 성핵 (Polygon Core)',        tiers: ['저주파수 취합 성핵', '중주파수 취합 성핵', '고주파수 취합 성핵', '전주파수 취합 성핵'] },
+  tidal:      { name: '침식 선형 구조물 (Tidal Residuum)', tiers: ['저주파수 침식 선형 구조물', '중주파수 침식 선형 구조물', '고주파수 침식 선형 구조물', '전주파수 침식 선형 구조물'] },
+  exoswarm:   { name: '엑소스웜 성핵 (Exoswarm Core)',   tiers: ['저주파수 엑소스웜 성핵', '중주파수 엑소스웜 성핵', '고주파수 엑소스웜 성핵', '전주파수 엑소스웜 성핵'] },
+  mech:       { name: '메카 성핵 (Mech Core)',           tiers: ['저주파수 메카 성핵', '중주파수 메카 성핵', '고주파수 메카 성핵', '전주파수 메카 성핵'] },
+  pendant:    { name: '엑소스웜 펜던트 (Exoswarm Pendant)', tiers: ['파손된 엑소스웜 펜던트', '허름한 엑소스웜 펜던트', '흠집이 있는 엑소스웜 펜던트', '완전한 엑소스웜 펜던트'] },
   autopuppet: { name: '기관 인형 중추 핵심 (Autopuppet Kernel)', tiers: ['저주파수 기관 인형 중추 핵심', '중주파수 기관 인형 중추 핵심', '고주파수 기관 인형 중추 핵심', '전주파수 기관 인형 중추 핵심'] }, // 인게임 한글 정식 명칭
 };
 
-// 주간 보스 재료 → 드랍 보스 (등장 시기)
+// 주간 보스 재료 → 드랍 보스 (한국어 정식 명칭 — wuthering.gg KR DB 대조, 2026-07-11)
 const WEEKLY_BOSS_MATS = {
-  'Unending Destruction':   '스카 (1.0 황룡)',
-  'Dreamless Feather':      '무명 · Dreamless (1.0 황룡)',
-  'Monument Bell':          '종배 거북 (1.0 황룡)',
-  "Sentinel's Dagger":      '수호자 각 · Jué (1.1 황룡)',
-  "The Netherworld's Stare": '리나시타 주간 보스 (2.0)',
-  'When Irises Bloom':      '리나시타 주간 보스 (2.2)',
-  'Curse of the Abyss':     'Threnodian: Leviathan (2.7)',
-  'Gold in Memory':         'Sigillum (3.1 라하이로이)',
-  '되묻는 우리 (We Who Question)': '주간 보스 데니아 (3.3)',
-  'Skyward Glazed Heart':   'Thousand-Puppet Pavilion (3.5)',
+  '끊임없는 파괴 (Unending Destruction)':      '스카 (1.0 황룡)',
+  '무망의 깃털 (Dreamless Feather)':           '무망자 · Dreamless (1.0 황룡)',
+  '비문 고종 (Monument Bell)':                 '타종 거북이 (1.0 황룡)',
+  "사계의 단검 (Sentinel's Dagger)":           '수호자 각 · Jué (1.1 황룡)',
+  '파도의 장창 (Wave-Cutting Tooth)':          '드랍 보스 확인 필요',
+  "저편 세계의 눈빛 (The Netherworld's Stare)": '리나시타 주간 보스 (2.0)',
+  '붓꽃이 만발하던 날 (When Irises Bloom)':    '리나시타 주간 보스 (2.2)',
+  '심해의 저주 (Curse of the Abyss)':          'Threnodian: Leviathan (2.7)',
+  '기억 속 금빛 (Gold in Memory)':             'Sigillum (3.1 라하이로이)',
+  '되묻는 우리 (We Who Question)':             '주간 보스 데니아 (3.3)',
+  '하늘길 유리의 마음 (Skyward Glazed Heart)': '천괴중루 (3.5)',
 };
 
 // 캐릭터별 스킬 재료 [단조 세트, 몹 드랍, 주간 보스 재료] — Game8 검증 데이터
 const CHAR_MATS = {
-  jiyan:       ['residue',    'howler',     'Monument Bell'],
-  yinlin:      ['helix',      'whisperin',  'Dreamless Feather'],
-  jinhsi:      ['residue',    'howler',     "Sentinel's Dagger"],
-  changli:     ['drip',       'ring',       "Sentinel's Dagger"],
-  zhezhi:      ['helix',      'howler',     'Monument Bell'],
-  xiangliyao:  ['cadence',    'whisperin',  'Unending Destruction'],
-  shorekeeper: ['helix',      'whisperin',  "Sentinel's Dagger"],
-  camellya:    ['drip',       'whisperin',  'Dreamless Feather'],
-  carlotta:    ['phlogiston', 'polygon',    "The Netherworld's Stare"],
-  roccia:      ['cadence',    'tidal',      "The Netherworld's Stare"],
-  phoebe:      ['helix',      'whisperin',  "Sentinel's Dagger"],
-  brant:       ['drip',       'tidal',      "The Netherworld's Stare"],
-  cantarella:  ['helix',      'polygon',    'When Irises Bloom'],
-  zani:        ['cadence',    'polygon',    "The Netherworld's Stare"],
-  ciaccona:    ['phlogiston', 'tidal',      'When Irises Bloom'],
-  cartethyia:  ['drip',       'tidal',      'When Irises Bloom'],
-  lupa:        ['residue',    'howler',     "The Netherworld's Stare"],
-  phrolova:    ['helix',      'polygon',    "The Netherworld's Stare"],
-  augusta:     ['residue',    'tidal',      'When Irises Bloom'],
-  iuno:        ['cadence',    'polygon',    "The Netherworld's Stare"],
-  galbrena:    ['phlogiston', 'tidal',      'Curse of the Abyss'],
-  qiuyuan:     ['drip',       'whisperin',  'Curse of the Abyss'],
-  chisa:       ['residue',    'polygon',    'When Irises Bloom'],
-  lynae:       ['combustor',  'exoswarm',   'Dreamless Feather'],
-  mornye:      ['crystal',    'mech',       "The Netherworld's Stare"],
-  aemeath:     ['polarizer',  'exoswarm',   'Gold in Memory'],
-  luukherssen: ['shard',      'pendant',    'Gold in Memory'],
-  sigrika:     ['shard',      'pendant',    'Gold in Memory'],
+  jiyan:       ['residue',    'howler',     '비문 고종 (Monument Bell)'],
+  yinlin:      ['helix',      'whisperin',  '무망의 깃털 (Dreamless Feather)'],
+  jinhsi:      ['residue',    'howler',     "사계의 단검 (Sentinel's Dagger)"],
+  changli:     ['drip',       'ring',       "사계의 단검 (Sentinel's Dagger)"],
+  zhezhi:      ['helix',      'howler',     '비문 고종 (Monument Bell)'],
+  xiangliyao:  ['cadence',    'whisperin',  '끊임없는 파괴 (Unending Destruction)'],
+  shorekeeper: ['helix',      'whisperin',  "사계의 단검 (Sentinel's Dagger)"],
+  camellya:    ['drip',       'whisperin',  '무망의 깃털 (Dreamless Feather)'],
+  carlotta:    ['phlogiston', 'polygon',    "저편 세계의 눈빛 (The Netherworld's Stare)"],
+  roccia:      ['cadence',    'tidal',      "저편 세계의 눈빛 (The Netherworld's Stare)"],
+  phoebe:      ['helix',      'whisperin',  "사계의 단검 (Sentinel's Dagger)"],
+  brant:       ['drip',       'tidal',      "저편 세계의 눈빛 (The Netherworld's Stare)"],
+  cantarella:  ['helix',      'polygon',    '붓꽃이 만발하던 날 (When Irises Bloom)'],
+  zani:        ['cadence',    'polygon',    "저편 세계의 눈빛 (The Netherworld's Stare)"],
+  ciaccona:    ['phlogiston', 'tidal',      '붓꽃이 만발하던 날 (When Irises Bloom)'],
+  cartethyia:  ['drip',       'tidal',      '붓꽃이 만발하던 날 (When Irises Bloom)'],
+  lupa:        ['residue',    'howler',     "저편 세계의 눈빛 (The Netherworld's Stare)"],
+  phrolova:    ['helix',      'polygon',    "저편 세계의 눈빛 (The Netherworld's Stare)"],
+  augusta:     ['residue',    'tidal',      '붓꽃이 만발하던 날 (When Irises Bloom)'],
+  iuno:        ['cadence',    'polygon',    "저편 세계의 눈빛 (The Netherworld's Stare)"],
+  galbrena:    ['phlogiston', 'tidal',      '심해의 저주 (Curse of the Abyss)'],
+  qiuyuan:     ['drip',       'whisperin',  '심해의 저주 (Curse of the Abyss)'],
+  chisa:       ['residue',    'polygon',    '붓꽃이 만발하던 날 (When Irises Bloom)'],
+  lynae:       ['combustor',  'exoswarm',   '무망의 깃털 (Dreamless Feather)'],
+  mornye:      ['crystal',    'mech',       "저편 세계의 눈빛 (The Netherworld's Stare)"],
+  aemeath:     ['polarizer',  'exoswarm',   '기억 속 금빛 (Gold in Memory)'],
+  luukherssen: ['shard',      'pendant',    '기억 속 금빛 (Gold in Memory)'],
+  sigrika:     ['shard',      'pendant',    '기억 속 금빛 (Gold in Memory)'],
   hiyuki:      ['polarizer',  'exoswarm',   '되묻는 우리 (We Who Question)'],
   denia:       ['string',     'mech',       '되묻는 우리 (We Who Question)'],
-  lucy:        ['combustor',  'exoswarm',   'Gold in Memory'],
+  lucy:        ['combustor',  'exoswarm',   '기억 속 금빛 (Gold in Memory)'],
   rebecca:     ['combustor',  'mech',       '되묻는 우리 (We Who Question)'], // 인게임 확인 (스킬 1개 1→10: ×4)
   lucilla:     ['string',     'mech',       '되묻는 우리 (We Who Question)'],
-  xuanling:    ['polarizer',  'autopuppet', 'Skyward Glazed Heart'],
-  suisui:      ['string',     'autopuppet', 'Skyward Glazed Heart'],
-  rover:       ['drip',       'whisperin',  'Unending Destruction'], // 회절 기준 (인멸: Dreamless Feather, 기류: When Irises Bloom)
-  calcharo:    ['residue',    'ring',       'Monument Bell'],
-  lingyang:    ['cadence',    'whisperin',  'Unending Destruction'],
-  jianxin:     ['cadence',    'whisperin',  'Unending Destruction'],
-  encore:      ['helix',      'whisperin',  'Unending Destruction'],
-  verina:      ['helix',      'howler',     'Monument Bell'],
-  yangyang:    ['drip',       'ring',       'Unending Destruction'],
-  chixia:      ['phlogiston', 'whisperin',  'Monument Bell'],
-  baizhi:      ['helix',      'howler',     'Monument Bell'],
-  sanhua:      ['drip',       'whisperin',  'Unending Destruction'],
-  taoqi:       ['residue',    'howler',     'Dreamless Feather'],
-  danjin:      ['drip',       'ring',       'Dreamless Feather'],
-  aalto:       ['phlogiston', 'howler',     'Monument Bell'],
-  mortefi:     ['phlogiston', 'whisperin',  'Monument Bell'],
-  yuanwu:      ['cadence',    'ring',       'Unending Destruction'],
-  lumi:        ['residue',    'howler',     "Sentinel's Dagger"],
-  youhu:       ['cadence',    'ring',       'Monument Bell'],
-  buling:      ['helix',      'whisperin',  'Curse of the Abyss'],
+  xuanling:    ['polarizer',  'autopuppet', '하늘길 유리의 마음 (Skyward Glazed Heart)'],
+  suisui:      ['string',     'autopuppet', '하늘길 유리의 마음 (Skyward Glazed Heart)'],
+  rover:       ['drip',       'whisperin',  '끊임없는 파괴 (Unending Destruction)'], // 회절 기준 (인멸: Dreamless Feather, 기류: When Irises Bloom)
+  calcharo:    ['residue',    'ring',       '비문 고종 (Monument Bell)'],
+  lingyang:    ['cadence',    'whisperin',  '끊임없는 파괴 (Unending Destruction)'],
+  jianxin:     ['cadence',    'whisperin',  '끊임없는 파괴 (Unending Destruction)'],
+  encore:      ['helix',      'whisperin',  '끊임없는 파괴 (Unending Destruction)'],
+  verina:      ['helix',      'howler',     '비문 고종 (Monument Bell)'],
+  yangyang:    ['drip',       'ring',       '끊임없는 파괴 (Unending Destruction)'],
+  chixia:      ['phlogiston', 'whisperin',  '비문 고종 (Monument Bell)'],
+  baizhi:      ['helix',      'howler',     '비문 고종 (Monument Bell)'],
+  sanhua:      ['drip',       'whisperin',  '끊임없는 파괴 (Unending Destruction)'],
+  taoqi:       ['residue',    'howler',     '무망의 깃털 (Dreamless Feather)'],
+  danjin:      ['drip',       'ring',       '무망의 깃털 (Dreamless Feather)'],
+  aalto:       ['phlogiston', 'howler',     '비문 고종 (Monument Bell)'],
+  mortefi:     ['phlogiston', 'whisperin',  '비문 고종 (Monument Bell)'],
+  yuanwu:      ['cadence',    'ring',       '끊임없는 파괴 (Unending Destruction)'],
+  lumi:        ['residue',    'howler',     "사계의 단검 (Sentinel's Dagger)"],
+  youhu:       ['cadence',    'ring',       '비문 고종 (Monument Bell)'],
+  buling:      ['helix',      'whisperin',  '심해의 저주 (Curse of the Abyss)'],
 };
 
-// 전용 무기(전무) 이름 — 영어 공식명, null = 확인 불가 (2026-07-10 조사 기준)
+// 전용 무기(전무) 이름 — 한국어 정식 명칭 (wuthering.gg KR 무기 목록 대조, 2026-07-11)
+// null = 확인 불가. 리네: 기존 'Starfield Calibrator' 표기가 모니에 전무로 정정되어 재확인 필요
 const SIG_WEAPONS = {
-  jiyan: 'Verdant Summit', yinlin: 'Stringmaster', jinhsi: 'Ages of Harvest',
-  changli: 'Blazing Brilliance', zhezhi: 'Rime-Draped Sprouts', xiangliyao: "Verity's Handle",
-  shorekeeper: 'Stellar Symphony', camellya: 'Red Spring', carlotta: 'The Last Dance',
-  roccia: 'Tragicomedy', phoebe: 'Luminous Hymn', brant: 'Unflickering Valor',
-  cantarella: 'Whispers of Sirens', zani: 'Blazing Justice', ciaccona: 'Woodland Aria',
-  cartethyia: "Defier's Thorn", lupa: 'Wildfire Mark', phrolova: 'Lethean Elegy',
-  augusta: 'Thunderflare Dominion', iuno: "Moongazer's Sigil", galbrena: null,
-  qiuyuan: null, chisa: 'Kumokiri', lynae: 'Starfield Calibrator', mornye: null,
-  aemeath: 'Everbright Polestar', luukherssen: null, sigrika: null,
-  hiyuki: 'Frostburn', denia: null, lucy: null, rebecca: null,
-  lucilla: 'Forged Dwarf Star', xuanling: 'Azure Oath', suisui: "Firstlight's Herald",
+  jiyan: '청룡의 천장',            // Verdant Summit
+  yinlin: '꼭두각시의 손',          // Stringmaster
+  jinhsi: '태평성대',              // Ages of Harvest
+  changli: '솟아오르는 화염',       // Blazing Brilliance
+  zhezhi: '옥수 비단',             // Rime-Draped Sprouts
+  xiangliyao: '팔방의 천추',        // Verity's Handle
+  shorekeeper: '뭇별의 교향곡',     // Stellar Symphony
+  camellya: '날카로운 봄',          // Red Spring
+  carlotta: '죽음과 춤',           // The Last Dance
+  roccia: '희비극',                // Tragicomedy
+  phoebe: '광휘의 찬송가',          // Luminous Hymn
+  brant: '흔들리지 않는 용기',      // Unflickering Valor
+  cantarella: '바다의 속삭임',      // Whispers of Sirens
+  zani: '불빛의 심판',             // Blazing Justice
+  ciaccona: '숲속의 아리아',        // Woodland Aria
+  cartethyia: '숙명에 맞서는 관',   // Defier's Thorn
+  lupa: '불길',                    // Wildfire Mark
+  phrolova: '잊혀진 피안의 슬픈 악장', // Lethean Elegy
+  augusta: '천둥벼락을 다스리는 권능', // Thunderflare Dominion
+  iuno: '세상 만물의 진리',         // Moongazer's Sigil
+  galbrena: '얽혀진 빛과 그림자',   // Lux & Umbra
+  qiuyuan: '푸른 의지',            // Emerald Sentence
+  chisa: '쿠모키리',               // Kumokiri (曇斬)
+  lynae: null,                     // 재확인 필요 — Starfield Calibrator는 모니에 전무로 정정됨
+  mornye: '별하늘 연산 측정기',     // Starfield Calibrator
+  aemeath: '영원한 샛별',          // Everbright Polestar
+  luukherssen: '한낮의 의지',      // Daybreaker's Spine
+  sigrika: '솔스원의 해석',        // Solsworn Ciphers
+  hiyuki: '서린 불꽃',             // Frostburn
+  denia: '위조된 작은별',          // Forged Dwarf Star
+  lucy: '스펙트럴 트리거',         // Spectral Trigger
+  rebecca: '스컬 스래셔',          // Skull Thrasher
+  lucilla: '프리즈 프레임',        // Freeze Frame (기존 Forged Dwarf Star 표기는 데니아 전무로 정정)
+  xuanling: '아득히 푸른 하늘',    // Azure Oath
+  suisui: '노을에 깃든 이슬',      // Firstlight's Herald
 };
 
 // 돌파(레벨업) 재료 [지역 특산물, 필드 보스 드랍] — 몹 드랍은 스킬과 같은 계열, null = 확인 불가
 const ASC_MATS = {
-  jiyan:       ['Pecok Flower', 'Roaring Rock Fist'],
-  yinlin:      ['Coriolus', 'Group Abomination Tacet Core'],
-  jinhsi:      ["Loong's Pearl", 'Elegy Tacet Core'],
-  changli:     ['Pavo Plum', 'Rage Tacet Core'],
-  zhezhi:      ['Lanternberry', 'Sound-Keeping Tacet Core'],
-  xiangliyao:  ['Violet Coral', 'Hidden Thunder Tacet Core'],
-  shorekeeper: ['Nova', 'Topological Confinement'],
-  camellya:    ['Nova', 'Topological Confinement'],
-  carlotta:    ['Sword Acorus', 'Platinum Core'],
-  roccia:      ['Firecracker Jewelweed', 'Cleansing Conch'],
-  phoebe:      ['Firecracker Jewelweed', 'Cleansing Conch'],
-  brant:       ['Golden Fleece', 'Blazing Bone'],
-  cantarella:  ['Seaside Cendrelis', 'Cleansing Conch'],
-  zani:        ['Sword Acorus', 'Platinum Core'],
-  ciaccona:    ['Golden Fleece', 'Blazing Bone'],
-  cartethyia:  ['Bamboo Iris', 'Unfading Glory'],
-  lupa:        ['Bloodleaf Viburnum', 'Unfading Glory'],
-  phrolova:    ['Afterlife', 'Truth in Lies'],
-  augusta:     ['Luminous Calendula', 'Blighted Crown of Puppet King'],
-  iuno:        ['Sliverglow Bloom', 'Abyssal Husk'],
-  galbrena:    ['Stone Rose', 'Blighted Crown of Puppet King'],
-  qiuyuan:     ['Wintry Bell', 'Truth in Lies'],
-  chisa:       ['Summer Flower', 'Abyssal Husk'],
-  lynae:       ['Rimewisp', "Suncoveter's Reach"],
-  mornye:      ['Gemini Spore', 'Burning Judgment'],
-  aemeath:     ['Moss Amber', 'Our Choice'],
-  luukherssen: ['Edelschnee', "Suncoveter's Reach"],
-  sigrika:     ['Arithmetic Shell', 'Our Choice'],
-  hiyuki:      ['Redbell', 'Our Choice'],
-  denia:       ['Stargrail', 'Burning Judgment'],
-  lucy:        ['Past Reveries', 'Nightmare Flashdrive'],
-  rebecca:     [null, null],
-  lucilla:     ['Forget-Me-Not', "Suncoveter's Reach"],
+  jiyan:       ['공작화', '울부짖는 바위주먹'],
+  yinlin:      ['구름버섯', '악의 이종 성핵'],
+  jinhsi:      ['클레로덴드론', '애가의 성핵'],
+  changli:     ['작령 열매', '분노의 성핵'],
+  zhezhi:      ['등롱초', '음향의 성핵'],
+  xiangliyao:  ['보라색 산호', '벼락의 성핵'],
+  shorekeeper: ['신성', '고요한 위상'],
+  camellya:    ['신성', '고요한 위상'],
+  carlotta:    ['검창포꽃', '백금 기계의 심장'],
+  roccia:      ['폭죽 봉선화', '속죄의 소라'],
+  phoebe:      ['폭죽 봉선화', '속죄의 소라'],
+  brant:       ['「황금 양모」', '화염의 용뼈'],
+  cantarella:  ['부유 바다꽃', '속죄의 소라'],
+  zani:        ['검창포꽃', '백금 기계의 심장'],
+  ciaccona:    ['「황금 양모」', '화염의 용뼈'],
+  cartethyia:  ['아이리스', '불후의 영광'],
+  lupa:        ['블러드 바이버넘', '불후의 영광'],
+  phrolova:    ['「다음 생」', '잠언과 거짓말'],
+  augusta:     ['빛나는 금잔', '오염된 꼭두각시 왕관'],
+  iuno:        ['달맞이꽃', '심해에 남은 침식물'],
+  galbrena:    ['돌장미', '오염된 꼭두각시 왕관'],
+  qiuyuan:     ['인동국화', '잠언과 거짓말'],
+  chisa:       ['영원한 여름', '심해에 남은 침식물'],
+  lynae:       ['서리꽃', '태양을 노리는 손끝'],
+  mornye:      ['쌍둥이 포자', '꺼지지 않는 심판'],
+  aemeath:     ['모스 엠버', '우리의 선택'],
+  luukherssen: ['에델슈네', '태양을 노리는 손끝'],
+  sigrika:     ['아르티메틱 셸', '우리의 선택'],
+  hiyuki:      ['붉은 은방울꽃', '우리의 선택'],
+  denia:       ['Stargrail (한글명 확인 필요)', '꺼지지 않는 심판'],
+  lucy:        ['지난날의 환상', '악몽의 잔재'],
+  rebecca:     ['지난날의 환상', '악몽의 잔재'], // 인게임/DB 확인
+  lucilla:     ['물망초', '태양을 노리는 손끝'],
   xuanling:    ['노을빛 구름 깃털', '화염에 새겨진 정의'], // 인게임 확인
-  suisui:      ['Flowborne Dream', "Solidarity's Loneflame"],
-  rover:       ['Pecok Flower', 'Mysterious Code'],
-  calcharo:    ['Iris', 'Thundering Tacet Core'],
-  lingyang:    ['Coriolus', 'Sound-Keeping Tacet Core'],
-  jianxin:     ['Lanternberry', 'Roaring Rock Fist'],
-  encore:      ['Pecok Flower', 'Rage Tacet Core'],
-  verina:      ['Belle Poppy', 'Elegy Tacet Core'],
-  yangyang:    ['Wintry Bell', 'Roaring Rock Fist'],
-  chixia:      ['Belle Poppy', 'Rage Tacet Core'],
-  baizhi:      ['Lanternberry', 'Sound-Keeping Tacet Core'],
-  sanhua:      ['Wintry Bell', 'Sound-Keeping Tacet Core'],
-  taoqi:       ['Iris', 'Gold-Dissolving Feather'],
-  danjin:      ['Belle Poppy', 'Strife Tacet Core'],
-  aalto:       ['Wintry Bell', 'Roaring Rock Fist'],
-  mortefi:     ['Coriolus', 'Rage Tacet Core'],
-  yuanwu:      ['Terraspawn Fungus', 'Hidden Thunder Tacet Core'],
-  lumi:        ['Terraspawn Fungus', 'Thundering Tacet Core'],
-  youhu:       ['Violet Coral', 'Topological Confinement'],
-  buling:      ['Pecok Flower', 'Blighted Crown of Puppet King'],
+  suisui:      ['노을을 헤엄치는 비단 잉어', '화염에 새겨진 정의'],
+  rover:       ['공작화', 'Mysterious Code'],
+  calcharo:    ['붓꽃', '번개의 성핵'],
+  lingyang:    ['구름버섯', '음향의 성핵'],
+  jianxin:     ['등롱초', '울부짖는 바위주먹'],
+  encore:      ['공작화', '분노의 성핵'],
+  verina:      ['개양귀비', '애가의 성핵'],
+  yangyang:    ['인동국화', '울부짖는 바위주먹'],
+  chixia:      ['개양귀비', '분노의 성핵'],
+  baizhi:      ['등롱초', '음향의 성핵'],
+  sanhua:      ['인동국화', '음향의 성핵'],
+  taoqi:       ['붓꽃', '파괴의 깃털'],
+  danjin:      ['개양귀비', '분쟁의 성핵'],
+  aalto:       ['인동국화', '울부짖는 바위주먹'],
+  mortefi:     ['구름버섯', '분노의 성핵'],
+  yuanwu:      ['검은 연꽃', '벼락의 성핵'],
+  lumi:        ['검은 연꽃', '번개의 성핵'],
+  youhu:       ['보라색 산호', '고요한 위상'],
+  buling:      ['공작화', '오염된 꼭두각시 왕관'],
 };
 
 // 돌파 공통 수량 (0→6돌파, Lv.90 상한 기준 — 인게임 확인)
@@ -421,19 +447,20 @@ const FORTE_TOTALS = {
    엔드 컨텐츠 (탑 / 해역 / 매트릭스) 기본값
    주기·버프·몹은 게임 내 로테이션에 맞춰 직접 수정해서 사용
    ================================================================ */
-/* 주기·규칙은 2026-07-10 조사 데이터 기준.
-   탑: 아카라이브 공지 3개 주기로 28일 격자 도출 / 해역: 앵커 1개 기반 추정 / 매트릭스: 버전 단위 */
+/* 이번 주기 버프·몹은 게임 데이터 추출 DB(encore.moe) 기준, 2026-07-11 확인 */
 const CONTENT_DEFAULTS = [
   {
     id: 'tower',
     icon: '🗼',
     name: '역경의 탑 (심경 구역)',
     period: 28,
-    start: '2026-06-22', // 검증된 주기 3개(25-10-13, 26-03-30, 26-05-25)의 28일 격자 도출
-    rules: '스테이지·심경 간섭은 28일마다 전면 교체, 도전·보상은 14일마다 초기화(중간 리셋 — 이번 주기: 7/6). 심경 구역 피로도 40, 잔향·울림의 탑 층당 1/2/3/4, 심연의 탑 층당 5.',
-    buff: '이번 주기(6/22~7/20) 심경 간섭 버프 미확인 — 인게임 확인 후 입력하세요',
+    start: '2026-06-22', // 37시즌: 2026-06-22 ~ 07-20 (검증 주기 3개의 28일 격자)
+    rules: '37시즌. 스테이지·심경 간섭은 28일마다 전면 교체, 도전·보상은 14일마다 초기화(중간 리셋 7/6). 심경 구역 피로도 40, 잔향·울림의 탑 층당 1/2/3/4, 심연의 탑 층당 5.',
+    buff: '잔향의 탑: 기류 저항 -10% · 피해 시 방어력 25% 무시 · 이상 효과 보유 적 받는 피해 +20%\n심연의 탑(1~2층): 회절·인멸 저항 -10%, 용융·응결 저항 +10% · 크리 피해 +25% · 변주 시 강공/일반 피해 +40%\n울림의 탑: 전도 저항 -10% · 변주 시 공격력 +20% · 공명 스킬 시 해방 피해 +30%',
     stages: [
-      { name: '층별 몹', mobs: '미확인 — 인게임 역경의 탑 화면 확인 후 입력하세요' },
+      { name: '잔향의 탑', mobs: '1층 페이 이그니스·미스터 매직, 2층 심판하는 전사·심연의 위병, 3층 갈기늑대·암흑·추방자 두목·흑야 기사, 4층 잔성·밀리너·음험한 백로' },
+      { name: '심연의 탑', mobs: '1층 반디의 군세, 2층 파트리시우스 귀족·서리의 기생갑·지옥불 기사, 3층 플로라 메카 레인디어·소용돌이 곰·크로나클라우·폭주의 고릴라, 4층 이름없는 탐색자·플뢰르 드 리스' },
+      { name: '울림의 탑', mobs: '1층 거대 인형, 2층 거암 투사·오열하는 전사, 3층 유령 인형, 4층 탄식의 고룡' },
     ],
   },
   {
@@ -441,23 +468,26 @@ const CONTENT_DEFAULTS = [
     icon: '🌊',
     name: '해역 (죽음의 노래와 바닷속 폐허)',
     period: 28,
-    start: '2026-07-06', // 2025-03-17 첫 시즌 초기화 앵커의 28일 격자 [추정]
-    rules: '4주 시즌제 (일정은 추정 — 인게임 표기로 확인 요망). 시즌 리셋 시 재생 해역(해곡·급류)만 초기화되고 금기의 해역은 유지. 2파티 동시 편성, 시즌마다 버프 세트 교체.',
-    buff: '이번 시즌 버프 미확인 — 인게임 확인 후 입력하세요',
+    start: '2026-07-06', // 19시즌: 2026-07-06 05:00 ~ 08-03 04:59 (KR 확정)
+    rules: '19시즌 (7/6 05:00 ~ 8/3 04:59 확정). 4주 시즌제, 리셋 시 재생 해역(해곡·급류)만 초기화되고 금기의 해역은 유지. 2파티 동시 편성.',
+    buff: '피해·처치로 연소 수치 회복, 최대치에서 타오르는 조수 진입(지속 30초)\n공격 명중한 적 5초간 받는 최종 피해 +60%\n조화 소실 적을 스킬로 명중하면 조화도 파괴 피해 발생',
     stages: [
-      { name: '재생 해역', mobs: '미확인 — 인게임 확인 후 입력하세요' },
+      { name: '12단계 · 끝 없는 심연', mobs: '적 받는 최종 피해 +30% · 모든 증표 무제한 휴대' },
+      { name: '상단', mobs: '칵찰찰, 플로라 메카 레인디어, 오열하는 전사, 유령 인형' },
+      { name: '하단', mobs: '파종 호박벌, 초록색 왜가리, 오열하는 전사, 유령 인형' },
     ],
   },
   {
     id: 'matrix',
     icon: '🧩',
     name: '매트릭스 더블 폰스',
-    period: 41,
-    start: '2026-07-10', // 3.5 업데이트일(KR 공식 공지) — 시즌은 버전 단위(약 41일)
-    rules: '시즌이 버전 단위로 운영 (3.5: 7/10 ~ 3.6 업데이트 전). 안정 프로토콜 최대 3파티 + 특이점 확장 무제한. 출전당 피로도 1(서포터 계열 2), 무기·에코는 캐릭터 귀속(돌려쓰기 불가), 방랑자는 속성 무관 1회.',
-    buff: '3.5 시즌 캐릭터 강화 목록 미확인 — 인게임 매트릭스 화면 확인 후 입력하세요',
+    period: 125,
+    start: '2026-07-10', // S2 단계1, 종료 표기 3.8 → 11월 중순 추정
+    rules: 'S2 단계1 「위험한 경지의 강습」 — 시즌 종료: 3.8 업데이트 시(11월 중순 추정). 안정 프로토콜 최대 3파티 + 특이점 확장 무제한. 출전당 피로도 1(서포터 계열 2), 무기·에코 캐릭터 귀속, 방랑자는 속성 무관 1회.',
+    buff: '공용: 적 받는 최종 피해 +20%, 공명 스킬 최종 피해 +20%\n이상 효과: 이상 부여 시 받는 최종 피해 +25%(30초), 암흑 부여 시 내 최종 피해 +30%(15초)\n에코: 에코 어빌리티 최종 피해 +30%, 용융 +20%, 강공격 +20%\n조화도 파괴: 조화 파동 최종 피해 +150%, 조화도·이탈 부여 시 +25%(30초)',
     stages: [
-      { name: '보스', mobs: '미확인 — 인게임 확인 후 입력하세요' },
+      { name: '등장 몹', mobs: '매트릭스 클러스터, 애곡하는 아익스, 플뢰르 드 리스, 리액터 허스크' },
+      { name: '특이점 확장', mobs: '매트릭스 미믹 추가' },
     ],
   },
 ];
@@ -467,12 +497,13 @@ const CONTENT_DEFAULTS = [
    팩 가격은 대략적인 KR 스토어 기준 (최고가 팩 11만원은 사용자 확인값). */
 const ASTRITE_PER_PULL = 160;
 const LUNITE_PACKS = [
-  { price: 1500,   base: 60,   bonus: 8 },
-  { price: 7500,   base: 300,  bonus: 30 },
-  { price: 25000,  base: 980,  bonus: 110 },
-  { price: 50000,  base: 1980, bonus: 260 },
-  { price: 79000,  base: 3280, bonus: 600 },
-  { price: 110000, base: 6480, bonus: 1600 },
+  // 쿠로게임즈 한국 공식 공시 가격 (2026-07-11, PS5는 별도: 6,480 = 130,900원)
+  { price: 1200,   base: 60,   bonus: 8 },
+  { price: 5900,   base: 300,  bonus: 30 },
+  { price: 19000,  base: 980,  bonus: 110 },
+  { price: 37000,  base: 1980, bonus: 260 },
+  { price: 65000,  base: 3280, bonus: 600 },
+  { price: 119000, base: 6480, bonus: 1600 },
 ];
 
 const COPY_LABELS = ['명함', '1돌', '2돌', '3돌', '4돌', '5돌', '6돌'];

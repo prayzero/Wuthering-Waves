@@ -316,7 +316,7 @@ function renderPityCalc() {
       <label>전무 뽑기권 <input type="number" id="calc-weapont" min="0" value="${c.weaponTickets}"></label>
     </div>
     <div class="calc-quick">
-      <button class="ghost-btn" data-addlunite="${topTotal}">+11만원 팩 (${topTotal.toLocaleString()})</button>
+      <button class="ghost-btn" data-addlunite="${topTotal}">+₩${topPack.price.toLocaleString()} 팩 (${topTotal.toLocaleString()})</button>
       <button class="ghost-btn" data-addlunite="${topPack.base * 2}">+첫구매 2배 (${(topPack.base * 2).toLocaleString()})</button>
     </div>
     <div class="calc-result">
@@ -343,7 +343,7 @@ function renderPityCalc() {
           </tr>`;
         }).join('')}
       </table>
-      <p class="pity-note">첫 구매는 보너스 대신 기본량 2배 (11만원 팩 = 12,960 = 81뽑). 가격은 스토어에 따라 다를 수 있어요.</p>
+      <p class="pity-note">첫 구매는 보너스 대신 기본량 2배 (₩119,000 팩 = 12,960 = 81뽑). 쿠로게임즈 KR 공식 공시 가격 기준 (PS5는 별도: 6,480 = ₩130,900).</p>
     </details>
   </div>`;
 }
