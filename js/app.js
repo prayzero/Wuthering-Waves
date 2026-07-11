@@ -1250,7 +1250,7 @@ function renderMatDetail() {
         </div>
         <div class="mat-row">
           <span class="tier-dot" style="background:#8f8d85">💰</span>
-          <span class="mn">쉘 크레딧</span>
+          <span class="mn">클램 코인</span>
           <span class="cnt">${FORTE_TOTALS.credits}</span>
         </div>
       </div>
@@ -1275,12 +1275,12 @@ function renderMatDetail() {
         </div>
         <div class="mat-row">
           <span class="tier-dot" style="background:#8f8d85">💰</span>
-          <span class="mn">쉘 크레딧</span>
+          <span class="mn">클램 코인</span>
           <span class="cnt">${ASC_TOTALS.credits}</span>
         </div>
       </div>
     </div>
-    <p class="mat-note">※ 수량은 포르테 풀강(전 노드) / 돌파(Lv.1→90) 기준 공통 수치이며, 재료 매칭은 검증된 데이터(2026-07-10, Game8 기준)입니다. 등급명이 미확인인 몹 드랍 세트는 I~IV로 표기했어요.</p>
+    <p class="mat-note">※ 수량은 포르테 풀강(전 노드) / 돌파(0→6돌파, Lv.90 상한) 기준 공통 수치. 주간 재료는 스킬 1개 1→10에 ×4씩. Lv.90 경험치까지 포함하면 ${esc(ASC_TOTALS.exp)} + 클램 코인 총 ${ASC_TOTALS.creditsWithExp}이 추가로 들어요. 등급명 미확인 몹 드랍 세트는 I~IV로 표기.</p>
   </div>`;
 
   document.getElementById('edit-mats-btn').addEventListener('click', () => openMatModal(c));

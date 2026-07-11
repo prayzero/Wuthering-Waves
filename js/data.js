@@ -250,7 +250,7 @@ const DROP_FAMILIES = {
   exoswarm:   { name: 'Exoswarm Core',    tiers: ['Exoswarm Core I', 'Exoswarm Core II', 'Exoswarm Core III', 'Exoswarm Core IV'] },
   mech:       { name: 'Mech Core',        tiers: ['Mech Core I', 'Mech Core II', 'Mech Core III', 'Mech Core IV'] },
   pendant:    { name: 'Exoswarm Pendant', tiers: ['Exoswarm Pendant I', 'Exoswarm Pendant II', 'Exoswarm Pendant III', 'Exoswarm Pendant IV'] },
-  autopuppet: { name: 'Autopuppet Kernel', tiers: ['Autopuppet Kernel I', 'Autopuppet Kernel II', 'Autopuppet Kernel III', 'Autopuppet Kernel IV'] },
+  autopuppet: { name: '기관 인형 중추 핵심 (Autopuppet Kernel)', tiers: ['저주파수 기관 인형 중추 핵심', '중주파수 기관 인형 중추 핵심', '고주파수 기관 인형 중추 핵심', '전주파수 기관 인형 중추 핵심'] }, // 인게임 한글 정식 명칭
 };
 
 // 주간 보스 재료 → 드랍 보스 (등장 시기)
@@ -263,7 +263,7 @@ const WEEKLY_BOSS_MATS = {
   'When Irises Bloom':      '리나시타 주간 보스 (2.2)',
   'Curse of the Abyss':     'Threnodian: Leviathan (2.7)',
   'Gold in Memory':         'Sigillum (3.1 라하이로이)',
-  'We Who Question':        'Denia 주간 보스판 (3.3)',
+  '되묻는 우리 (We Who Question)': '주간 보스 데니아 (3.3)',
   'Skyward Glazed Heart':   'Thousand-Puppet Pavilion (3.5)',
 };
 
@@ -297,11 +297,11 @@ const CHAR_MATS = {
   aemeath:     ['polarizer',  'exoswarm',   'Gold in Memory'],
   luukherssen: ['shard',      'pendant',    'Gold in Memory'],
   sigrika:     ['shard',      'pendant',    'Gold in Memory'],
-  hiyuki:      ['polarizer',  'exoswarm',   'We Who Question'],
-  denia:       ['string',     'mech',       'We Who Question'],
+  hiyuki:      ['polarizer',  'exoswarm',   '되묻는 우리 (We Who Question)'],
+  denia:       ['string',     'mech',       '되묻는 우리 (We Who Question)'],
   lucy:        ['combustor',  'exoswarm',   'Gold in Memory'],
-  rebecca:     ['combustor',  'mech',       ''],  // 위클리 재료 확인 불가
-  lucilla:     ['string',     'mech',       'We Who Question'],
+  rebecca:     ['combustor',  'mech',       '되묻는 우리 (We Who Question)'], // 인게임 확인 (스킬 1개 1→10: ×4)
+  lucilla:     ['string',     'mech',       '되묻는 우리 (We Who Question)'],
   xuanling:    ['polarizer',  'autopuppet', 'Skyward Glazed Heart'],
   suisui:      ['string',     'autopuppet', 'Skyward Glazed Heart'],
   rover:       ['drip',       'whisperin',  'Unending Destruction'], // 회절 기준 (인멸: Dreamless Feather, 기류: When Irises Bloom)
@@ -374,7 +374,7 @@ const ASC_MATS = {
   lucy:        ['Past Reveries', 'Nightmare Flashdrive'],
   rebecca:     [null, null],
   lucilla:     ['Forget-Me-Not', "Suncoveter's Reach"],
-  xuanling:    [null, null], // 3.5 멍저우 신규 특산물/보스 — 확인 불가
+  xuanling:    ['노을빛 구름 깃털', '화염에 새겨진 정의'], // 인게임 확인
   suisui:      ['Flowborne Dream', "Solidarity's Loneflame"],
   rover:       ['Pecok Flower', 'Mysterious Code'],
   calcharo:    ['Iris', 'Thundering Tacet Core'],
@@ -396,12 +396,14 @@ const ASC_MATS = {
   buling:      ['Pecok Flower', 'Blighted Crown of Puppet King'],
 };
 
-// 돌파 공통 수량 (Lv.1→90 풀돌파)
+// 돌파 공통 수량 (0→6돌파, Lv.90 상한 기준 — 인게임 확인)
 const ASC_TOTALS = {
   specialty: 60,
   boss: 46,
   enemy: [4, 12, 12, 4],
-  credits: '170,000',
+  credits: '170,000',            // 순수 돌파 비용
+  exp: '특급 공명 촉진제 ×122',   // Lv.90 경험치 (전 캐릭터 공통)
+  creditsWithExp: '1,023,300',   // 경험치 포함 총 클램 코인
 };
 
 // 재료 등급 색 (T1~T4: 초록/파랑/보라/금)
