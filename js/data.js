@@ -49,7 +49,7 @@ const CHARACTERS = [
   { id: 'galbrena',    name: '갈브레나',   rarity: 5, element: 'fusion',  group: 'limited', ver: '2.7', weapon: 'pistols',    role: '딜러',            img: WG('55_UI') },
   { id: 'qiuyuan',     name: '구원',       rarity: 5, element: 'aero',    group: 'limited', ver: '2.7', weapon: 'sword',      role: '서브딜러/서포터', img: WG('56_UI') },
   { id: 'chisa',       name: '치사',       rarity: 5, element: 'havoc',   group: 'limited', ver: '2.8', weapon: 'broadblade', role: '서포터',          img: WG('57_UI') },
-  { id: 'lynae',       name: '리네',       rarity: 5, element: 'spectro', group: 'limited', ver: '3.0', weapon: 'pistols',    role: '버퍼/서포터',     img: WG('60_UI') },
+  { id: 'lynae',       name: '린네',       rarity: 5, element: 'spectro', group: 'limited', ver: '3.0', weapon: 'pistols',    role: '버퍼/서포터',     img: WG('60_UI') },
   { id: 'mornye',      name: '모니에',     rarity: 5, element: 'fusion',  group: 'limited', ver: '3.0', weapon: 'broadblade', role: '서포터/서브딜러', img: WG('61_UI') },
   { id: 'aemeath',     name: '에메스',     rarity: 5, element: 'fusion',  group: 'limited', ver: '3.1', weapon: 'sword',      role: '딜러',            img: WG('53_UI') },
   { id: 'luukherssen', name: '루크 헤르센', rarity: 5, element: 'spectro', group: 'limited', ver: '3.1', weapon: 'gauntlets', role: '딜러',            img: WG('54_UI') },
@@ -133,7 +133,7 @@ const BANNERS = [
 
 // 캐릭터명 변경 전 기록과의 호환용 (구 표기 → 현 표기)
 const OLD_NAME_ALIASES = {
-  '샤코나': '시아코나', '구원': '추원', '모니에': '모르네', '카르티시아': '카르테시아', '카카루': '카카로',
+  '샤코나': '시아코나', '구원': '추원', '모니에': '모르네', '린네': '리네', '카르티시아': '카르테시아', '카카루': '카카로',
   '버리나': '버디나', '알토': '아토', '위안우': '원무', '단근': '단진', '파수인': '수안인',
 };
 
@@ -259,11 +259,11 @@ const WEEKLY_BOSS_MATS = {
   '무망의 깃털 (Dreamless Feather)':           '무망자 · Dreamless (1.0 황룡)',
   '비문 고종 (Monument Bell)':                 '타종 거북이 (1.0 황룡)',
   "사계의 단검 (Sentinel's Dagger)":           '수호자 각 · Jué (1.1 황룡)',
-  '파도의 장창 (Wave-Cutting Tooth)':          '드랍 보스 확인 필요',
-  "저편 세계의 눈빛 (The Netherworld's Stare)": '리나시타 주간 보스 (2.0)',
-  '붓꽃이 만발하던 날 (When Irises Bloom)':    '리나시타 주간 보스 (2.2)',
-  '심해의 저주 (Curse of the Abyss)':          'Threnodian: Leviathan (2.7)',
-  '기억 속 금빛 (Gold in Memory)':             'Sigillum (3.1 라하이로이)',
+  '파도의 장창 (Wave-Cutting Tooth)':          '미실장 — 데이터상 회유의 고래 드랍 예정',
+  "저편 세계의 눈빛 (The Netherworld's Stare)": '헤카테 (2.0 리나시타)',
+  '붓꽃이 만발하던 날 (When Irises Bloom)':    '플뢰르 드 리스 (2.2 리나시타)',
+  '심해의 저주 (Curse of the Abyss)':          '명식 · 레비아탄 (2.7)',
+  '기억 속 금빛 (Gold in Memory)':             '시길룸 (3.1 라하이로이)',
   '되묻는 우리 (We Who Question)':             '주간 보스 데니아 (3.3)',
   '하늘길 유리의 마음 (Skyward Glazed Heart)': '천괴중루 (3.5)',
 };
@@ -351,7 +351,7 @@ const SIG_WEAPONS = {
   galbrena: '얽혀진 빛과 그림자',   // Lux & Umbra
   qiuyuan: '푸른 의지',            // Emerald Sentence
   chisa: '쿠모키리',               // Kumokiri (曇斬)
-  lynae: null,                     // 재확인 필요 — Starfield Calibrator는 모니에 전무로 정정됨
+  lynae: '스펙트럼 블래스터',       // Spectrum Blaster (3.0 공식 공지·위키 확인)
   mornye: '별하늘 연산 측정기',     // Starfield Calibrator
   aemeath: '영원한 샛별',          // Everbright Polestar
   luukherssen: '한낮의 의지',      // Daybreaker's Spine
@@ -396,13 +396,13 @@ const ASC_MATS = {
   luukherssen: ['에델슈네', '태양을 노리는 손끝'],
   sigrika:     ['아르티메틱 셸', '우리의 선택'],
   hiyuki:      ['붉은 은방울꽃', '우리의 선택'],
-  denia:       ['Stargrail (한글명 확인 필요)', '꺼지지 않는 심판'],
+  denia:       ['별의 꿈', '꺼지지 않는 심판'], // Dream of Stars (Stargrail은 사전 명칭으로 추정)
   lucy:        ['지난날의 환상', '악몽의 잔재'],
   rebecca:     ['지난날의 환상', '악몽의 잔재'], // 인게임/DB 확인
   lucilla:     ['물망초', '태양을 노리는 손끝'],
   xuanling:    ['노을빛 구름 깃털', '화염에 새겨진 정의'], // 인게임 확인
   suisui:      ['노을을 헤엄치는 비단 잉어', '화염에 새겨진 정의'],
-  rover:       ['공작화', 'Mysterious Code'],
+  rover:       ['공작화', '신비한 암호'], // Mysterious Code
   calcharo:    ['붓꽃', '번개의 성핵'],
   lingyang:    ['구름버섯', '음향의 성핵'],
   jianxin:     ['등롱초', '울부짖는 바위주먹'],
