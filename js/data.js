@@ -35,15 +35,15 @@ const CHARACTERS = [
   { id: 'shorekeeper', name: '파수인',     rarity: 5, element: 'spectro', group: 'limited', ver: '1.3', weapon: 'rectifier',  role: '힐러/서포터',     img: WG('28_UI') },
   { id: 'camellya',    name: '카멜리아',   rarity: 5, element: 'havoc',   group: 'limited', ver: '1.4', weapon: 'sword',      role: '딜러',            img: WG('29_UI') },
   { id: 'carlotta',    name: '카를로타',   rarity: 5, element: 'glacio',  group: 'limited', ver: '2.0', weapon: 'pistols',    role: '딜러',            img: WG('32_UI') },
-  { id: 'roccia',      name: '로치아',     rarity: 5, element: 'havoc',   group: 'limited', ver: '2.0', weapon: 'gauntlets',  role: '서포터',          img: WG('33_UI') },
-  { id: 'phoebe',      name: '피비',       rarity: 5, element: 'spectro', group: 'limited', ver: '2.1', weapon: 'rectifier',  role: '딜러/서포터',     img: WG('45_UI') },
-  { id: 'brant',       name: '브란트',     rarity: 5, element: 'fusion',  group: 'limited', ver: '2.1', weapon: 'sword',      role: '딜러/힐러',       img: WG('44_UI') },
+  { id: 'roccia',      name: '로코코',     rarity: 5, element: 'havoc',   group: 'limited', ver: '2.0', weapon: 'gauntlets',  role: '서포터',          img: WG('33_UI') },
+  { id: 'phoebe',      name: '페비',       rarity: 5, element: 'spectro', group: 'limited', ver: '2.1', weapon: 'rectifier',  role: '딜러/서포터',     img: WG('45_UI') },
+  { id: 'brant',       name: '브렌트',     rarity: 5, element: 'fusion',  group: 'limited', ver: '2.1', weapon: 'sword',      role: '딜러/힐러',       img: WG('44_UI') },
   { id: 'cantarella',  name: '칸타렐라',   rarity: 5, element: 'havoc',   group: 'limited', ver: '2.2', weapon: 'rectifier',  role: '서브딜러/힐러',   img: WG('34_UI') },
-  { id: 'zani',        name: '자니',       rarity: 5, element: 'spectro', group: 'limited', ver: '2.3', weapon: 'gauntlets',  role: '딜러',            img: WG('38_UI') },
-  { id: 'ciaccona',    name: '샤코나',     rarity: 5, element: 'aero',    group: 'limited', ver: '2.3', weapon: 'pistols',    role: '서포터/서브딜러', img: WG('37_UI') },
+  { id: 'zani',        name: '젠니',       rarity: 5, element: 'spectro', group: 'limited', ver: '2.3', weapon: 'gauntlets',  role: '딜러',            img: WG('38_UI') },
+  { id: 'ciaccona',    name: '샤콘',       rarity: 5, element: 'aero',    group: 'limited', ver: '2.3', weapon: 'pistols',    role: '서포터/서브딜러', img: WG('37_UI') },
   { id: 'cartethyia',  name: '카르티시아', rarity: 5, element: 'aero',    group: 'limited', ver: '2.4', weapon: 'sword',      role: '딜러',            img: WG('40_UI') },
   { id: 'lupa',        name: '루파',       rarity: 5, element: 'fusion',  group: 'limited', ver: '2.4', weapon: 'broadblade', role: '서포터/서브딜러', img: WG('46_UI') },
-  { id: 'phrolova',    name: '프롤로바',   rarity: 5, element: 'havoc',   group: 'limited', ver: '2.5', weapon: 'rectifier',  role: '오프필드 딜러',   img: WG('41_UI') },
+  { id: 'phrolova',    name: '플로로',     rarity: 5, element: 'havoc',   group: 'limited', ver: '2.5', weapon: 'rectifier',  role: '오프필드 딜러',   img: WG('41_UI') },
   { id: 'augusta',     name: '아우구스타', rarity: 5, element: 'electro', group: 'limited', ver: '2.6', weapon: 'broadblade', role: '딜러',            img: WG('51_UI') },
   { id: 'iuno',        name: '유노',       rarity: 5, element: 'aero',    group: 'limited', ver: '2.6', weapon: 'gauntlets',  role: '힐러/서브딜러',   img: WG('48_UI') },
   { id: 'galbrena',    name: '갈브레나',   rarity: 5, element: 'fusion',  group: 'limited', ver: '2.7', weapon: 'pistols',    role: '딜러',            img: WG('55_UI') },
@@ -51,15 +51,15 @@ const CHARACTERS = [
   { id: 'chisa',       name: '치사',       rarity: 5, element: 'havoc',   group: 'limited', ver: '2.8', weapon: 'broadblade', role: '서포터',          img: WG('57_UI') },
   { id: 'lynae',       name: '린네',       rarity: 5, element: 'spectro', group: 'limited', ver: '3.0', weapon: 'pistols',    role: '버퍼/서포터',     img: WG('60_UI') },
   { id: 'mornye',      name: '모니에',     rarity: 5, element: 'fusion',  group: 'limited', ver: '3.0', weapon: 'broadblade', role: '서포터/서브딜러', img: WG('61_UI') },
-  { id: 'aemeath',     name: '에메스',     rarity: 5, element: 'fusion',  group: 'limited', ver: '3.1', weapon: 'sword',      role: '딜러',            img: WG('53_UI') },
-  { id: 'luukherssen', name: '루크 헤르센', rarity: 5, element: 'spectro', group: 'limited', ver: '3.1', weapon: 'gauntlets', role: '딜러',            img: WG('54_UI') },
+  { id: 'aemeath',     name: '에이메스',   rarity: 5, element: 'fusion',  group: 'limited', ver: '3.1', weapon: 'sword',      role: '딜러',            img: WG('53_UI') },
+  { id: 'luukherssen', name: '루크 · 헤르센', rarity: 5, element: 'spectro', group: 'limited', ver: '3.1', weapon: 'gauntlets', role: '딜러',          img: WG('54_UI') },
   { id: 'sigrika',     name: '시그리카',   rarity: 5, element: 'aero',    group: 'limited', ver: '3.2', weapon: 'gauntlets',  role: '딜러',            img: WG('65_UI') },
   { id: 'hiyuki',      name: '히유키',     rarity: 5, element: 'glacio',  group: 'limited', ver: '3.3', weapon: 'sword',      role: '딜러',            img: WG('67_UI') },
   { id: 'denia',       name: '데니아',     rarity: 5, element: 'fusion',  group: 'limited', ver: '3.3', weapon: 'rectifier',  role: '딜러',            img: WG('64_UI') },
   { id: 'lucy',        name: '루시',       rarity: 5, element: 'spectro', group: 'limited', ver: '3.4', weapon: 'pistols',    role: '딜러 (콜라보 한정)', img: WG('68_UI') },
   { id: 'lucilla',     name: '루실라',     rarity: 5, element: 'glacio',  group: 'limited', ver: '3.4', weapon: 'rectifier',  role: '서브딜러',        img: WG('66_UI') },
   { id: 'rebecca',     name: '레베카',     rarity: 5, element: 'electro', group: 'limited', ver: '3.4', weapon: 'pistols',    role: '버스트 딜러 (콜라보 무료)', img: WG('69_UI') },
-  { id: 'xuanling',    name: '현령',       rarity: 5, element: 'havoc',   group: 'limited', ver: '3.5', weapon: 'sword',      role: '딜러 (양양 SP)',  img: TOPUP('1783586929_0ZcueR8hIW') },
+  { id: 'xuanling',    name: '양양 · 현령', rarity: 5, element: 'havoc',   group: 'limited', ver: '3.5', weapon: 'sword',      role: '딜러 (양양 SP)',  img: TOPUP('1783586929_0ZcueR8hIW') },
   { id: 'suisui',      name: '수수',       rarity: 5, element: 'glacio',  group: 'limited', ver: '3.5', weapon: 'rectifier',  role: '서브딜러',        img: TOPUP('1783586993_DtAuOuxMBY') },
   // ---- 상시 5성 ----
   { id: 'rover',       name: '방랑자',     rarity: 5, element: 'spectro', group: 'standard', weapon: 'sword',      role: '주인공 (회절/인멸/기류)', img: WG('5') },
@@ -67,20 +67,20 @@ const CHARACTERS = [
   { id: 'lingyang',    name: '능양',       rarity: 5, element: 'glacio',  group: 'standard', weapon: 'gauntlets',  role: '딜러',            img: WG('14') },
   { id: 'jianxin',     name: '감심',       rarity: 5, element: 'aero',    group: 'standard', weapon: 'gauntlets',  role: '서포터(실드/힐)', img: WG('23_UI') },
   { id: 'encore',      name: '앙코',       rarity: 5, element: 'fusion',  group: 'standard', weapon: 'rectifier',  role: '딜러',            img: WG('8') },
-  { id: 'verina',      name: '버리나',     rarity: 5, element: 'spectro', group: 'standard', weapon: 'rectifier',  role: '힐러/버퍼',       img: WG('3') },
+  { id: 'verina',      name: '벨리나',     rarity: 5, element: 'spectro', group: 'standard', weapon: 'rectifier',  role: '힐러/버퍼',       img: WG('3') },
   // ---- 4성 ----
   { id: 'yangyang',    name: '양양',       rarity: 4, element: 'aero',    group: 'four', weapon: 'sword',      role: '서포터',       img: WG('1') },
   { id: 'chixia',      name: '치샤',       rarity: 4, element: 'fusion',  group: 'four', weapon: 'pistols',    role: '딜러',         img: WG('2') },
-  { id: 'baizhi',      name: '백지',       rarity: 4, element: 'glacio',  group: 'four', weapon: 'rectifier',  role: '힐러',         img: WG('6') },
+  { id: 'baizhi',      name: '설지',       rarity: 4, element: 'glacio',  group: 'four', weapon: 'rectifier',  role: '힐러',         img: WG('6') },
   { id: 'sanhua',      name: '산화',       rarity: 4, element: 'glacio',  group: 'four', weapon: 'sword',      role: '서브딜러/버퍼', img: WG('7') },
   { id: 'taoqi',       name: '도기',       rarity: 4, element: 'havoc',   group: 'four', weapon: 'broadblade', role: '탱커/서포터',  img: WG('9') },
   { id: 'danjin',      name: '단근',       rarity: 4, element: 'havoc',   group: 'four', weapon: 'sword',      role: '딜러',         img: WG('10') },
   { id: 'aalto',       name: '알토',       rarity: 4, element: 'aero',    group: 'four', weapon: 'pistols',    role: '서브딜러',     img: WG('12') },
   { id: 'mortefi',     name: '모르테피',   rarity: 4, element: 'fusion',  group: 'four', weapon: 'pistols',    role: '서브딜러(협주)', img: WG('13') },
-  { id: 'yuanwu',      name: '위안우',     rarity: 4, element: 'electro', group: 'four', weapon: 'gauntlets',  role: '서포터',       img: WG('15') },
+  { id: 'yuanwu',      name: '연무',       rarity: 4, element: 'electro', group: 'four', weapon: 'gauntlets',  role: '서포터',       img: WG('15') },
   { id: 'lumi',        name: '루미',       rarity: 4, element: 'electro', group: 'four', weapon: 'broadblade', role: '서브딜러/버퍼', img: WG('30_UI') },
   { id: 'youhu',       name: '유호',       rarity: 4, element: 'glacio',  group: 'four', weapon: 'gauntlets',  role: '힐러/버퍼',    img: WG('31_UI') },
-  { id: 'buling',      name: '복령',       rarity: 4, element: 'electro', group: 'four', weapon: 'rectifier',  role: '서포터',       img: WG('58_UI') },
+  { id: 'buling',      name: '복링',       rarity: 4, element: 'electro', group: 'four', weapon: 'rectifier',  role: '서포터',       img: WG('58_UI') },
 ];
 
 /* ---- 역대 픽업 배너 (1.0 ~ 3.5, 복각 포함, 페이즈 단위) ----
@@ -131,10 +131,13 @@ const BANNERS = [
     leakNames: ['청초', '경연'], note: '이름·외형은 2026-06-15 공식 공개. 실장 버전·등급·속성·무기는 미발표 (유출·추정 단계)' },
 ];
 
-// 캐릭터명 변경 전 기록과의 호환용 (구 표기 → 현 표기)
+// 캐릭터명 변경 전 기록과의 호환용 (현 표기 → 예전 표기 목록)
 const OLD_NAME_ALIASES = {
-  '샤코나': '시아코나', '구원': '추원', '모니에': '모르네', '린네': '리네', '카르티시아': '카르테시아', '카카루': '카카로',
-  '버리나': '버디나', '알토': '아토', '위안우': '원무', '단근': '단진', '파수인': '수안인',
+  '로코코': ['로치아'], '페비': ['피비'], '브렌트': ['브란트'], '젠니': ['자니'],
+  '샤콘': ['샤코나', '시아코나'], '플로로': ['프롤로바'],
+  '구원': ['추원'], '모니에': ['모르네'], '린네': ['리네'], '카르티시아': ['카르테시아'], '카카루': ['카카로'],
+  '벨리나': ['버리나', '버디나'], '알토': ['아토'], '연무': ['위안우', '원무'], '단근': ['단진'], '파수인': ['수안인'],
+  '양양 · 현령': ['현령'], '루크 · 헤르센': ['루크 헤르센'], '에이메스': ['에메스'], '설지': ['백지'], '복링': ['복령'],
 };
 
 /* ---- 확률 모델 ----

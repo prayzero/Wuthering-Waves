@@ -1317,13 +1317,13 @@ function bannerKey(b) {
 // 이 배너에 귀속되는 시즌 이름들 (키 + 예전 "OO 픽업" 형식 + 개명 전 이름 호환)
 function bannerSeasonNames(b) {
   const names = [bannerKey(b)];
-  (b.pickup || []).forEach(id => {
+  [...(b.pickup || []), ...(b.rerun || [])].forEach(id => {
     const c = charById(id);
     if (!c) return;
-    names.push(`${c.name} 픽업`);
-    if (OLD_NAME_ALIASES[c.name]) names.push(`${OLD_NAME_ALIASES[c.name]} 픽업`);
+    [c.name, ...(OLD_NAME_ALIASES[c.name] || [])]
+      .forEach(name => names.push(`${name} 픽업`));
   });
-  return names;
+  return [...new Set(names)];
 }
 
 const ALL_BANNER_SEASONS = new Set(BANNERS.flatMap(b => (b.leaked ? [] : bannerSeasonNames(b))));
