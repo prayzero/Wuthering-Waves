@@ -5,26 +5,52 @@ on:
     branches:
       - main
       - claude/gacha-tracker-party-hp0h9b
+  pull_request:
+    branches:
+      - main
+      - claude/gacha-tracker-party-hp0h9b
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
 
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Validate static site
+        run: |
+          node scripts/validate-site.mjs
+          node scripts/test-character-names.mjs
+          node scripts/test-app.mjs
+          node scripts/test-sw.mjs
+
   deploy:
+    needs: validate
+    if: >-
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' &&
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/claude/gacha-tracker-party-hp0h9b'))
+    concurrency:
+      group: pages
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@v6
       - name: Setup Pages
         uses: actions/configure-pages@v6
         with:

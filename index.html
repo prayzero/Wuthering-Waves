@@ -23,7 +23,7 @@
       <img class="logo" src="icons/app-192.v2.png" alt="파수인">
       <span>WuWa 픽업 플래너 <small>명조: 워더링 웨이브</small></span>
     </div>
-    <nav class="tabs" id="tabs">
+    <nav class="tabs" id="tabs" aria-label="주요 메뉴">
       <button class="tab-btn active" data-tab="planner">홈 · 플래너</button>
       <button class="tab-btn" data-tab="contents">컨텐츠</button>
       <button class="tab-btn" data-tab="materials">스킬 재료</button>
@@ -35,7 +35,7 @@
       <button class="icon-btn install-btn" id="install-btn" hidden title="홈 화면에 앱으로 설치">⬇ 앱 설치</button>
       <button class="icon-btn" id="export-btn" title="데이터 백업(JSON 다운로드)">내보내기</button>
       <button class="icon-btn" id="import-btn" title="백업 JSON 불러오기">가져오기</button>
-      <input type="file" id="import-file" accept="application/json" hidden>
+      <input type="file" id="import-file" accept="application/json" aria-label="백업 파일 선택" hidden>
     </div>
   </div>
 </header>
@@ -49,7 +49,7 @@
         <h2>픽업 일정</h2>
         <span class="spacer"></span>
         <button class="primary-btn" id="add-schedule-btn">+ 일정 추가</button>
-        <p class="desc">뽑을 캐릭터의 픽업 일정을 등록하면 진행 중인 일정이 맨 앞에 표시됩니다. 모아둔 뽑기 수로 천장(160뽑)까지의 진행도를 확인하세요.</p>
+        <p class="desc">뽑을 캐릭터의 픽업 일정을 등록하면 진행 중인 일정이 맨 앞에 표시됩니다. 명함·돌파·전무 목표별 필요 뽑기 수와 현재 진행도를 확인하세요.</p>
       </div>
       <div class="schedule-list" id="schedule-list"></div>
     </div>
@@ -71,7 +71,7 @@
       </div>
       <div class="roster-strip-wrap">
         <div class="roster-strip" id="roster-strip"></div>
-        <p class="strip-hint">보유 캐릭터만 표시됩니다. <a id="goto-roster">보유 캐릭터 탭</a>에서 캐릭터를 클릭해 보유 처리하면 여기에 나타나요.</p>
+        <p class="strip-hint">보유 캐릭터만 표시됩니다. <button type="button" class="link-btn" id="goto-roster">보유 캐릭터 탭</button>에서 캐릭터를 클릭해 보유 처리하면 여기에 나타나요.</p>
       </div>
       <div class="party-list" id="party-list"></div>
     </div>
@@ -88,11 +88,11 @@
         <p class="desc">카드를 클릭하면 흑백 ↔ 컬러로 전환되며 보유 상태가 저장됩니다. 보유한 캐릭터만 파티 편성에 사용할 수 있어요.</p>
       </div>
       <div class="filter-row" id="roster-filter">
-        <button class="chip active" data-filter="all">전체</button>
-        <button class="chip" data-filter="limited">한정 5성</button>
-        <button class="chip" data-filter="standard">상시 5성</button>
-        <button class="chip" data-filter="four">4성</button>
-        <button class="chip" data-filter="owned">보유만</button>
+        <button class="chip active" data-filter="all" aria-pressed="true">전체</button>
+        <button class="chip" data-filter="limited" aria-pressed="false">한정 5성</button>
+        <button class="chip" data-filter="standard" aria-pressed="false">상시 5성</button>
+        <button class="chip" data-filter="four" aria-pressed="false">4성</button>
+        <button class="chip" data-filter="owned" aria-pressed="false">보유만</button>
       </div>
       <p class="own-summary" id="own-summary"></p>
       <div id="roster-grid"></div>
@@ -209,12 +209,13 @@
 
       <div class="card chart-card">
         <h3>누적 획득 확률 곡선 (추산)</h3>
-        <p class="chart-desc">N뽑 안에 픽업을 확보할 누적 확률. 66뽑부터 5성 확률이 상승하는 소프트 천장은 공식 미공개라 커뮤니티 추정 모델을 사용했어요. 곡선에 마우스를 올리면 정확한 수치가 보입니다.</p>
+        <p class="chart-desc">N뽑 안에 픽업을 확보할 누적 확률. 66뽑부터 5성 확률이 상승하는 소프트 천장은 공식 미공개라 커뮤니티 추정 모델을 사용했어요. 곡선에 마우스를 올리거나 터치하고, 키보드 방향키를 누르면 정확한 수치가 보입니다.</p>
         <div class="chart-legend">
           <span><span class="k" style="background:#3987e5"></span>픽업 캐릭터 (50% + 픽뚫 보정, 최대 160뽑)</span>
           <span><span class="k" style="background:#c98500"></span>픽업 전무 (확정, 최대 80뽑)</span>
         </div>
-        <svg id="pity-chart" viewBox="0 0 720 300" role="img" aria-label="뽑기 수에 따른 픽업 획득 누적 확률 곡선"></svg>
+        <svg id="pity-chart" viewBox="0 0 720 300" role="img" tabindex="0" aria-label="뽑기 수에 따른 픽업 획득 누적 확률 곡선" aria-describedby="chart-status"></svg>
+        <p class="sr-only" id="chart-status" aria-live="polite">방향키로 뽑기 수별 확률을 확인할 수 있습니다.</p>
       </div>
 
       <div class="card chart-card">
@@ -236,34 +237,34 @@
 </footer>
 
 <!-- ================= 모달: 픽업 일정 ================= -->
-<dialog id="schedule-modal">
+<dialog id="schedule-modal" aria-labelledby="schedule-modal-title">
   <h3 id="schedule-modal-title">픽업 일정 추가</h3>
   <form class="form-grid" id="schedule-form" method="dialog">
     <div class="form-row">
-      <label>픽업 캐릭터</label>
+      <label for="sch-char">픽업 캐릭터</label>
       <select id="sch-char"></select>
     </div>
     <div class="form-row">
-      <label>배너 이름 (선택)</label>
+      <label for="sch-name">배너 이름 (선택)</label>
       <input type="text" id="sch-name" placeholder="예: 3.1 1페이즈 픽업">
     </div>
     <div class="form-2col">
       <div class="form-row">
-        <label>시작일</label>
+        <label for="sch-start">시작일</label>
         <input type="date" id="sch-start" required>
       </div>
       <div class="form-row">
-        <label>종료일</label>
+        <label for="sch-end">종료일</label>
         <input type="date" id="sch-end" required>
       </div>
     </div>
     <div class="form-2col">
       <div class="form-row">
-        <label>모아둔 뽑기 수</label>
+        <label for="sch-saved">모아둔 뽑기 수</label>
         <input type="number" id="sch-saved" min="0" max="9999" value="0">
       </div>
       <div class="form-row">
-        <label>목표</label>
+        <label for="sch-goal">목표</label>
         <select id="sch-goal">
           <option value="명함">명함</option><option value="1돌">1돌</option>
           <option value="2돌">2돌</option><option value="3돌">3돌</option>
@@ -275,7 +276,7 @@
       </div>
     </div>
     <div class="form-row">
-      <label>메모</label>
+      <label for="sch-memo">메모</label>
       <textarea id="sch-memo" rows="2" placeholder="예: 무조건 확보! 전무는 상황 봐서"></textarea>
     </div>
     <div class="modal-actions">
@@ -286,39 +287,39 @@
 </dialog>
 
 <!-- ================= 모달: 뽑기 기록 ================= -->
-<dialog id="record-modal">
-  <h3>뽑기 기록 추가</h3>
+<dialog id="record-modal" aria-labelledby="record-modal-title">
+  <h3 id="record-modal-title">뽑기 기록 추가</h3>
   <form class="form-grid" id="record-form" method="dialog">
     <div class="form-row">
-      <label>배너 / 시즌</label>
+      <label for="rec-banner">배너 / 시즌</label>
       <select id="rec-banner"></select>
     </div>
     <div class="form-row" id="rec-banner-custom-row" hidden>
-      <label>시즌 이름 직접 입력</label>
+      <label for="rec-banner-custom">시즌 이름 직접 입력</label>
       <input type="text" id="rec-banner-custom" placeholder="예: 3.0 츠바키 픽업">
     </div>
     <div class="form-row">
-      <label>종류</label>
+      <label for="rec-type">종류</label>
       <select id="rec-type">
         <option value="char">캐릭터</option>
         <option value="weapon">전무 (무기)</option>
       </select>
     </div>
     <div class="form-row" id="rec-char-row">
-      <label>획득 캐릭터</label>
+      <label for="rec-char">획득 캐릭터</label>
       <select id="rec-char"></select>
     </div>
     <div class="form-row" id="rec-weapon-row" hidden>
-      <label>전무 이름</label>
+      <label for="rec-weapon-name">전무 이름</label>
       <input type="text" id="rec-weapon-name" placeholder="예: 카르테시아 전무">
     </div>
     <div class="form-2col">
       <div class="form-row" id="rec-copy-row">
-        <label>몇 번째 획득? (돌파)</label>
+        <label for="rec-copy">몇 번째 획득? (돌파)</label>
         <select id="rec-copy"></select>
       </div>
       <div class="form-row">
-        <label>소모한 뽑기 수</label>
+        <label for="rec-pulls">소모한 뽑기 수</label>
         <input type="number" id="rec-pulls" min="1" max="160" required placeholder="예: 74">
       </div>
     </div>
@@ -334,8 +335,8 @@
 </dialog>
 
 <!-- ================= 모달: 파티 캐릭터 선택 ================= -->
-<dialog id="picker-modal">
-  <h3>캐릭터 선택</h3>
+<dialog id="picker-modal" aria-labelledby="picker-modal-title">
+  <h3 id="picker-modal-title">캐릭터 선택</h3>
   <div class="picker-grid" id="picker-grid"></div>
   <p class="picker-note">흐리게 표시된 캐릭터는 미보유 상태예요. [보유 캐릭터] 탭에서 클릭해 보유 처리하면 선택할 수 있어요.</p>
   <div class="modal-actions">
@@ -344,33 +345,33 @@
 </dialog>
 
 <!-- ================= 모달: 컨텐츠 수정 ================= -->
-<dialog id="content-modal">
+<dialog id="content-modal" aria-labelledby="content-modal-title">
   <h3 id="content-modal-title">컨텐츠 정보 수정</h3>
   <form class="form-grid" id="content-form" method="dialog">
     <div class="form-row">
-      <label>컨텐츠 이름</label>
+      <label for="ct-name">컨텐츠 이름</label>
       <input type="text" id="ct-name" maxlength="24" required>
     </div>
     <div class="form-2col">
       <div class="form-row">
-        <label>이번 주기 시작일</label>
+        <label for="ct-start">이번 주기 시작일</label>
         <input type="date" id="ct-start" required>
       </div>
       <div class="form-row">
-        <label>리셋 주기 (일)</label>
-        <input type="number" id="ct-period" min="1" max="90" required>
+        <label for="ct-period">리셋 주기 (일)</label>
+        <input type="number" id="ct-period" min="1" max="999" required>
       </div>
     </div>
     <div class="form-row">
-      <label>규칙 메모 (주기·피로도 등)</label>
+      <label for="ct-rules">규칙 메모 (주기·피로도 등)</label>
       <textarea id="ct-rules" rows="2"></textarea>
     </div>
     <div class="form-row">
-      <label>이번 주기 버프</label>
+      <label for="ct-buff">이번 주기 버프</label>
       <textarea id="ct-buff" rows="2" placeholder="예: 응결 피해 +25%, 공명 해방 피해 +30%"></textarea>
     </div>
     <div class="form-row">
-      <label>단계별 등장 몹 — 한 줄에 하나씩 "단계명: 몹1, 몹2" 형식</label>
+      <label for="ct-stages">단계별 등장 몹 — 한 줄에 하나씩 "단계명: 몹1, 몹2" 형식</label>
       <textarea id="ct-stages" rows="5" placeholder="위험 구역 1층: 무관자, 폭풍 메피스&#10;위험 구역 2층: 만가의 용"></textarea>
     </div>
     <div class="modal-actions">
@@ -381,19 +382,19 @@
 </dialog>
 
 <!-- ================= 모달: 스킬 재료 수정 ================= -->
-<dialog id="mat-modal">
+<dialog id="mat-modal" aria-labelledby="mat-modal-title">
   <h3 id="mat-modal-title">스킬 재료 수정</h3>
   <form class="form-grid" id="mat-form" method="dialog">
     <div class="form-row">
-      <label>포지(합성) 재료 계열</label>
+      <label for="mat-forge">포지(합성) 재료 계열</label>
       <select id="mat-forge"></select>
     </div>
     <div class="form-row">
-      <label>일반 몹 드랍 계열</label>
+      <label for="mat-drop">일반 몹 드랍 계열</label>
       <select id="mat-drop"></select>
     </div>
     <div class="form-row">
-      <label>주간 보스 재료</label>
+      <label for="mat-weekly">주간 보스 재료</label>
       <input type="text" id="mat-weekly" maxlength="40" list="weekly-mats" placeholder="예: Monument Bell">
       <datalist id="weekly-mats"></datalist>
     </div>
@@ -405,23 +406,23 @@
 </dialog>
 
 <!-- ================= 모달: 커스텀 캐릭터 ================= -->
-<dialog id="custom-modal">
-  <h3>신규 캐릭터 직접 추가</h3>
+<dialog id="custom-modal" aria-labelledby="custom-modal-title">
+  <h3 id="custom-modal-title">신규 캐릭터 직접 추가</h3>
   <form class="form-grid" id="custom-form" method="dialog">
     <div class="form-row">
-      <label>이름</label>
+      <label for="cus-name">이름</label>
       <input type="text" id="cus-name" required maxlength="12" placeholder="예: 츠바키">
     </div>
     <div class="form-2col">
       <div class="form-row">
-        <label>레어도</label>
+        <label for="cus-rarity">레어도</label>
         <select id="cus-rarity">
           <option value="5">5성 (한정)</option>
           <option value="4">4성</option>
         </select>
       </div>
       <div class="form-row">
-        <label>속성</label>
+        <label for="cus-element">속성</label>
         <select id="cus-element">
           <option value="fusion">용융</option><option value="glacio">응결</option>
           <option value="electro">전도</option><option value="aero">기류</option>
@@ -436,7 +437,7 @@
   </form>
 </dialog>
 
-<div id="toast"></div>
+<div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 <div class="chart-tip" id="chart-tip"></div>
 
 <script src="js/data.js"></script>
