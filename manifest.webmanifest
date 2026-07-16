@@ -1,6 +1,6 @@
 {
-  "name": "WuWa 픽업 플래너 — 명조 가챠 계획 & 파티 편성",
-  "short_name": "WuWa 플래너",
+  "name": "명조 도구 — 명조 가챠 계획 & 파티 편성",
+  "short_name": "명조 도구",
   "description": "명조: 워더링 웨이브 픽업 일정 관리, 파티 편성, 뽑기 기록과 운 퍼센트 분석 도구",
   "lang": "ko",
   "start_url": "./index.html",

@@ -2158,7 +2158,7 @@ installBtn.addEventListener('click', async () => {
 
 window.addEventListener('appinstalled', () => {
   installBtn.hidden = true;
-  toast('설치 완료! 홈 화면에서 WuWa 플래너를 실행하세요');
+  toast('설치 완료! 홈 화면에서 명조 도구를 실행하세요');
 });
 
 /* ---------------- 초기 렌더 ---------------- */
