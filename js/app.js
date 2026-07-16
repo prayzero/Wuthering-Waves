@@ -3,16 +3,31 @@
    ================================================================ */
 
 const STORE_KEY = 'wuwa-planner-v1';
+const STATE_SCHEMA_VERSION = 2;
+const DEFAULT_CHAR_PITY_GROUP = 'char-event';
+const DEFAULT_WEAPON_PITY_GROUP = 'weapon-event';
+const SAFE_ID_RE = /^[A-Za-z0-9_-]{1,80}$/;
+const UNSAFE_ID_KEYS = new Set(Object.getOwnPropertyNames(Object.prototype));
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const SCHEDULE_GOALS = new Set(['명함', '1돌', '2돌', '3돌', '4돌', '5돌', '6돌', '명함+전무', '전무만']);
+
+const defaultPity = () => ({
+  selectedCharGroup: DEFAULT_CHAR_PITY_GROUP,
+  selectedWeaponGroup: DEFAULT_WEAPON_PITY_GROUP,
+  charGroups: { [DEFAULT_CHAR_PITY_GROUP]: { count: 0, guaranteed: false, effectOwner: null } },
+  weaponGroups: { [DEFAULT_WEAPON_PITY_GROUP]: { count: 0, effectOwner: null } },
+});
 
 const defaultState = () => ({
-  owned: {},            // charId -> true
+  schemaVersion: STATE_SCHEMA_VERSION,
+  owned: Object.create(null), // charId -> true
   customChars: [],      // {id, name, rarity, element, group}
   schedules: [],        // {id, charId, name, start, end, saved, goal, memo}
   parties: [{ id: uid(), name: '파티 1', members: [null, null, null], tag: '' }],
   records: [],          // {id, season, type, charId, weaponName, copy, pulls, lost}
   contents: JSON.parse(JSON.stringify(CONTENT_DEFAULTS)), // 탑/해역/매트릭스 로테이션
-  matOverrides: {},     // charId -> {forge, drop, weekly}
-  pity: { charCount: 0, charGuaranteed: false, weaponCount: 0 },
+  matOverrides: Object.create(null), // charId -> {forge, drop, weekly}
+  pity: defaultPity(),
   calc: { astrite: 0, lunite: 0, charTickets: 0, weaponTickets: 0 },
 });
 
@@ -22,22 +37,351 @@ function uid() {
   return 'id' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
 }
 
+function isPlainObject(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
+}
+
+function hasOwn(obj, key) {
+  return Object.prototype.hasOwnProperty.call(obj, key);
+}
+
+function cleanString(value, max = 200) {
+  return typeof value === 'string' ? value.trim().slice(0, max) : '';
+}
+
+function cleanId(value) {
+  return typeof value === 'string' && SAFE_ID_RE.test(value) && !UNSAFE_ID_KEYS.has(value) ? value : '';
+}
+
+function cleanInt(value, min, max, fallback = min) {
+  const n = Number(value);
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, Math.trunc(n))) : fallback;
+}
+
+function validDate(value) {
+  if (typeof value !== 'string' || !DATE_RE.test(value)) return false;
+  const d = new Date(`${value}T00:00:00Z`);
+  return Number.isFinite(d.getTime()) && d.toISOString().slice(0, 10) === value;
+}
+
+function clone(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function pityGroupIds(kind) {
+  const field = kind === 'char' ? 'charPityGroup' : 'weaponPityGroup';
+  const base = kind === 'char' ? DEFAULT_CHAR_PITY_GROUP : DEFAULT_WEAPON_PITY_GROUP;
+  return [base, ...BANNERS.map(b => cleanId(b[field])).filter(Boolean)]
+    .filter((id, i, list) => list.indexOf(id) === i);
+}
+
+function normalizePity(raw) {
+  const result = defaultPity();
+  if (!isPlainObject(raw)) return result;
+
+  // v1의 단일 천장 값을 일반 이벤트 그룹으로 마이그레이션합니다.
+  if (hasOwn(raw, 'charCount') || hasOwn(raw, 'charGuaranteed')) {
+    result.charGroups[DEFAULT_CHAR_PITY_GROUP] = {
+      count: cleanInt(raw.charCount, 0, GACHA.HARD - 1, 0),
+      guaranteed: raw.charGuaranteed === true,
+      effectOwner: null,
+    };
+  }
+  if (hasOwn(raw, 'weaponCount')) {
+    result.weaponGroups[DEFAULT_WEAPON_PITY_GROUP] = {
+      count: cleanInt(raw.weaponCount, 0, GACHA.WEAPON_MAX - 1, 0),
+      effectOwner: null,
+    };
+  }
+
+  const charIds = pityGroupIds('char');
+  const weaponIds = pityGroupIds('weapon');
+  if (isPlainObject(raw.charGroups)) {
+    charIds.forEach(id => {
+      const group = raw.charGroups[id];
+      if (!isPlainObject(group)) return;
+      result.charGroups[id] = {
+        count: cleanInt(group.count, 0, GACHA.HARD - 1, 0),
+        guaranteed: group.guaranteed === true,
+        effectOwner: cleanId(group.effectOwner) || null,
+      };
+    });
+  }
+  if (isPlainObject(raw.weaponGroups)) {
+    weaponIds.forEach(id => {
+      const group = raw.weaponGroups[id];
+      if (!isPlainObject(group)) return;
+      result.weaponGroups[id] = {
+        count: cleanInt(group.count, 0, GACHA.WEAPON_MAX - 1, 0),
+        effectOwner: cleanId(group.effectOwner) || null,
+      };
+    });
+  }
+  result.selectedCharGroup = charIds.includes(raw.selectedCharGroup)
+    ? raw.selectedCharGroup : DEFAULT_CHAR_PITY_GROUP;
+  result.selectedWeaponGroup = weaponIds.includes(raw.selectedWeaponGroup)
+    ? raw.selectedWeaponGroup : DEFAULT_WEAPON_PITY_GROUP;
+  return result;
+}
+
+function assertImportShape(data) {
+  if (!isPlainObject(data) || !Array.isArray(data.parties)) throw new Error('백업 최상위 구조가 올바르지 않습니다.');
+  ['customChars', 'schedules', 'parties', 'records', 'contents'].forEach(key => {
+    if (hasOwn(data, key) && !Array.isArray(data[key])) throw new Error(`${key} 항목은 배열이어야 합니다.`);
+    if (Array.isArray(data[key]) && data[key].some(item => !isPlainObject(item))) {
+      throw new Error(`${key} 배열에 잘못된 항목이 있습니다.`);
+    }
+  });
+  ['owned', 'matOverrides', 'pity', 'calc'].forEach(key => {
+    if (hasOwn(data, key) && !isPlainObject(data[key])) throw new Error(`${key} 항목이 올바르지 않습니다.`);
+  });
+  if ((data.customChars?.length || 0) > 300 || (data.schedules?.length || 0) > 500 ||
+      data.parties.length > 100 || (data.records?.length || 0) > 5000) {
+    throw new Error('백업 데이터가 허용 범위를 초과했습니다.');
+  }
+  (data.contents || []).forEach(item => {
+    const def = CONTENT_DEFAULTS.find(c => c.id === item.id);
+    if (!def) throw new Error('알 수 없는 컨텐츠 ID가 있습니다.');
+    if (hasOwn(item, 'icon') && item.icon !== def.icon) throw new Error('컨텐츠 아이콘은 변경할 수 없습니다.');
+    if (hasOwn(item, 'stages') && (!Array.isArray(item.stages) || item.stages.some(s => !isPlainObject(s)))) {
+      throw new Error('컨텐츠 단계 정보가 올바르지 않습니다.');
+    }
+  });
+}
+
+function normalizeRecordEffects(raw, scheduleIds) {
+  if (!isPlainObject(raw)) return undefined;
+  const effects = {};
+  if (isPlainObject(raw.pity)) {
+    const type = raw.pity.type === 'weapon' ? 'weapon' : raw.pity.type === 'char' ? 'char' : '';
+    const validGroups = type ? pityGroupIds(type) : [];
+    const groupId = cleanId(raw.pity.groupId);
+    if (type && validGroups.includes(groupId) && isPlainObject(raw.pity.before) && isPlainObject(raw.pity.after)) {
+      const max = type === 'char' ? GACHA.HARD - 1 : GACHA.WEAPON_MAX - 1;
+      effects.pity = {
+        type,
+        groupId,
+        before: {
+          count: cleanInt(raw.pity.before.count, 0, max, 0),
+          guaranteed: type === 'char' && raw.pity.before.guaranteed === true,
+          effectOwner: cleanId(raw.pity.before.effectOwner) || null,
+        },
+        after: {
+          count: cleanInt(raw.pity.after.count, 0, max, 0),
+          guaranteed: type === 'char' && raw.pity.after.guaranteed === true,
+        },
+      };
+    }
+  }
+  if (isPlainObject(raw.schedule) && scheduleIds.has(raw.schedule.id) &&
+      isPlainObject(raw.schedule.before) && isPlainObject(raw.schedule.after)) {
+    effects.schedule = {
+      id: raw.schedule.id,
+      before: {
+        saved: cleanInt(raw.schedule.before.saved, 0, 9999, 0),
+        effectOwner: cleanId(raw.schedule.before.effectOwner) || null,
+      },
+      after: { saved: cleanInt(raw.schedule.after.saved, 0, 9999, 0) },
+    };
+  }
+  return Object.keys(effects).length ? effects : undefined;
+}
+
+function normalizeStateData(input, { strict = false } = {}) {
+  if (strict) assertImportShape(input);
+  const raw = isPlainObject(input) ? input : {};
+  const result = defaultState();
+
+  const builtInIds = new Set(CHARACTERS.map(c => c.id));
+  const customIds = new Set();
+  result.customChars = (Array.isArray(raw.customChars) ? raw.customChars : []).slice(0, 300).flatMap(item => {
+    if (!isPlainObject(item)) return [];
+    const id = cleanId(item.id);
+    const name = cleanString(item.name, 24);
+    if (!id || !name || builtInIds.has(id) || customIds.has(id)) {
+      if (strict) throw new Error('커스텀 캐릭터 ID 또는 이름이 올바르지 않습니다.');
+      return [];
+    }
+    customIds.add(id);
+    const rarity = Number(item.rarity) === 4 ? 4 : 5;
+    const element = hasOwn(ELEMENTS, item.element) ? item.element : 'fusion';
+    const weapon = hasOwn(WEAPONS, item.weapon) ? item.weapon : undefined;
+    return [{ id, name, rarity, element, group: rarity === 5 ? 'limited' : 'four', ...(weapon ? { weapon } : {}) }];
+  });
+
+  const charIds = new Set([...builtInIds, ...customIds]);
+  result.owned = Object.create(null);
+  if (isPlainObject(raw.owned)) {
+    Object.entries(raw.owned).forEach(([id, owned]) => {
+      if (owned === true && charIds.has(id)) result.owned[id] = true;
+    });
+  }
+
+  const scheduleIds = new Set();
+  result.schedules = (Array.isArray(raw.schedules) ? raw.schedules : []).slice(0, 500).flatMap(item => {
+    if (!isPlainObject(item)) return [];
+    const id = cleanId(item.id);
+    const charId = cleanId(item.charId);
+    const start = item.start;
+    const end = item.end;
+    if (!id || scheduleIds.has(id) || !charIds.has(charId) || !validDate(start) || !validDate(end) || end < start) {
+      if (strict) throw new Error('일정 데이터가 올바르지 않습니다.');
+      return [];
+    }
+    scheduleIds.add(id);
+    return [{
+      id,
+      charId,
+      name: cleanString(item.name, 80),
+      start,
+      end,
+      saved: cleanInt(item.saved, 0, 9999, 0),
+      goal: SCHEDULE_GOALS.has(item.goal) ? item.goal : '명함',
+      memo: cleanString(item.memo, 500),
+      effectOwner: cleanId(item.effectOwner) || null,
+    }];
+  });
+
+  const contentIds = new Set(CONTENT_DEFAULTS.map(c => c.id));
+  const partyIds = new Set();
+  result.parties = (Array.isArray(raw.parties) ? raw.parties : result.parties).slice(0, 100).flatMap(item => {
+    if (!isPlainObject(item)) return [];
+    const id = cleanId(item.id);
+    if (!id || partyIds.has(id)) {
+      if (strict) throw new Error('파티 ID가 올바르지 않습니다.');
+      return [];
+    }
+    partyIds.add(id);
+    const seen = new Set();
+    const sourceMembers = Array.isArray(item.members) ? item.members.slice(0, 3) : [];
+    const members = [0, 1, 2].map(i => {
+      const member = cleanId(sourceMembers[i]);
+      if (!member || !charIds.has(member) || seen.has(member)) return null;
+      seen.add(member);
+      return member;
+    });
+    return [{
+      id,
+      name: cleanString(item.name, 16) || `파티 ${partyIds.size}`,
+      members,
+      tag: contentIds.has(item.tag) ? item.tag : '',
+    }];
+  });
+
+  const rawContents = Array.isArray(raw.contents) ? raw.contents : [];
+  result.contents = CONTENT_DEFAULTS.map(def => {
+    const item = rawContents.find(c => isPlainObject(c) && c.id === def.id);
+    if (!item) return clone(def);
+    const stages = Array.isArray(item.stages) ? item.stages.slice(0, 50).flatMap(stage => {
+      if (!isPlainObject(stage)) return [];
+      const name = cleanString(stage.name, 80);
+      const mobs = cleanString(stage.mobs, 1000);
+      return name || mobs ? [{ name: name || '단계', mobs }] : [];
+    }) : clone(def.stages || []);
+    return {
+      id: def.id,
+      icon: def.icon,
+      name: cleanString(item.name, 24) || def.name,
+      period: cleanInt(item.period, 1, 999, def.period),
+      start: validDate(item.start) ? item.start : def.start,
+      rules: cleanString(item.rules, 2000) || def.rules,
+      buff: cleanString(item.buff, 3000) || def.buff,
+      stages,
+    };
+  });
+
+  result.matOverrides = Object.create(null);
+  if (isPlainObject(raw.matOverrides)) {
+    Object.entries(raw.matOverrides).forEach(([id, item]) => {
+      if (!charIds.has(id) || !isPlainObject(item)) return;
+      result.matOverrides[id] = {
+        forge: hasOwn(FORGE_FAMILIES, item.forge) ? item.forge : (CHAR_MATS[id]?.[0] || 'drip'),
+        drop: hasOwn(DROP_FAMILIES, item.drop) ? item.drop : (CHAR_MATS[id]?.[1] || 'whisperin'),
+        weekly: cleanString(item.weekly, 80),
+      };
+    });
+  }
+
+  result.pity = normalizePity(raw.pity);
+  result.calc = {
+    astrite: cleanInt(raw.calc?.astrite, 0, 1000000000, 0),
+    lunite: cleanInt(raw.calc?.lunite, 0, 1000000000, 0),
+    charTickets: cleanInt(raw.calc?.charTickets, 0, 1000000, 0),
+    weaponTickets: cleanInt(raw.calc?.weaponTickets, 0, 1000000, 0),
+  };
+
+  const recordIds = new Set();
+  result.records = (Array.isArray(raw.records) ? raw.records : []).slice(0, 5000).flatMap(item => {
+    if (!isPlainObject(item)) return [];
+    const id = cleanId(item.id);
+    const type = item.type === 'weapon' ? 'weapon' : item.type === 'char' ? 'char' : '';
+    const season = cleanString(item.season, 120);
+    const maxPulls = type === 'weapon' ? GACHA.WEAPON_MAX : GACHA.CHAR_MAX;
+    const pulls = cleanInt(item.pulls, 1, maxPulls, 0);
+    const charId = cleanId(item.charId);
+    if (!id || recordIds.has(id) || !type || !season || !pulls || (type === 'char' && !charIds.has(charId))) {
+      if (strict) throw new Error('뽑기 기록 데이터가 올바르지 않습니다.');
+      return [];
+    }
+    recordIds.add(id);
+    const maxCopy = type === 'char' ? COPY_LABELS.length - 1 : WEAPON_COPY_LABELS.length - 1;
+    const record = {
+      id,
+      season,
+      type,
+      copy: cleanInt(item.copy, 0, maxCopy, 0),
+      pulls,
+      lost: type === 'char' && item.lost === true,
+      ...(type === 'char' ? { charId } : {
+        weaponName: cleanString(item.weaponName, 120) || '픽업 전무',
+        ...(charIds.has(charId) ? { charId } : {}),
+      }),
+    };
+    const scheduleId = cleanId(item.scheduleId);
+    if (scheduleIds.has(scheduleId)) record.scheduleId = scheduleId;
+    const effects = normalizeRecordEffects(item.effects, scheduleIds);
+    if (effects) record.effects = effects;
+    return [record];
+  });
+
+  // 삭제된 기록을 가리키는 구버전 effectOwner는 자동 복원 근거로 사용하지 않습니다.
+  const normalizedRecordIds = new Set(result.records.map(record => record.id));
+  result.records.forEach(record => {
+    const pityEffect = record.effects?.pity;
+    if (pityEffect?.before.effectOwner && !normalizedRecordIds.has(pityEffect.before.effectOwner)) {
+      delete record.effects.pity;
+    }
+    const scheduleEffect = record.effects?.schedule;
+    if (scheduleEffect?.before.effectOwner && !normalizedRecordIds.has(scheduleEffect.before.effectOwner)) {
+      delete record.effects.schedule;
+    }
+    if (record.effects && !Object.keys(record.effects).length) delete record.effects;
+  });
+  const recordsById = new Map(result.records.map(record => [record.id, record]));
+  Object.entries(result.pity.charGroups).forEach(([groupId, group]) => {
+    const effect = recordsById.get(group.effectOwner)?.effects?.pity;
+    if (!effect || effect.type !== 'char' || effect.groupId !== groupId) group.effectOwner = null;
+  });
+  Object.entries(result.pity.weaponGroups).forEach(([groupId, group]) => {
+    const effect = recordsById.get(group.effectOwner)?.effects?.pity;
+    if (!effect || effect.type !== 'weapon' || effect.groupId !== groupId) group.effectOwner = null;
+  });
+  result.schedules.forEach(schedule => {
+    const effect = recordsById.get(schedule.effectOwner)?.effects?.schedule;
+    if (!effect || effect.id !== schedule.id) schedule.effectOwner = null;
+  });
+
+  result.schemaVersion = STATE_SCHEMA_VERSION;
+  return result;
+}
+
 function loadState() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
     if (!raw) return defaultState();
-    const s = JSON.parse(raw);
-    const merged = Object.assign(defaultState(), s);
-    // 중첩 객체는 기본값 위에 병합 (구버전 백업 호환)
-    merged.pity = Object.assign(defaultState().pity, s.pity || {});
-    merged.calc = Object.assign(defaultState().calc, s.calc || {});
-    // 컨텐츠: 사용자가 버프를 입력하지 않은 항목은 최신 기본값으로 자동 갱신
-    merged.contents = CONTENT_DEFAULTS.map(def => {
-      const cur = (s.contents || []).find(x => x.id === def.id);
-      if (!cur || !cur.buff || cur.buff.includes('입력하세요')) return JSON.parse(JSON.stringify(def));
-      return Object.assign({ rules: def.rules }, cur);
-    });
-    return merged;
+    return normalizeStateData(JSON.parse(raw));
   } catch {
     return defaultState();
   }
@@ -58,7 +402,7 @@ function charById(id) {
 }
 
 function isOwned(id) {
-  return !!state.owned[id];
+  return hasOwn(state.owned, id) && state.owned[id] === true;
 }
 
 function esc(s) {
@@ -96,19 +440,105 @@ function today() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+function scheduleGoalPlan(goal) {
+  if (goal === '전무만') return { char: 0, weapon: GACHA.WEAPON_MAX, total: GACHA.WEAPON_MAX };
+  if (goal === '명함+전무') {
+    return { char: GACHA.CHAR_MAX, weapon: GACHA.WEAPON_MAX, total: GACHA.CHAR_MAX + GACHA.WEAPON_MAX };
+  }
+  const match = /^([1-6])돌$/.exec(goal);
+  const copies = match ? Number(match[1]) + 1 : 1;
+  const char = copies * GACHA.CHAR_MAX;
+  return { char, weapon: 0, total: char };
+}
+
+function goalIncludesType(goal, type) {
+  const plan = scheduleGoalPlan(goal);
+  return type === 'weapon' ? plan.weapon > 0 : plan.char > 0;
+}
+
+function calculatorPullsForSchedule(schedule, calc = state.calc) {
+  const plan = scheduleGoalPlan(schedule.goal);
+  const pool = Math.max(0, +calc.astrite || 0) + Math.max(0, +calc.lunite || 0);
+  const poolPulls = Math.floor(pool / ASTRITE_PER_PULL);
+  return poolPulls +
+    (plan.char ? Math.max(0, +calc.charTickets || 0) : 0) +
+    (plan.weapon ? Math.max(0, +calc.weaponTickets || 0) : 0);
+}
+
+function bannerPityGroup(banner, type) {
+  if (!banner) return type === 'char' ? DEFAULT_CHAR_PITY_GROUP : DEFAULT_WEAPON_PITY_GROUP;
+  const field = type === 'char' ? 'charPityGroup' : 'weaponPityGroup';
+  return cleanId(banner[field]) || (type === 'char' ? DEFAULT_CHAR_PITY_GROUP : DEFAULT_WEAPON_PITY_GROUP);
+}
+
+function pityGroupLabel(type, id) {
+  const defaultId = type === 'char' ? DEFAULT_CHAR_PITY_GROUP : DEFAULT_WEAPON_PITY_GROUP;
+  if (id === defaultId) return type === 'char' ? '일반 캐릭터 이벤트' : '일반 전무 이벤트';
+  const field = type === 'char' ? 'charPityGroup' : 'weaponPityGroup';
+  const banner = BANNERS.find(b => b[field] === id);
+  return banner ? `Ver ${banner.ver} ${banner.phase}` : id;
+}
+
+function ensurePityGroup(type, id) {
+  const map = type === 'char' ? state.pity.charGroups : state.pity.weaponGroups;
+  if (!map[id]) map[id] = type === 'char'
+    ? { count: 0, guaranteed: false, effectOwner: null }
+    : { count: 0, effectOwner: null };
+  return map[id];
+}
+
+function findBannerBySeason(season) {
+  return BANNERS.find(b => !b.leaked && bannerSeasonNames(b).includes(season)) || null;
+}
+
+function bannerIsActive(banner) {
+  const t = today();
+  return !!banner && banner.start <= t && t <= banner.end;
+}
+
+function bannerContainsRecordTarget(banner, rec) {
+  if (!rec.charId || rec.lost) return true;
+  return [...(banner.pickup || []), ...(banner.rerun || [])].includes(rec.charId);
+}
+
+function resolveActiveBannerForRecord(rec, schedule = null) {
+  const overlapsSchedule = banner => !schedule ||
+    (scheduleStatus(schedule) === 'ongoing' && schedule.start <= banner.end && banner.start <= schedule.end);
+  const exact = findBannerBySeason(rec.season);
+  if (bannerIsActive(exact) && bannerContainsRecordTarget(exact, rec) && overlapsSchedule(exact)) return exact;
+  if (!schedule && !bannerIsActive(exact)) return null;
+  const matches = BANNERS.filter(b => !b.leaked && bannerIsActive(b) &&
+    bannerContainsRecordTarget(b, rec) && overlapsSchedule(b));
+  return matches.length === 1 ? matches[0] : null;
+}
+
 /* ---------------- 탭 ---------------- */
 
-function switchTab(name) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
-  window.scrollTo({ top: 0 });
+function switchTab(name, { scroll = true, focus = false } = {}) {
+  let activeButton = null;
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    const active = b.dataset.tab === name;
+    b.classList.toggle('active', active);
+    if (active) {
+      b.setAttribute('aria-current', 'page');
+      activeButton = b;
+    }
+    else b.removeAttribute('aria-current');
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => {
+    const active = p.id === 'tab-' + name;
+    p.classList.toggle('active', active);
+    p.hidden = !active;
+  });
+  if (scroll) window.scrollTo({ top: 0 });
+  if (focus) activeButton?.focus();
 }
 
 document.getElementById('tabs').addEventListener('click', e => {
   const btn = e.target.closest('.tab-btn');
   if (btn) switchTab(btn.dataset.tab);
 });
-document.getElementById('goto-roster').addEventListener('click', () => switchTab('roster'));
+document.getElementById('goto-roster').addEventListener('click', () => switchTab('roster', { focus: true }));
 
 /* ================================================================
    1. 픽업 일정
@@ -152,8 +582,17 @@ function renderSchedules() {
       : status === 'upcoming' ? '<span class="badge soon">예정</span>'
       : '<span class="badge done-b">종료</span>';
     const saved = Math.max(0, +s.saved || 0);
-    const pct = Math.min(100, saved / GACHA.CHAR_MAX * 100);
-    const halfPct = GACHA.HARD / GACHA.CHAR_MAX * 100;
+    const plan = scheduleGoalPlan(s.goal);
+    const pct = Math.min(100, saved / plan.total * 100);
+    const milestones = [];
+    for (let n = GACHA.CHAR_MAX; n < plan.char; n += GACHA.CHAR_MAX) milestones.push(n);
+    if (plan.char > 0 && plan.weapon > 0) milestones.push(plan.char);
+    const milestoneMarks = milestones.map(n =>
+      `<div class="mark half" style="left:${(n / plan.total * 100).toFixed(2)}%" title="${n}뽑 지점"></div>`
+    ).join('');
+    const goalSummary = plan.char && plan.weapon
+      ? `캐릭터 ${plan.char} + 전무 ${plan.weapon}`
+      : plan.weapon ? `전무 ${plan.weapon}` : `캐릭터 ${plan.char}`;
     return `
     <div class="schedule-card ${status}">
       ${ch ? avatarHTML(ch) : ''}
@@ -164,22 +603,22 @@ function renderSchedules() {
         </div>
         <div class="schedule-meta">${esc(s.name || '')}${s.name ? ' · ' : ''}${fmtDate(s.start)} ~ ${fmtDate(s.end)} · <b>${dday(s)}</b></div>
         <div class="gauge-wrap">
-          <div class="gauge-label"><span>모아둔 뽑기</span><b>${saved} / ${GACHA.CHAR_MAX}뽑</b></div>
+          <div class="gauge-label"><span>모아둔 뽑기</span><b>${saved} / ${plan.total}뽑</b></div>
           <div class="gauge">
             <div class="fill" style="width:${pct}%"></div>
-            <div class="mark half" style="left:${halfPct}%" title="반천장 80뽑"></div>
-            <div class="mark" style="left:100%;margin-left:-2px" title="천장 160뽑"></div>
+            ${milestoneMarks}
+            <div class="mark" style="left:100%;margin-left:-2px" title="목표 ${plan.total}뽑"></div>
           </div>
           <div class="gauge-legend">
-            <span><span class="k" style="background:var(--ink-2)"></span>반천장 80뽑 (픽뚫 가능)</span>
-            <span><span class="k" style="background:var(--accent)"></span>천장 160뽑 (확정)</span>
+            <span><span class="k" style="background:var(--ink-2)"></span>${goalSummary}</span>
+            <span><span class="k" style="background:var(--accent)"></span>목표 최악 기준 ${plan.total}뽑</span>
           </div>
         </div>
         ${s.memo ? `<div class="schedule-memo">${esc(s.memo)}</div>` : ''}
       </div>
       <div class="schedule-actions">
-        <button class="icon-btn" data-edit-schedule="${s.id}">수정</button>
-        <button class="icon-btn danger-btn" data-del-schedule="${s.id}">삭제</button>
+        <button class="icon-btn" data-edit-schedule="${s.id}" aria-label="${esc(ch ? ch.name : '픽업')} 일정 수정">수정</button>
+        <button class="icon-btn danger-btn" data-del-schedule="${s.id}" aria-label="${esc(ch ? ch.name : '픽업')} 일정 삭제">삭제</button>
       </div>
     </div>`;
   }).join('');
@@ -190,6 +629,8 @@ document.getElementById('schedule-list').addEventListener('click', e => {
   const delBtn = e.target.closest('[data-del-schedule]');
   if (editBtn) openScheduleModal(editBtn.dataset.editSchedule);
   if (delBtn) {
+    const target = state.schedules.find(s => s.id === delBtn.dataset.delSchedule);
+    if (!target || !confirm(`"${charById(target.charId)?.name || '픽업'}" 일정을 삭제할까요?`)) return;
     state.schedules = state.schedules.filter(s => s.id !== delBtn.dataset.delSchedule);
     save(); renderSchedules(); renderPityCalc(); toast('일정을 삭제했어요');
   }
@@ -232,9 +673,9 @@ document.getElementById('schedule-form').addEventListener('submit', e => {
   if (!data.start || !data.end) { toast('시작일과 종료일을 입력해주세요'); return; }
   if (data.end < data.start) { toast('종료일이 시작일보다 빠를 수 없어요'); return; }
   if (editingScheduleId) {
-    Object.assign(state.schedules.find(s => s.id === editingScheduleId), data);
+    Object.assign(state.schedules.find(s => s.id === editingScheduleId), data, { effectOwner: null });
   } else {
-    state.schedules.push(Object.assign({ id: uid() }, data));
+    state.schedules.push(Object.assign({ id: uid(), effectOwner: null }, data));
   }
   save(); renderSchedules(); renderPityCalc();
   document.getElementById('schedule-modal').close();
@@ -250,9 +691,14 @@ function renderPityCalc() {
   const p = state.pity;
   const c = state.calc;
 
-  const charLeft5 = GACHA.HARD - Math.min(p.charCount, GACHA.HARD - 1);
-  const charLeftPickup = p.charGuaranteed ? charLeft5 : charLeft5 + GACHA.HARD;
-  const weaponLeft = GACHA.WEAPON_MAX - Math.min(p.weaponCount, GACHA.WEAPON_MAX - 1);
+  const charGroupId = p.selectedCharGroup;
+  const weaponGroupId = p.selectedWeaponGroup;
+  const charGroup = ensurePityGroup('char', charGroupId);
+  const weaponGroup = ensurePityGroup('weapon', weaponGroupId);
+
+  const charLeft5 = GACHA.HARD - Math.min(charGroup.count, GACHA.HARD - 1);
+  const charLeftPickup = charGroup.guaranteed ? charLeft5 : charLeft5 + GACHA.HARD;
+  const weaponLeft = GACHA.WEAPON_MAX - Math.min(weaponGroup.count, GACHA.WEAPON_MAX - 1);
 
   const pool = Math.max(0, +c.astrite || 0) + Math.max(0, +c.lunite || 0);
   const poolPulls = Math.floor(pool / ASTRITE_PER_PULL);
@@ -267,42 +713,51 @@ function renderPityCalc() {
 
   const topPack = LUNITE_PACKS[LUNITE_PACKS.length - 1];
   const topTotal = topPack.base + topPack.bonus;
+  const groupOptions = (type, selected) => pityGroupIds(type).map(id =>
+    `<option value="${id}" ${id === selected ? 'selected' : ''}>${esc(pityGroupLabel(type, id))}</option>`
+  ).join('');
 
   wrap.innerHTML = `
   <div class="card pity-card">
     <h3>🎯 캐릭터 배너 천장</h3>
+    <label class="pity-group-label" for="pity-char-group">천장 그룹</label>
+    <select class="pity-group-select" id="pity-char-group">${groupOptions('char', charGroupId)}</select>
     <div class="pity-count">
-      <input type="number" id="pity-char-count" min="0" max="${GACHA.HARD - 1}" value="${p.charCount}">
+      <label class="sr-only" for="pity-char-count">캐릭터 천장 카운트</label>
+      <input type="number" id="pity-char-count" min="0" max="${GACHA.HARD - 1}" value="${charGroup.count}" aria-label="캐릭터 천장 카운트">
       <span class="max">/ ${GACHA.HARD}</span>
     </div>
-    <button class="chip ${p.charGuaranteed ? 'active' : ''}" id="pity-guaranteed">
-      ${p.charGuaranteed ? '★ 픽업 확정 상태 (픽뚫 이후)' : '반반 상태 (픽뚫 가능)'}
+    <button class="chip ${charGroup.guaranteed ? 'active' : ''}" id="pity-guaranteed" aria-pressed="${charGroup.guaranteed}">
+      ${charGroup.guaranteed ? '★ 픽업 확정 상태 (픽뚫 이후)' : '반반 상태 (픽뚫 가능)'}
     </button>
     <div class="pity-info">
       다음 5성까지 최대 <b>${charLeft5}뽑</b><br>
-      픽업 확보까지 최대 <b>${charLeftPickup}뽑</b> ${p.charGuaranteed ? '(확정)' : '(픽뚫 시 기준)'}
+      픽업 확보까지 최대 <b>${charLeftPickup}뽑</b> ${charGroup.guaranteed ? '(확정)' : '(픽뚫 시 기준)'}
     </div>
     <div class="pity-btns">
-      <button class="ghost-btn" data-pity="char:1">+1</button>
-      <button class="ghost-btn" data-pity="char:10">+10</button>
-      <button class="ghost-btn danger-btn" data-pity="char:reset">초기화</button>
+      <button class="ghost-btn" data-pity="char:1" aria-label="캐릭터 천장 1 증가">+1</button>
+      <button class="ghost-btn" data-pity="char:10" aria-label="캐릭터 천장 10 증가">+10</button>
+      <button class="ghost-btn danger-btn" data-pity="char:reset" aria-label="캐릭터 천장 초기화">초기화</button>
     </div>
     <p class="pity-note">픽업 기록 저장 시 자동으로 리셋돼요.</p>
   </div>
 
   <div class="card pity-card">
     <h3>⚔ 전무 배너 천장</h3>
+    <label class="pity-group-label" for="pity-weapon-group">천장 그룹</label>
+    <select class="pity-group-select" id="pity-weapon-group">${groupOptions('weapon', weaponGroupId)}</select>
     <div class="pity-count">
-      <input type="number" id="pity-weapon-count" min="0" max="${GACHA.WEAPON_MAX - 1}" value="${p.weaponCount}">
+      <label class="sr-only" for="pity-weapon-count">전무 천장 카운트</label>
+      <input type="number" id="pity-weapon-count" min="0" max="${GACHA.WEAPON_MAX - 1}" value="${weaponGroup.count}" aria-label="전무 천장 카운트">
       <span class="max">/ ${GACHA.WEAPON_MAX}</span>
     </div>
     <div class="pity-info">
       픽업 전무 확보까지 최대 <b>${weaponLeft}뽑</b> (픽뚫 없음 · 확정)
     </div>
     <div class="pity-btns">
-      <button class="ghost-btn" data-pity="weapon:1">+1</button>
-      <button class="ghost-btn" data-pity="weapon:10">+10</button>
-      <button class="ghost-btn danger-btn" data-pity="weapon:reset">초기화</button>
+      <button class="ghost-btn" data-pity="weapon:1" aria-label="전무 천장 1 증가">+1</button>
+      <button class="ghost-btn" data-pity="weapon:10" aria-label="전무 천장 10 증가">+10</button>
+      <button class="ghost-btn danger-btn" data-pity="weapon:reset" aria-label="전무 천장 초기화">초기화</button>
     </div>
     <p class="pity-note">전무 기록 저장 시 자동으로 리셋돼요.</p>
   </div>
@@ -325,7 +780,7 @@ function renderPityCalc() {
     </div>
     ${state.schedules.length ? `
     <div class="calc-apply">
-      <select id="calc-schedule">${schedOpts}</select>
+      <select id="calc-schedule" aria-label="계산 결과를 반영할 일정">${schedOpts}</select>
       <button class="ghost-btn" id="calc-apply-btn">일정에 반영</button>
     </div>` : '<p class="pity-note">픽업 일정을 추가하면 계산 결과를 일정 게이지에 바로 반영할 수 있어요.</p>'}
     <details class="pack-details">
@@ -352,17 +807,22 @@ document.getElementById('pity-calc').addEventListener('click', e => {
   const pityBtn = e.target.closest('[data-pity]');
   if (pityBtn) {
     const [kind, act] = pityBtn.dataset.pity.split(':');
+    const groupId = kind === 'char' ? state.pity.selectedCharGroup : state.pity.selectedWeaponGroup;
+    const group = ensurePityGroup(kind, groupId);
+    group.effectOwner = null;
     if (kind === 'char') {
-      if (act === 'reset') { state.pity.charCount = 0; state.pity.charGuaranteed = false; }
-      else state.pity.charCount = Math.min(GACHA.HARD - 1, state.pity.charCount + +act);
+      if (act === 'reset') { group.count = 0; group.guaranteed = false; }
+      else group.count = Math.min(GACHA.HARD - 1, group.count + +act);
     } else {
-      state.pity.weaponCount = act === 'reset' ? 0 : Math.min(GACHA.WEAPON_MAX - 1, state.pity.weaponCount + +act);
+      group.count = act === 'reset' ? 0 : Math.min(GACHA.WEAPON_MAX - 1, group.count + +act);
     }
     save(); renderPityCalc();
     return;
   }
   if (e.target.closest('#pity-guaranteed')) {
-    state.pity.charGuaranteed = !state.pity.charGuaranteed;
+    const group = ensurePityGroup('char', state.pity.selectedCharGroup);
+    group.guaranteed = !group.guaranteed;
+    group.effectOwner = null;
     save(); renderPityCalc();
     return;
   }
@@ -376,9 +836,9 @@ document.getElementById('pity-calc').addEventListener('click', e => {
     const sel = document.getElementById('calc-schedule');
     const s = state.schedules.find(x => x.id === sel.value);
     if (!s) return;
-    const pool = Math.max(0, +state.calc.astrite || 0) + Math.max(0, +state.calc.lunite || 0);
-    const pulls = Math.floor(pool / ASTRITE_PER_PULL) + Math.max(0, +state.calc.charTickets || 0);
+    const pulls = calculatorPullsForSchedule(s);
     s.saved = pulls;
+    s.effectOwner = null;
     save(); renderSchedules(); renderPityCalc();
     toast(`일정의 모아둔 뽑기를 ${pulls}뽑으로 반영했어요`);
   }
@@ -387,8 +847,19 @@ document.getElementById('pity-calc').addEventListener('click', e => {
 document.getElementById('pity-calc').addEventListener('change', e => {
   const id = e.target.id;
   const v = Math.max(0, +e.target.value || 0);
-  if (id === 'pity-char-count') state.pity.charCount = Math.min(GACHA.HARD - 1, v);
-  else if (id === 'pity-weapon-count') state.pity.weaponCount = Math.min(GACHA.WEAPON_MAX - 1, v);
+  if (id === 'pity-char-group' && pityGroupIds('char').includes(e.target.value)) {
+    state.pity.selectedCharGroup = e.target.value;
+  } else if (id === 'pity-weapon-group' && pityGroupIds('weapon').includes(e.target.value)) {
+    state.pity.selectedWeaponGroup = e.target.value;
+  } else if (id === 'pity-char-count') {
+    const group = ensurePityGroup('char', state.pity.selectedCharGroup);
+    group.count = Math.min(GACHA.HARD - 1, v);
+    group.effectOwner = null;
+  } else if (id === 'pity-weapon-count') {
+    const group = ensurePityGroup('weapon', state.pity.selectedWeaponGroup);
+    group.count = Math.min(GACHA.WEAPON_MAX - 1, v);
+    group.effectOwner = null;
+  }
   else if (id === 'calc-astrite') state.calc.astrite = v;
   else if (id === 'calc-lunite') state.calc.lunite = v;
   else if (id === 'calc-chart') state.calc.charTickets = v;
@@ -397,30 +868,115 @@ document.getElementById('pity-calc').addEventListener('change', e => {
   save(); renderPityCalc();
 });
 
-// 기록 저장 시 공통 후처리: 천장 리셋 + 같은 캐릭터 일정에서 뽑기 차감
+// 진행 중인 배너 기록만 해당 천장 그룹과 겹치는 일정을 갱신합니다.
 function applyRecordSideEffects(rec) {
-  const notes = [];
-  if (rec.type === 'char') {
-    if (state.pity.charCount > 0 || state.pity.charGuaranteed) notes.push('캐릭터 천장 리셋');
-    state.pity.charCount = 0;
-    state.pity.charGuaranteed = false;
-  } else {
-    if (state.pity.weaponCount > 0) notes.push('전무 천장 리셋');
-    state.pity.weaponCount = 0;
+  const explicitSchedule = rec.scheduleId
+    ? state.schedules.find(s => s.id === rec.scheduleId) : null;
+  const referencedBanner = findBannerBySeason(rec.season);
+  const banner = resolveActiveBannerForRecord(rec, explicitSchedule);
+  if (!banner) {
+    return referencedBanner && !bannerIsActive(referencedBanner)
+      ? ' (과거·예정 배너라 현재 천장과 일정은 유지)'
+      : ' (현재 배너와 기록 대상을 확인할 수 없어 천장과 일정은 유지)';
   }
+
+  const notes = [];
+  const groupId = bannerPityGroup(banner, rec.type);
+  const group = ensurePityGroup(rec.type, groupId);
+  const beforePity = {
+    count: group.count,
+    guaranteed: rec.type === 'char' && group.guaranteed === true,
+    effectOwner: group.effectOwner || null,
+  };
+  const afterPity = {
+    count: 0,
+    guaranteed: rec.type === 'char' && rec.lost === true,
+  };
+  rec.effects = {
+    pity: { type: rec.type, groupId, before: beforePity, after: afterPity },
+  };
+  group.count = afterPity.count;
+  if (rec.type === 'char') group.guaranteed = afterPity.guaranteed;
+  group.effectOwner = rec.id;
+  if (beforePity.count > 0 || beforePity.guaranteed !== afterPity.guaranteed) {
+    notes.push(`${pityGroupLabel(rec.type, groupId)} 천장 갱신`);
+  }
+  if (rec.type === 'char') state.pity.selectedCharGroup = groupId;
+  else state.pity.selectedWeaponGroup = groupId;
+
   if (rec.charId) {
-    const order = { ongoing: 0, upcoming: 1, past: 2 };
-    const sched = state.schedules
-      .filter(s => s.charId === rec.charId && s.saved > 0)
-      .sort((a, b) => order[scheduleStatus(a)] - order[scheduleStatus(b)])[0];
-    if (sched) {
+    const schedules = state.schedules.filter(s =>
+      s.charId === rec.charId &&
+      scheduleStatus(s) === 'ongoing' &&
+      s.start <= banner.end && banner.start <= s.end &&
+      goalIncludesType(s.goal, rec.type) &&
+      (!rec.scheduleId || s.id === rec.scheduleId)
+    );
+    if (schedules.length === 1 && schedules[0].saved > 0) {
+      const sched = schedules[0];
       const before = sched.saved;
       sched.saved = Math.max(0, sched.saved - rec.pulls);
+      rec.effects.schedule = {
+        id: sched.id,
+        before: { saved: before, effectOwner: sched.effectOwner || null },
+        after: { saved: sched.saved },
+      };
+      sched.effectOwner = rec.id;
       notes.push(`일정 뽑기 ${before} → ${sched.saved}`);
     }
   }
   renderSchedules(); renderPityCalc();
   return notes.length ? ` (${notes.join(' · ')})` : '';
+}
+
+function revertRecordSideEffects(rec) {
+  const notes = [];
+  const pityEffect = rec.effects?.pity;
+  if (pityEffect) {
+    const group = ensurePityGroup(pityEffect.type, pityEffect.groupId);
+    const unchanged = group.effectOwner === rec.id &&
+      group.count === pityEffect.after.count &&
+      (pityEffect.type !== 'char' || group.guaranteed === pityEffect.after.guaranteed);
+    if (unchanged) {
+      group.count = pityEffect.before.count;
+      if (pityEffect.type === 'char') group.guaranteed = pityEffect.before.guaranteed;
+      group.effectOwner = pityEffect.before.effectOwner;
+      notes.push('천장 복원');
+    } else {
+      notes.push('이후 변경된 천장은 유지');
+    }
+  }
+  const scheduleEffect = rec.effects?.schedule;
+  if (scheduleEffect) {
+    const schedule = state.schedules.find(s => s.id === scheduleEffect.id);
+    if (schedule && schedule.effectOwner === rec.id && schedule.saved === scheduleEffect.after.saved) {
+      schedule.saved = scheduleEffect.before.saved;
+      schedule.effectOwner = scheduleEffect.before.effectOwner;
+      notes.push('일정 뽑기 복원');
+    } else {
+      notes.push('이후 변경된 일정은 유지');
+    }
+  }
+  return notes.length ? ` (${notes.join(' · ')})` : '';
+}
+
+// 오래된 기록을 먼저 삭제해도 최신 기록의 복원 체인이 끊기지 않게 이전 상태를 넘겨줍니다.
+function rebaseRecordEffectsForDeletion(rec) {
+  const sourcePity = rec.effects?.pity;
+  const sourceSchedule = rec.effects?.schedule;
+  state.records.forEach(other => {
+    if (other.id === rec.id) return;
+    const targetPity = other.effects?.pity;
+    if (sourcePity && targetPity && targetPity.before.effectOwner === rec.id &&
+        targetPity.type === sourcePity.type && targetPity.groupId === sourcePity.groupId) {
+      targetPity.before = clone(sourcePity.before);
+    }
+    const targetSchedule = other.effects?.schedule;
+    if (sourceSchedule && targetSchedule && targetSchedule.before.effectOwner === rec.id &&
+        targetSchedule.id === sourceSchedule.id) {
+      targetSchedule.before = clone(sourceSchedule.before);
+    }
+  });
 }
 
 /* ================================================================
@@ -450,26 +1006,26 @@ function renderParties() {
   wrap.innerHTML = state.parties.map(p => `
     <div class="party-card" data-party="${p.id}">
       <div class="party-head">
-        <input class="party-name" value="${esc(p.name)}" maxlength="16" data-party-name="${p.id}">
-        <select class="party-tag" data-party-tag="${p.id}" title="용도 라벨 — 컨텐츠 탭에 연결돼요">
+        <input class="party-name" value="${esc(p.name)}" maxlength="16" data-party-name="${p.id}" aria-label="${esc(p.name)} 이름">
+        <select class="party-tag" data-party-tag="${p.id}" title="용도 라벨 — 컨텐츠 탭에 연결돼요" aria-label="${esc(p.name)} 용도 라벨">
           <option value="">라벨 없음</option>
-          ${state.contents.map(c => `<option value="${c.id}" ${p.tag === c.id ? 'selected' : ''}>${c.icon || ''} ${esc(c.name)}</option>`).join('')}
+          ${state.contents.map(c => `<option value="${c.id}" ${p.tag === c.id ? 'selected' : ''}>${esc(c.icon || '')} ${esc(c.name)}</option>`).join('')}
         </select>
-        <button class="icon-btn danger-btn" data-del-party="${p.id}" title="파티 삭제">✕</button>
+        <button class="icon-btn danger-btn" data-del-party="${p.id}" title="파티 삭제" aria-label="${esc(p.name)} 삭제">✕</button>
       </div>
       <div class="party-slots">
         ${p.members.map((m, i) => {
           const ch = m ? charById(m) : null;
           if (ch) {
-            return `<div class="party-slot filled" draggable="true" data-slot data-party-id="${p.id}" data-idx="${i}" data-drag-char="${ch.id}">
+            return `<div class="party-slot filled" draggable="true" data-slot data-party-id="${p.id}" data-idx="${i}" data-drag-char="${ch.id}" role="group" aria-label="${esc(p.name)} ${i + 1}번 슬롯, ${esc(ch.name)}">
               ${avatarHTML(ch)}
               <span class="nm">${esc(ch.name)}</span>
-              <button class="slot-remove" data-remove-member title="빼기">✕</button>
+              <button class="slot-remove" data-remove-member title="빼기" aria-label="${esc(p.name)}에서 ${esc(ch.name)} 빼기">✕</button>
             </div>`;
           }
-          return `<div class="party-slot" data-slot data-party-id="${p.id}" data-idx="${i}">
+          return `<button type="button" class="party-slot" data-slot data-party-id="${p.id}" data-idx="${i}" aria-label="${esc(p.name)} ${i + 1}번 빈 슬롯에 캐릭터 추가">
             <span class="plus">＋</span><span>클릭 또는<br>드래그로 추가</span>
-          </div>`;
+          </button>`;
         }).join('')}
       </div>
     </div>`).join('');
@@ -485,6 +1041,8 @@ const partyList = document.getElementById('party-list');
 partyList.addEventListener('click', e => {
   const del = e.target.closest('[data-del-party]');
   if (del) {
+    const target = state.parties.find(p => p.id === del.dataset.delParty);
+    if (!target || !confirm(`"${target.name}" 파티를 삭제할까요?`)) return;
     state.parties = state.parties.filter(p => p.id !== del.dataset.delParty);
     save(); renderParties();
     return;
@@ -506,7 +1064,7 @@ partyList.addEventListener('change', e => {
   if (input) {
     const p = state.parties.find(x => x.id === input.dataset.partyName);
     p.name = input.value.trim() || p.name;
-    save(); renderContents();
+    save(); renderContents(); renderParties();
     return;
   }
   const tagSel = e.target.closest('[data-party-tag]');
@@ -584,12 +1142,17 @@ document.addEventListener('drop', e => {
     // 파티 내/파티 간 이동: 스왑 처리
     const pFrom = state.parties.find(x => x.id === fromParty);
     if (!pFrom) return;
+    if (pFrom.members[fromIdx] !== charId) return;
     if (fromParty === toParty) {
       pTo.members[fromIdx] = displaced ?? null;
       pTo.members[toIdx] = charId;
     } else {
       if (pTo.members.includes(charId)) { toast('이미 이 파티에 있는 캐릭터예요'); return; }
-      if (displaced && pFrom.members.includes(displaced) && displaced !== charId) { /* 스왑 검사 */ }
+      if (displaced && displaced !== charId &&
+          pFrom.members.some((id, i) => i !== fromIdx && id === displaced)) {
+        toast('교환하면 출발 파티에 같은 캐릭터가 중복돼요');
+        return;
+      }
       pFrom.members[fromIdx] = displaced ?? null;
       pTo.members[toIdx] = charId;
     }
@@ -655,11 +1218,15 @@ function renderRoster() {
     if (!list.length) return '';
     return `<div class="group-title">${g.title}</div>
       <div class="char-grid">${list.map(c => `
-        <div class="char-cell ${isOwned(c.id) ? 'owned' : ''}" data-toggle-own="${c.id}">
-          ${avatarHTML(c, { gray: !isOwned(c.id) })}
-          <span class="nm">${esc(c.name)}</span>
-          <span class="tag">${ELEMENTS[c.element]?.name ?? ''}${c.ver ? ' · ' + c.ver : ''}</span>
-          <span class="owned-check">✔ 보유</span>
+        <div class="char-cell-wrap">
+          <button type="button" class="char-cell ${isOwned(c.id) ? 'owned' : ''}" data-toggle-own="${c.id}" aria-pressed="${isOwned(c.id)}" aria-label="${esc(c.name)} 보유 상태 ${isOwned(c.id) ? '해제' : '등록'}">
+            ${avatarHTML(c, { gray: !isOwned(c.id) })}
+            <span class="nm">${esc(c.name)}</span>
+            <span class="tag">${ELEMENTS[c.element]?.name ?? ''}${c.ver ? ' · ' + c.ver : ''}</span>
+            <span class="owned-check">✔ 보유</span>
+          </button>
+          ${state.customChars.some(x => x.id === c.id)
+            ? `<button type="button" class="custom-char-delete" data-del-custom="${c.id}" aria-label="${esc(c.name)} 커스텀 캐릭터 삭제">삭제</button>` : ''}
         </div>`).join('')}
       </div>`;
   }).join('') || `<div class="empty-note">조건에 맞는 캐릭터가 없어요.</div>`;
@@ -671,10 +1238,26 @@ function renderRoster() {
 }
 
 document.getElementById('roster-grid').addEventListener('click', e => {
+  const customDelete = e.target.closest('[data-del-custom]');
+  if (customDelete) {
+    const id = customDelete.dataset.delCustom;
+    const character = state.customChars.find(c => c.id === id);
+    if (!character || !confirm(`"${character.name}" 커스텀 캐릭터와 연결된 일정·기록을 모두 삭제할까요?`)) return;
+    state.customChars = state.customChars.filter(c => c.id !== id);
+    delete state.owned[id];
+    delete state.matOverrides[id];
+    state.schedules = state.schedules.filter(s => s.charId !== id);
+    state.records = state.records.filter(r => r.charId !== id);
+    state.parties.forEach(p => { p.members = p.members.map(m => m === id ? null : m); });
+    save(); renderAll(); toast(`${character.name} 캐릭터를 삭제했어요`);
+    return;
+  }
   const cell = e.target.closest('[data-toggle-own]');
   if (!cell) return;
   const id = cell.dataset.toggleOwn;
   if (isOwned(id)) {
+    const inParty = state.parties.some(p => p.members.includes(id));
+    if (inParty && !confirm('보유를 해제하면 편성된 모든 파티에서도 빠집니다. 계속할까요?')) return;
     delete state.owned[id];
     // 파티에서도 제거
     state.parties.forEach(p => {
@@ -690,7 +1273,11 @@ document.getElementById('roster-filter').addEventListener('click', e => {
   const chip = e.target.closest('.chip');
   if (!chip) return;
   rosterFilter = chip.dataset.filter;
-  document.querySelectorAll('#roster-filter .chip').forEach(c => c.classList.toggle('active', c === chip));
+  document.querySelectorAll('#roster-filter .chip').forEach(c => {
+    const active = c === chip;
+    c.classList.toggle('active', active);
+    c.setAttribute('aria-pressed', String(active));
+  });
   renderRoster();
 });
 
@@ -751,7 +1338,7 @@ function bcRecordRow(r) {
   <div class="bc-rec">
     <span class="what">${label} · ${r.pulls}뽑</span>
     <span class="lk ${g.cls}"><span class="pct">상위 ${top.toFixed(1)}%</span></span>
-    <button class="record-del" data-del-record="${r.id}" title="삭제">✕</button>
+    <button class="record-del" data-del-record="${r.id}" title="삭제" aria-label="${esc(r.type === 'char' ? (charById(r.charId)?.name || '캐릭터') : (r.weaponName || '전무'))} 기록 삭제">✕</button>
   </div>`;
 }
 
@@ -830,11 +1417,11 @@ function renderBannerCards() {
         ${recs.length ? recs.map(bcRecordRow).join('') : '<div class="bc-empty">아직 기록이 없어요 — 아래에서 바로 추가!</div>'}
       </div>
       <div class="bc-add">
-        <select class="bc-target">${targetOpts}</select>
-        <select class="bc-copy"></select>
-        <input class="bc-pulls" type="number" min="1" max="${GACHA.CHAR_MAX}" placeholder="몇 뽑?">
+        <select class="bc-target" aria-label="${esc(label)} 기록 대상">${targetOpts}</select>
+        <select class="bc-copy" aria-label="${esc(label)} 획득 회차"></select>
+        <input class="bc-pulls" type="number" min="1" max="${GACHA.CHAR_MAX}" placeholder="몇 뽑?" aria-label="${esc(label)} 소모한 뽑기 수">
         <label class="bc-lost"><input type="checkbox" class="bc-lost-chk"> 픽뚫</label>
-        <button class="bc-save primary-btn">기록</button>
+        <button class="bc-save primary-btn" aria-label="${esc(label)} 뽑기 기록 저장">기록</button>
       </div>
       <div class="bc-luck">${luckFoot}</div>
     </div>`;
@@ -879,7 +1466,7 @@ bannerCardsEl.addEventListener('click', e => {
     lost: type === 'char' && card.querySelector('.bc-lost-chk').checked,
   };
   if (type === 'char') {
-    if (!isOwned(charId)) {
+    if (!rec.lost && !isOwned(charId)) {
       state.owned[charId] = true;
       renderRoster(); renderRosterStrip();
     }
@@ -913,12 +1500,20 @@ function renderRecords() {
     stats.innerHTML = `<div class="empty-note" style="grid-column:1/-1">아래 픽업 카드에서 첫 뽑기 결과를 기록하면 통계가 표시돼요.</div>`;
   } else {
     const totalPulls = recs.reduce((a, r) => a + r.pulls, 0);
+    const freePulls = BANNERS.reduce((sum, banner) => {
+      if (!banner.freePulls) return sum;
+      const seasons = new Set(bannerSeasonNames(banner));
+      const used = recs.filter(r => r.type === 'char' && seasons.has(r.season))
+        .reduce((n, r) => n + r.pulls, 0);
+      return sum + Math.min(banner.freePulls, used);
+    }, 0);
+    const paidPulls = Math.max(0, totalPulls - freePulls);
     const avgLuck = recs.reduce((a, r) => a + recordLuck(r), 0) / recs.length;
     const grade = luckGrade(avgLuck);
     const charRecs = recs.filter(r => r.type === 'char');
     const weaponRecs = recs.filter(r => r.type === 'weapon');
     stats.innerHTML = `
-      <div class="stat-tile"><div class="lbl">총 소모 뽑기</div><div class="val">${totalPulls.toLocaleString()}뽑</div><div class="sub">약 ${(totalPulls * 160).toLocaleString()} 성운의 조각</div></div>
+      <div class="stat-tile"><div class="lbl">총 소모 뽑기</div><div class="val">${totalPulls.toLocaleString()}뽑</div><div class="sub">약 ${(paidPulls * ASTRITE_PER_PULL).toLocaleString()} 아스트라이트${freePulls ? ` · 무료 ${freePulls}뽑 제외` : ''}</div></div>
       <div class="stat-tile"><div class="lbl">획득 기록</div><div class="val">${recs.length}건</div><div class="sub">캐릭터 ${charRecs.length} · 전무 ${weaponRecs.length}</div></div>
       <div class="stat-tile"><div class="lbl">평균 운 (상위 %)</div><div class="val">${avgLuck.toFixed(1)}%</div><div class="sub"><span class="${grade.cls}"><span class="grade">${grade.label}</span></span></div></div>
       <div class="stat-tile"><div class="lbl">픽뚫 횟수</div><div class="val">${charRecs.filter(r => r.lost).length}회</div><div class="sub">캐릭터 기록 기준</div></div>`;
@@ -951,7 +1546,7 @@ function renderRecords() {
         <span class="pct">상위 ${top.toFixed(1)}%</span>
         <span class="grade">${g.label}</span>
       </div>
-      <button class="record-del" data-del-record="${r.id}" title="기록 삭제">✕</button>
+      <button class="record-del" data-del-record="${r.id}" title="기록 삭제" aria-label="${esc(r.type === 'char' ? (ch?.name || '캐릭터') : (r.weaponName || '전무'))} 기록 삭제">✕</button>
     </div>`;
   }).join('');
 }
@@ -960,8 +1555,12 @@ function renderRecords() {
 document.addEventListener('click', e => {
   const del = e.target.closest('[data-del-record]');
   if (!del) return;
+  const record = state.records.find(r => r.id === del.dataset.delRecord);
+  if (!record || !confirm('이 뽑기 기록을 삭제할까요? 자동 반영된 천장·일정도 가능한 범위에서 복원됩니다.')) return;
+  rebaseRecordEffectsForDeletion(record);
+  const extra = revertRecordSideEffects(record);
   state.records = state.records.filter(r => r.id !== del.dataset.delRecord);
-  save(); renderRecords(); toast('기록을 삭제했어요');
+  save(); renderRecords(); renderSchedules(); renderPityCalc(); toast(`기록을 삭제했어요${extra}`);
 });
 
 /* ----- 기록 추가 모달 ----- */
@@ -975,7 +1574,7 @@ function refreshRecordFormOptions() {
   const scheduleOpts = state.schedules.map(s => {
     const c = charById(s.charId);
     const label = s.name || `${c ? c.name : '?'} 픽업`;
-    return `<option value="${esc(label)}">내 일정 · ${esc(label)}</option>`;
+    return `<option value="schedule:${s.id}">내 일정 · ${esc(label)}</option>`;
   });
   bannerSel.innerHTML =
     scheduleOpts.join('') + opts.join('') +
@@ -999,8 +1598,15 @@ function refreshCopyOptions() {
 
 document.getElementById('rec-type').addEventListener('change', refreshCopyOptions);
 
+function syncRecordScheduleCharacter(value = document.getElementById('rec-banner').value) {
+  document.getElementById('rec-banner-custom-row').hidden = value !== '__custom__';
+  if (!value.startsWith('schedule:')) return;
+  const schedule = state.schedules.find(s => s.id === value.slice('schedule:'.length));
+  if (schedule) document.getElementById('rec-char').value = schedule.charId;
+}
+
 document.getElementById('rec-banner').addEventListener('change', e => {
-  document.getElementById('rec-banner-custom-row').hidden = e.target.value !== '__custom__';
+  syncRecordScheduleCharacter(e.target.value);
 });
 
 document.getElementById('add-record-btn').addEventListener('click', () => {
@@ -1008,7 +1614,7 @@ document.getElementById('add-record-btn').addEventListener('click', () => {
   refreshCopyOptions();
   document.getElementById('record-form').reset();
   refreshCopyOptions();
-  document.getElementById('rec-banner-custom-row').hidden = true;
+  syncRecordScheduleCharacter();
   document.getElementById('record-modal').showModal();
 });
 
@@ -1016,6 +1622,14 @@ document.getElementById('record-form').addEventListener('submit', e => {
   e.preventDefault();
   const type = document.getElementById('rec-type').value;
   let season = document.getElementById('rec-banner').value;
+  let scheduleId = null;
+  let linkedSchedule = null;
+  if (season.startsWith('schedule:')) {
+    scheduleId = season.slice('schedule:'.length);
+    linkedSchedule = state.schedules.find(s => s.id === scheduleId);
+    if (!linkedSchedule) { toast('연결된 일정을 찾을 수 없어요'); return; }
+    season = linkedSchedule.name || `${charById(linkedSchedule.charId)?.name || '픽업'} 일정`;
+  }
   if (season === '__custom__') {
     season = document.getElementById('rec-banner-custom').value.trim();
     if (!season) { toast('시즌 이름을 입력해주세요'); return; }
@@ -1034,8 +1648,9 @@ document.getElementById('record-form').addEventListener('submit', e => {
     pulls,
     lost: type === 'char' && document.getElementById('rec-lost').checked,
   };
+  if (scheduleId) rec.scheduleId = scheduleId;
   if (type === 'char') {
-    rec.charId = document.getElementById('rec-char').value;
+    rec.charId = linkedSchedule?.charId || document.getElementById('rec-char').value;
     // 기록한 캐릭터는 자동으로 보유 처리
     if (!isOwned(rec.charId)) {
       state.owned[rec.charId] = true;
@@ -1043,6 +1658,7 @@ document.getElementById('record-form').addEventListener('submit', e => {
     }
   } else {
     rec.weaponName = document.getElementById('rec-weapon-name').value.trim() || '픽업 전무';
+    if (linkedSchedule) rec.charId = linkedSchedule.charId;
   }
   state.records.push(rec);
   const extra = applyRecordSideEffects(rec);
@@ -1091,12 +1707,12 @@ function renderContents() {
     return `
     <div class="content-card">
       <div class="content-head">
-        <span class="ct-icon">${c.icon || '📌'}</span>
+        <span class="ct-icon">${esc(c.icon || '📌')}</span>
         <div class="t">
           <b>${esc(c.name)}</b>
-          <small>${c.period}일 주기 · 이번 주기 ${fmtShort(new Date(new Date(info.next).getTime() - c.period * 86400000))} ~ ${fmtShort(new Date(info.next))}</small>
+          <small>${cleanInt(c.period, 1, 999, 1)}일 주기 · 이번 주기 ${fmtShort(new Date(new Date(info.next).getTime() - cleanInt(c.period, 1, 999, 1) * 86400000))} ~ ${fmtShort(new Date(info.next))}</small>
         </div>
-        <button class="icon-btn" data-edit-content="${c.id}">수정</button>
+        <button class="icon-btn" data-edit-content="${c.id}" aria-label="${esc(c.name)} 정보 수정">수정</button>
       </div>
       <div class="reset-badge">
         <div class="dd ${info.left <= 3 ? 'soon-reset' : ''}">${info.upcoming ? '시작까지' : '리셋까지'} D-${info.left}</div>
@@ -1154,7 +1770,7 @@ document.getElementById('content-form').addEventListener('submit', e => {
   if (!c) return;
   c.name = document.getElementById('ct-name').value.trim() || c.name;
   c.start = document.getElementById('ct-start').value;
-  c.period = Math.max(1, +document.getElementById('ct-period').value || c.period);
+  c.period = cleanInt(document.getElementById('ct-period').value, 1, 999, c.period);
   c.rules = document.getElementById('ct-rules').value.trim();
   c.buff = document.getElementById('ct-buff').value.trim();
   c.stages = document.getElementById('ct-stages').value.split('\n')
@@ -1190,7 +1806,7 @@ function charMats(c) {
 function renderMatStrip() {
   const strip = document.getElementById('mat-char-strip');
   strip.innerHTML = allChars().map(c => `
-    <button class="mat-char ${selectedMatChar === c.id ? 'selected' : ''}" data-mat-char="${c.id}">
+    <button class="mat-char ${selectedMatChar === c.id ? 'selected' : ''}" data-mat-char="${c.id}" aria-pressed="${selectedMatChar === c.id}">
       ${avatarHTML(c, { small: true })}
       <span class="nm">${esc(c.name)}</span>
     </button>`).join('');
@@ -1376,25 +1992,25 @@ function renderChart() {
     <line id="hover-line" y1="${T}" y2="${T + ph}" stroke="#52514e" stroke-width="1" style="display:none"/>
   `;
 
-  // 호버 툴팁
+  // 포인터(마우스·터치)와 키보드 툴팁
   const tip = document.getElementById('chart-tip');
+  const status = document.getElementById('chart-status');
   const dotC = svg.querySelector('#hover-dot-c');
   const dotW = svg.querySelector('#hover-dot-w');
   const hline = svg.querySelector('#hover-line');
+  let activeN = GACHA.HARD;
 
-  svg.addEventListener('mousemove', e => {
-    const rect = svg.getBoundingClientRect();
-    const relX = (e.clientX - rect.left) / rect.width * W;
-    const n = Math.round((relX - L) / pw * maxX);
-    if (n < 1 || n > maxX) { hideTip(); return; }
-    const cp = charCdf[Math.min(n, GACHA.CHAR_MAX)];
+  function showTipAt(n, clientX, clientY, announce = false) {
+    n = Math.max(1, Math.min(maxX, Math.round(n)));
+    activeN = n;
+    const cp = charCdf[n];
+    const wp = n <= GACHA.WEAPON_MAX ? wpCdf[n] : null;
     hline.setAttribute('x1', x(n)); hline.setAttribute('x2', x(n));
     hline.style.display = '';
     dotC.setAttribute('cx', x(n)); dotC.setAttribute('cy', y(cp));
     dotC.style.display = '';
     let wpText = '';
-    if (n <= GACHA.WEAPON_MAX) {
-      const wp = wpCdf[n];
+    if (wp !== null) {
       dotW.setAttribute('cx', x(n)); dotW.setAttribute('cy', y(wp));
       dotW.style.display = '';
       wpText = `<br>전무: <b>${(wp * 100).toFixed(1)}%</b>`;
@@ -1403,9 +2019,24 @@ function renderChart() {
     }
     tip.innerHTML = `<b>${n}뽑</b> 이내 획득 확률<br>픽업 캐릭터: <b>${(cp * 100).toFixed(1)}%</b>${wpText}`;
     tip.style.display = 'block';
-    tip.style.left = Math.min(window.innerWidth - 180, e.clientX + 14) + 'px';
-    tip.style.top = (e.clientY + 14) + 'px';
-  });
+    const rect = svg.getBoundingClientRect();
+    const px = Number.isFinite(clientX) ? clientX : rect.left + rect.width / 2;
+    const py = Number.isFinite(clientY) ? clientY : rect.top + rect.height / 2;
+    tip.style.left = Math.max(8, Math.min(window.innerWidth - 180, px + 14)) + 'px';
+    tip.style.top = Math.max(8, Math.min(window.innerHeight - 90, py + 14)) + 'px';
+    if (announce) {
+      status.textContent = `${n}뽑 이내 픽업 캐릭터 획득 확률 ${(cp * 100).toFixed(1)}%` +
+        (wp !== null ? `, 전무 획득 확률 ${(wp * 100).toFixed(1)}%` : '');
+    }
+  }
+
+  function showTipFromPointer(e, announce = false) {
+    const rect = svg.getBoundingClientRect();
+    const relX = (e.clientX - rect.left) / rect.width * W;
+    const n = Math.round((relX - L) / pw * maxX);
+    if (n < 1 || n > maxX) { hideTip(); return; }
+    showTipAt(n, e.clientX, e.clientY, announce);
+  }
 
   function hideTip() {
     tip.style.display = 'none';
@@ -1413,7 +2044,25 @@ function renderChart() {
     dotW.style.display = 'none';
     hline.style.display = 'none';
   }
-  svg.addEventListener('mouseleave', hideTip);
+  svg.addEventListener('pointermove', e => showTipFromPointer(e));
+  svg.addEventListener('pointerdown', e => showTipFromPointer(e, true));
+  svg.addEventListener('pointerleave', () => {
+    if (document.activeElement !== svg) hideTip();
+  });
+  svg.addEventListener('focus', () => showTipAt(activeN, undefined, undefined, true));
+  svg.addEventListener('blur', hideTip);
+  svg.addEventListener('keydown', e => {
+    const changes = {
+      ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1,
+      PageDown: -10, PageUp: 10,
+    };
+    if (e.key === 'Home') activeN = 1;
+    else if (e.key === 'End') activeN = maxX;
+    else if (hasOwn(changes, e.key)) activeN += changes[e.key];
+    else return;
+    e.preventDefault();
+    showTipAt(activeN, undefined, undefined, true);
+  });
 
   document.getElementById('exp-char').textContent = Math.round(expectedPulls(CHAR_PMF));
   document.getElementById('exp-weapon').textContent = Math.round(expectedPulls(WEAPON_PMF));
@@ -1440,16 +2089,30 @@ document.getElementById('import-btn').addEventListener('click', () => {
 document.getElementById('import-file').addEventListener('change', e => {
   const file = e.target.files[0];
   if (!file) return;
+  if (file.size > 5 * 1024 * 1024) {
+    toast('백업 파일은 5MB 이하여야 해요');
+    e.target.value = '';
+    return;
+  }
   const reader = new FileReader();
   reader.onload = () => {
     try {
       const data = JSON.parse(reader.result);
-      if (!data || typeof data !== 'object' || !('parties' in data)) throw new Error('bad');
-      state = Object.assign(defaultState(), data);
-      save(); renderAll();
+      const nextState = normalizeStateData(data, { strict: true });
+      if (!confirm('현재 데이터를 백업 내용으로 교체할까요?')) return;
+      const previousState = state;
+      state = nextState;
+      try {
+        renderAll();
+        save();
+      } catch (error) {
+        state = previousState;
+        renderAll();
+        throw error;
+      }
       toast('백업을 불러왔어요');
-    } catch {
-      toast('올바른 백업 파일이 아니에요');
+    } catch (error) {
+      toast(`백업을 불러오지 못했어요: ${cleanString(error?.message, 80) || '형식 오류'}`);
     }
   };
   reader.readAsText(file);
@@ -1513,5 +2176,6 @@ function renderAll() {
   renderPityCalc();
 }
 
+switchTab('planner', { scroll: false });
 renderAll();
 renderChart();

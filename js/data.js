@@ -122,11 +122,11 @@ const BANNERS = [
   { ver: '3.2', phase: '후반', start: '2026-04-09', end: '2026-04-30', pickup: [],              rerun: ['lynae', 'zani', 'phoebe'], note: '신규 없음' },
   { ver: '3.3', phase: '전반', start: '2026-04-30', end: '2026-05-21', pickup: ['hiyuki'],      rerun: ['mornye', 'iuno'], note: '2주년' },
   { ver: '3.3', phase: '후반', start: '2026-05-21', end: '2026-06-08', pickup: ['denia'],       rerun: ['chisa', 'phrolova'], note: '종료일 소스별 상이 (06-07~06-11)' },
-  { ver: '3.4', phase: '콜라보', start: '2026-06-08', end: '2026-07-10', pickup: ['lucy'],      rerun: [], note: '사이버펑크: 엣지러너 콜라보 · 별도 슬롯/천장 · 레베카 무료 배포' },
+  { ver: '3.4', phase: '콜라보', start: '2026-06-08', end: '2026-07-10', pickup: ['lucy'],      rerun: [], charPityGroup: 'char-collab-34', weaponPityGroup: 'weapon-collab-34', note: '사이버펑크: 엣지러너 콜라보 · 별도 슬롯/천장 · 레베카 무료 배포' },
   { ver: '3.4', phase: '일반',  start: '2026-06-13', end: '2026-07-10', pickup: ['lucilla'],    rerun: ['cartethyia'], note: '카르티시아 복각은 06-18부터' },
   { ver: '3.5', phase: '전반', start: '2026-07-10', end: '2026-07-30', pickup: ['xuanling'],    rerun: ['lynae', 'luukherssen'], note: '3.5는 KR 공식 공지 기준 07-10 시작(약 41일) · 최초의 기존 4성(양양) 5성 승격판' },
   { ver: '3.5', phase: '후반', start: '2026-07-30', end: '2026-08-19', pickup: ['suisui'],      rerun: ['aemeath'], note: '공식 일정 공개됨' },
-  { ver: '3.5', phase: '선택형', start: '2026-07-10', end: '2026-08-19', pickup: [],            rerun: ['jiyan', 'yinlin', 'jinhsi', 'changli', 'zhezhi', 'xiangliyao'], note: '택1 선택형 복각 배너 · 변경 가능 · 첫 10회 무료 · 천장 별도' },
+  { ver: '3.5', phase: '선택형', start: '2026-07-10', end: '2026-08-19', pickup: [],            rerun: ['jiyan', 'yinlin', 'jinhsi', 'changli', 'zhezhi', 'xiangliyao'], charPityGroup: 'char-select-35', weaponPityGroup: 'weapon-select-35', freePulls: 10, note: '택1 선택형 복각 배너 · 변경 가능 · 첫 10회 무료 · 천장 별도' },
   { ver: '3.6', phase: '유출', start: null, end: null, pickup: [], rerun: [], leaked: true,
     leakNames: ['청초', '경연'], note: '이름·외형은 2026-06-15 공식 공개. 실장 버전·등급·속성·무기는 미발표 (유출·추정 단계)' },
 ];
