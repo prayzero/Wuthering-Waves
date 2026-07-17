@@ -496,17 +496,22 @@ const CONTENT_DEFAULTS = [
 ];
 
 /* ---- 재화 ----
-   1뽑 = 아스트라이트 160. 달빛살(Lunite)은 1:1로 아스트라이트 전환.
-   팩 가격은 대략적인 KR 스토어 기준 (최고가 팩 11만원은 사용자 확인값). */
+   1뽑 = 별의 소리(Astrite) 160. 달빛(Lunite)은 1:1로 별의 소리 전환.
+   쿠로게임즈 상품 정보 및 PlayStation 한국 스토어 기준 (2026-07-17 확인). */
 const ASTRITE_PER_PULL = 160;
+const LUNITE_PRICE_CHECKED = '2026-07-17';
+const LUNITE_PLATFORMS = {
+  kuro: { label: '쿠로 공식 공시 (KR)', priceKey: 'price' },
+  ps5: { label: 'PlayStation 5 (KR)', priceKey: 'psPrice' },
+};
 const LUNITE_PACKS = [
-  // 쿠로게임즈 한국 공식 공시 가격 (2026-07-11, PS5는 별도: 6,480 = 130,900원)
-  { price: 1200,   base: 60,   bonus: 8 },
-  { price: 5900,   base: 300,  bonus: 30 },
-  { price: 19000,  base: 980,  bonus: 110 },
-  { price: 37000,  base: 1980, bonus: 260 },
-  { price: 65000,  base: 3280, bonus: 600 },
-  { price: 119000, base: 6480, bonus: 1600 },
+  // price: 쿠로 공식 한국 공시, psPrice: PlayStation 한국 스토어
+  { price: 1200,   psPrice: 1300,   base: 60,   bonus: 0 },
+  { price: 5900,   psPrice: 6500,   base: 300,  bonus: 30 },
+  { price: 19000,  psPrice: 20900,  base: 980,  bonus: 110 },
+  { price: 37000,  psPrice: 40700,  base: 1980, bonus: 260 },
+  { price: 65000,  psPrice: 71500,  base: 3280, bonus: 600 },
+  { price: 119000, psPrice: 130900, base: 6480, bonus: 1600 },
 ];
 
 const COPY_LABELS = ['명함', '1돌', '2돌', '3돌', '4돌', '5돌', '6돌'];
