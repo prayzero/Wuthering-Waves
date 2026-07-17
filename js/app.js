@@ -3,13 +3,15 @@
    ================================================================ */
 
 const STORE_KEY = 'wuwa-planner-v1';
-const STATE_SCHEMA_VERSION = 2;
+const STATE_SCHEMA_VERSION = 3;
 const DEFAULT_CHAR_PITY_GROUP = 'char-event';
 const DEFAULT_WEAPON_PITY_GROUP = 'weapon-event';
 const SAFE_ID_RE = /^[A-Za-z0-9_-]{1,80}$/;
 const UNSAFE_ID_KEYS = new Set(Object.getOwnPropertyNames(Object.prototype));
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const SCHEDULE_GOALS = new Set(['명함', '1돌', '2돌', '3돌', '4돌', '5돌', '6돌', '명함+전무', '전무만']);
+const LUNITE_PACK_BASES = new Set(LUNITE_PACKS.map(pack => pack.base));
+const LUNITE_PLATFORM_IDS = new Set(Object.keys(LUNITE_PLATFORMS));
 
 const defaultPity = () => ({
   selectedCharGroup: DEFAULT_CHAR_PITY_GROUP,
@@ -28,7 +30,11 @@ const defaultState = () => ({
   contents: JSON.parse(JSON.stringify(CONTENT_DEFAULTS)), // 탑/해역/매트릭스 로테이션
   matOverrides: Object.create(null), // charId -> {forge, drop, weekly}
   pity: defaultPity(),
-  calc: { astrite: 0, lunite: 0, charTickets: 0, weaponTickets: 0 },
+  calc: {
+    astrite: 0, lunite: 0, charTickets: 0, weaponTickets: 0,
+    purchasePlatform: 'kuro', purchasePack: 6480, purchaseFirst: false, purchases: [],
+    legacyLuniteReview: false,
+  },
 });
 
 let state = loadState();
@@ -58,6 +64,67 @@ function cleanId(value) {
 function cleanInt(value, min, max, fallback = min) {
   const n = Number(value);
   return Number.isFinite(n) ? Math.min(max, Math.max(min, Math.trunc(n))) : fallback;
+}
+
+function lunitePack(base) {
+  return LUNITE_PACKS.find(pack => pack.base === Number(base)) || null;
+}
+
+function lunitePurchasePrice(purchase) {
+  const pack = lunitePack(purchase?.base);
+  const platform = LUNITE_PLATFORMS[purchase?.platform] || LUNITE_PLATFORMS.kuro;
+  return pack ? pack[platform.priceKey] : 0;
+}
+
+function lunitePurchaseAmount(purchase) {
+  const pack = lunitePack(purchase?.base);
+  return pack ? pack.base + (purchase?.first === true ? pack.base : pack.bonus) : 0;
+}
+
+function purchasePlanTotals(calc = state.calc) {
+  return (Array.isArray(calc?.purchases) ? calc.purchases : []).reduce((totals, purchase) => ({
+    won: totals.won + lunitePurchasePrice(purchase),
+    lunite: totals.lunite + lunitePurchaseAmount(purchase),
+  }), { won: 0, lunite: 0 });
+}
+
+function normalizePurchases(value, { strict = false } = {}) {
+  const firstUsed = new Set();
+  return (Array.isArray(value) ? value : []).slice(0, 100).flatMap(item => {
+    if (!isPlainObject(item)) {
+      if (strict) throw new Error('충전 계획 항목이 올바르지 않습니다.');
+      return [];
+    }
+    const base = cleanInt(item.base, 0, 100000, 0);
+    const platform = LUNITE_PLATFORM_IDS.has(item.platform) ? item.platform : 'kuro';
+    if (!LUNITE_PACK_BASES.has(base) || (strict && !LUNITE_PLATFORM_IDS.has(item.platform))) {
+      if (strict) throw new Error('충전 계획의 팩 또는 플랫폼이 올바르지 않습니다.');
+      return [];
+    }
+    let first = item.first === true;
+    if (first && firstUsed.has(base)) {
+      if (strict) throw new Error('같은 팩의 첫 충전 보너스는 한 번만 적용할 수 있습니다.');
+      first = false;
+    }
+    if (first) firstUsed.add(base);
+    return [{ base, platform, first }];
+  });
+}
+
+function addSelectedLunitePurchase(calc = state.calc) {
+  if (!Array.isArray(calc.purchases)) calc.purchases = [];
+  if (calc.purchases.length >= 100) return { ok: false, reason: 'limit' };
+  const base = LUNITE_PACK_BASES.has(Number(calc.purchasePack)) ? Number(calc.purchasePack) : 6480;
+  const platform = LUNITE_PLATFORM_IDS.has(calc.purchasePlatform) ? calc.purchasePlatform : 'kuro';
+  const firstUsed = calc.purchases.some(purchase => purchase.first && purchase.base === base);
+  if (calc.purchaseFirst === true && firstUsed) {
+    calc.purchaseFirst = false;
+    return { ok: false, reason: 'first-used' };
+  }
+  const purchase = { base, platform, first: calc.purchaseFirst === true };
+  calc.purchases.push(purchase);
+  calc.purchaseFirst = false;
+  return { ok: true, purchase };
 }
 
 function validDate(value) {
@@ -137,8 +204,12 @@ function assertImportShape(data) {
   ['owned', 'matOverrides', 'pity', 'calc'].forEach(key => {
     if (hasOwn(data, key) && !isPlainObject(data[key])) throw new Error(`${key} 항목이 올바르지 않습니다.`);
   });
+  if (hasOwn(data.calc || {}, 'purchases') &&
+      (!Array.isArray(data.calc.purchases) || data.calc.purchases.some(item => !isPlainObject(item)))) {
+    throw new Error('충전 계획은 배열이어야 합니다.');
+  }
   if ((data.customChars?.length || 0) > 300 || (data.schedules?.length || 0) > 500 ||
-      data.parties.length > 100 || (data.records?.length || 0) > 5000) {
+      data.parties.length > 100 || (data.records?.length || 0) > 5000 || (data.calc?.purchases?.length || 0) > 100) {
     throw new Error('백업 데이터가 허용 범위를 초과했습니다.');
   }
   (data.contents || []).forEach(item => {
@@ -305,11 +376,24 @@ function normalizeStateData(input, { strict = false } = {}) {
   }
 
   result.pity = normalizePity(raw.pity);
+  const purchases = normalizePurchases(raw.calc?.purchases, { strict });
+  const purchasePack = LUNITE_PACK_BASES.has(Number(raw.calc?.purchasePack))
+    ? Number(raw.calc.purchasePack) : 6480;
+  const purchaseFirstUsed = purchases.some(purchase => purchase.first && purchase.base === purchasePack);
+  const lunite = cleanInt(raw.calc?.lunite, 0, 1000000000, 0);
+  const sourceSchemaVersion = cleanInt(raw.schemaVersion, 0, STATE_SCHEMA_VERSION, 0);
   result.calc = {
     astrite: cleanInt(raw.calc?.astrite, 0, 1000000000, 0),
-    lunite: cleanInt(raw.calc?.lunite, 0, 1000000000, 0),
+    lunite,
     charTickets: cleanInt(raw.calc?.charTickets, 0, 1000000, 0),
     weaponTickets: cleanInt(raw.calc?.weaponTickets, 0, 1000000, 0),
+    purchasePlatform: LUNITE_PLATFORM_IDS.has(raw.calc?.purchasePlatform) ? raw.calc.purchasePlatform : 'kuro',
+    purchasePack,
+    purchaseFirst: raw.calc?.purchaseFirst === true && !purchaseFirstUsed,
+    purchases,
+    // v2의 빠른 팩 버튼은 구매 계획과 실제 보유 달빛을 구분하지 않았습니다.
+    // 출처를 추측해 값을 버리지 않고, 사용자가 한 번 확인하도록 표시합니다.
+    legacyLuniteReview: raw.calc?.legacyLuniteReview === true || (sourceSchemaVersion < 3 && lunite > 0),
   };
 
   const recordIds = new Set();
@@ -458,11 +542,19 @@ function goalIncludesType(goal, type) {
 
 function calculatorPullsForSchedule(schedule, calc = state.calc) {
   const plan = scheduleGoalPlan(schedule.goal);
-  const pool = Math.max(0, +calc.astrite || 0) + Math.max(0, +calc.lunite || 0);
+  const planned = purchasePlanTotals(calc);
+  const pool = Math.max(0, +calc.astrite || 0) + Math.max(0, +calc.lunite || 0) + planned.lunite;
   const poolPulls = Math.floor(pool / ASTRITE_PER_PULL);
   return poolPulls +
     (plan.char ? Math.max(0, +calc.charTickets || 0) : 0) +
     (plan.weapon ? Math.max(0, +calc.weaponTickets || 0) : 0);
+}
+
+function pullBreakdown(amount) {
+  const safe = Math.max(0, Number(amount) || 0);
+  const pulls = Math.floor(safe / ASTRITE_PER_PULL);
+  const remain = safe % ASTRITE_PER_PULL;
+  return `${pulls}뽑${remain ? ` + ${remain.toLocaleString()} 잔여` : ''}`;
 }
 
 function bannerPityGroup(banner, type) {
@@ -686,7 +778,44 @@ document.getElementById('schedule-form').addEventListener('submit', e => {
    1.5 천장 현황 & 재화 계산기
    ================================================================ */
 
-function renderPityCalc() {
+function calculatorResultMarkup(calc = state.calc) {
+  const purchaseTotals = purchasePlanTotals(calc);
+  const pool = Math.max(0, +calc.astrite || 0) + Math.max(0, +calc.lunite || 0) + purchaseTotals.lunite;
+  const poolPulls = Math.floor(pool / ASTRITE_PER_PULL);
+  const poolRemain = pool % ASTRITE_PER_PULL;
+  const charTickets = Math.max(0, +calc.charTickets || 0);
+  const weaponTickets = Math.max(0, +calc.weaponTickets || 0);
+  return `
+    <div class="calc-total">공용 재화 <b>${pool.toLocaleString()}</b> = <b>${poolPulls}뽑</b> <small>(잔여 ${poolRemain.toLocaleString()})</small></div>
+    <div>캐릭터 배너: <b>${poolPulls + charTickets}뽑</b> <small>(공용 ${poolPulls} + 캐릭터권 ${charTickets})</small></div>
+    <div>전무 배너: <b>${poolPulls + weaponTickets}뽑</b> <small>(공용 ${poolPulls} + 전무권 ${weaponTickets})</small></div>
+    <p class="calc-warning">공용 재화 ${poolPulls}뽑은 두 배너에 동시에 사용할 수 없습니다.</p>`;
+}
+
+function updateCalculatorResult() {
+  const result = document.getElementById('calc-result');
+  if (result) result.innerHTML = calculatorResultMarkup();
+}
+
+const CALC_VALUE_INPUTS = {
+  'calc-astrite': ['astrite', 1000000000],
+  'calc-lunite': ['lunite', 1000000000],
+  'calc-chart': ['charTickets', 1000000],
+  'calc-weapont': ['weaponTickets', 1000000],
+};
+
+function updateCalcValueInput(target, { commit = false } = {}) {
+  const config = hasOwn(CALC_VALUE_INPUTS, target?.id) ? CALC_VALUE_INPUTS[target.id] : null;
+  if (!config) return false;
+  const [field, max] = config;
+  const value = cleanInt(target.value, 0, max, 0);
+  state.calc[field] = value;
+  if (commit) target.value = String(value);
+  save(); updateCalculatorResult();
+  return true;
+}
+
+function renderPityCalc(focusId = '') {
   const wrap = document.getElementById('pity-calc');
   const p = state.pity;
   const c = state.calc;
@@ -700,19 +829,37 @@ function renderPityCalc() {
   const charLeftPickup = charGroup.guaranteed ? charLeft5 : charLeft5 + GACHA.HARD;
   const weaponLeft = GACHA.WEAPON_MAX - Math.min(weaponGroup.count, GACHA.WEAPON_MAX - 1);
 
-  const pool = Math.max(0, +c.astrite || 0) + Math.max(0, +c.lunite || 0);
-  const poolPulls = Math.floor(pool / ASTRITE_PER_PULL);
-  const poolRemain = pool % ASTRITE_PER_PULL;
-  const charPulls = poolPulls + Math.max(0, +c.charTickets || 0);
-  const weaponPulls = poolPulls + Math.max(0, +c.weaponTickets || 0);
+  const purchaseTotals = purchasePlanTotals(c);
 
   const schedOpts = state.schedules.map(s => {
     const ch = charById(s.charId);
     return `<option value="${s.id}">${esc(s.name || (ch ? ch.name + ' 픽업' : '일정'))}</option>`;
   }).join('');
 
-  const topPack = LUNITE_PACKS[LUNITE_PACKS.length - 1];
-  const topTotal = topPack.base + topPack.bonus;
+  const selectedPack = lunitePack(c.purchasePack) || LUNITE_PACKS[LUNITE_PACKS.length - 1];
+  const selectedPlatform = LUNITE_PLATFORMS[c.purchasePlatform] || LUNITE_PLATFORMS.kuro;
+  const selectedPrice = selectedPack[selectedPlatform.priceKey];
+  const selectedFirstUsed = c.purchases.some(purchase => purchase.first && purchase.base === selectedPack.base);
+  const selectedFirst = c.purchaseFirst === true && !selectedFirstUsed;
+  const selectedAmount = selectedPack.base + (selectedFirst ? selectedPack.base : selectedPack.bonus);
+  const platformOptions = Object.entries(LUNITE_PLATFORMS).map(([id, platform]) =>
+    `<option value="${id}" ${id === c.purchasePlatform ? 'selected' : ''}>${esc(platform.label)}</option>`
+  ).join('');
+  const packOptions = LUNITE_PACKS.map(pack => {
+    const price = pack[selectedPlatform.priceKey];
+    return `<option value="${pack.base}" ${pack.base === selectedPack.base ? 'selected' : ''}>${pack.base.toLocaleString()} 달빛 · ₩${price.toLocaleString()}</option>`;
+  }).join('');
+  const purchaseRows = c.purchases.map((purchase, index) => {
+    const pack = lunitePack(purchase.base);
+    const platform = LUNITE_PLATFORMS[purchase.platform] || LUNITE_PLATFORMS.kuro;
+    const price = lunitePurchasePrice(purchase);
+    const amount = lunitePurchaseAmount(purchase);
+    return `<li>
+      <span>${esc(platform.label)} · ${pack.base.toLocaleString()} 팩${purchase.first ? ' · 첫 충전' : ''}</span>
+      <b>₩${price.toLocaleString()} → +${amount.toLocaleString()} 달빛</b>
+      <button type="button" class="link-btn danger-text" id="calc-remove-purchase-${index}" data-remove-purchase="${index}" aria-label="${index + 1}번째 충전 계획 삭제">삭제</button>
+    </li>`;
+  }).join('');
   const groupOptions = (type, selected) => pityGroupIds(type).map(id =>
     `<option value="${id}" ${id === selected ? 'selected' : ''}>${esc(pityGroupLabel(type, id))}</option>`
   ).join('');
@@ -763,44 +910,85 @@ function renderPityCalc() {
   </div>
 
   <div class="card calc-card">
-    <h3>💎 재화 계산기</h3>
-    <div class="calc-rows">
-      <label>아스트라이트 <input type="number" id="calc-astrite" min="0" value="${c.astrite}"></label>
-      <label>달빛살 (루나이트) <input type="number" id="calc-lunite" min="0" value="${c.lunite}"></label>
-      <label>한정 캐릭터 뽑기권 <input type="number" id="calc-chart" min="0" value="${c.charTickets}"></label>
-      <label>전무 뽑기권 <input type="number" id="calc-weapont" min="0" value="${c.weaponTickets}"></label>
-    </div>
-    <div class="calc-quick">
-      <button class="ghost-btn" data-addlunite="${topTotal}">+₩${topPack.price.toLocaleString()} 팩 (${topTotal.toLocaleString()})</button>
-      <button class="ghost-btn" data-addlunite="${topPack.base * 2}">+첫구매 2배 (${(topPack.base * 2).toLocaleString()})</button>
-    </div>
-    <div class="calc-result">
-      <div>캐릭터 뽑기 가능: <b>${charPulls}뽑</b> <small>(석 ${poolPulls}뽑 + 뽑기권 ${Math.max(0, +c.charTickets || 0)} · 잔여 ${poolRemain}석)</small></div>
-      <div>전무 뽑기 가능: <b>${weaponPulls}뽑</b> <small>(석은 캐릭터와 공용)</small></div>
-    </div>
+    <h3>💎 재화·충전 계산기</h3>
+    <fieldset class="calc-section">
+      <legend>보유 재화</legend>
+      <div class="calc-rows">
+        <label>별의 소리 (Astrite) <input type="number" id="calc-astrite" min="0" step="1" inputmode="numeric" value="${c.astrite}"></label>
+        <label>달빛 (Lunite) <input type="number" id="calc-lunite" min="0" step="1" inputmode="numeric" value="${c.lunite}"></label>
+        <label>한정 캐릭터 뽑기권 <input type="number" id="calc-chart" min="0" step="1" inputmode="numeric" value="${c.charTickets}"></label>
+        <label>전무 뽑기권 <input type="number" id="calc-weapont" min="0" step="1" inputmode="numeric" value="${c.weaponTickets}"></label>
+      </div>
+      ${c.legacyLuniteReview ? `
+      <div class="legacy-calc-warning" role="note" aria-label="기존 달빛 값 확인">
+        <p><b>기존 달빛 값을 확인해 주세요.</b> 이전 버전의 빠른 팩 버튼으로 더한 값과 직접 입력한 보유량을 구분할 수 없어 그대로 보존했습니다.</p>
+        <div>
+          <button type="button" class="ghost-btn" id="calc-legacy-keep">현재 보유값으로 확인</button>
+          <button type="button" class="ghost-btn danger-btn" id="calc-legacy-clear">달빛 0으로 초기화</button>
+        </div>
+      </div>` : ''}
+    </fieldset>
+
+    <fieldset class="calc-section purchase-planner" aria-describedby="purchase-source">
+      <legend>충전 계획</legend>
+      <p class="pity-note purchase-source" id="purchase-source">한국 공식 가격 · ${LUNITE_PRICE_CHECKED.replaceAll('-', '.')} 확인. 플랫폼에 따라 결제액이 다릅니다.</p>
+      <div class="purchase-controls">
+        <label for="calc-platform">가격 기준
+          <select id="calc-platform">${platformOptions}</select>
+        </label>
+        <label for="calc-pack">달빛 팩
+          <select id="calc-pack">${packOptions}</select>
+        </label>
+      </div>
+      <label class="purchase-first" for="calc-first">
+        <input type="checkbox" id="calc-first" ${selectedFirst ? 'checked' : ''} ${selectedFirstUsed ? 'disabled' : ''} aria-describedby="purchase-first-note">
+        <span>이 팩의 첫 충전 보너스 적용</span>
+      </label>
+      <p class="pity-note" id="purchase-first-note">${selectedFirstUsed ? '이 계획에서 이미 한 번 적용했습니다.' : '계정에 해당 팩의 보너스가 남아 있을 때만 선택하세요. 팩별 1회입니다.'}</p>
+      <div class="purchase-preview" aria-live="polite">
+        <span>${selectedFirst ? '첫 충전' : '이후 구매'}</span>
+        <b>₩${selectedPrice.toLocaleString()} → ${selectedAmount.toLocaleString()} 달빛 → ${pullBreakdown(selectedAmount)}</b>
+      </div>
+      <button type="button" class="ghost-btn purchase-add" id="calc-add-purchase">구매 계획에 추가</button>
+
+      <div class="purchase-summary" role="status" aria-live="polite">
+        <div><span>예상 결제액</span><b>₩${purchaseTotals.won.toLocaleString()}</b></div>
+        <div><span>충전으로 추가</span><b>${purchaseTotals.lunite.toLocaleString()} 달빛</b></div>
+      </div>
+      ${c.purchases.length ? `
+      <ol class="purchase-list">${purchaseRows}</ol>
+      <button type="button" class="link-btn danger-text purchase-clear" id="calc-clear-purchases">충전 계획 전체 삭제</button>` : '<p class="pity-note purchase-empty">아직 추가한 구매 계획이 없습니다.</p>'}
+    </fieldset>
+
+    <div class="calc-result" id="calc-result" role="status" aria-live="polite">${calculatorResultMarkup(c)}</div>
     ${state.schedules.length ? `
     <div class="calc-apply">
       <select id="calc-schedule" aria-label="계산 결과를 반영할 일정">${schedOpts}</select>
       <button class="ghost-btn" id="calc-apply-btn">일정에 반영</button>
     </div>` : '<p class="pity-note">픽업 일정을 추가하면 계산 결과를 일정 게이지에 바로 반영할 수 있어요.</p>'}
     <details class="pack-details">
-      <summary>달빛살 팩 → 뽑 환산표</summary>
-      <table class="banner-table">
-        <tr><th>가격(대략)</th><th>달빛살</th><th>환산</th><th>뽑당 가격</th></tr>
-        ${LUNITE_PACKS.map(pk => {
-          const total = pk.base + pk.bonus;
-          const pulls = total / ASTRITE_PER_PULL;
-          return `<tr>
-            <td>₩${pk.price.toLocaleString()}</td>
-            <td>${pk.base.toLocaleString()} +${pk.bonus.toLocaleString()}</td>
-            <td>${pulls.toFixed(1)}뽑</td>
-            <td>₩${Math.round(pk.price / pulls).toLocaleString()}</td>
-          </tr>`;
-        }).join('')}
-      </table>
-      <p class="pity-note">첫 구매는 보너스 대신 기본량 2배 (₩119,000 팩 = 12,960 = 81뽑). 쿠로게임즈 KR 공식 공시 가격 기준 (PS5는 별도: 6,480 = ₩130,900).</p>
+      <summary>팩 가격·보너스 비교</summary>
+      <div class="pack-table-wrap" role="region" tabindex="0" aria-label="플랫폼별 달빛 팩 가격과 보너스 비교표">
+        <table class="banner-table">
+          <caption class="sr-only">플랫폼별 달빛 팩 가격과 일반·첫 충전 지급량</caption>
+          <thead><tr><th scope="col">팩</th><th scope="col">쿠로 공시</th><th scope="col">PS5</th><th scope="col">이후 구매</th><th scope="col">첫 충전</th></tr></thead>
+          <tbody>${LUNITE_PACKS.map(pack => {
+            const regular = pack.base + pack.bonus;
+            const first = pack.base * 2;
+            return `<tr>
+              <td>${pack.base.toLocaleString()}</td>
+              <td>₩${pack.price.toLocaleString()}</td>
+              <td>₩${pack.psPrice.toLocaleString()}</td>
+              <td>${regular.toLocaleString()} <small>${pullBreakdown(regular)}</small></td>
+              <td>${first.toLocaleString()} <small>${pullBreakdown(first)}</small></td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table>
+      </div>
+      <p class="pity-note">가격·보너스는 쿠로게임즈 한국 상품 정보와 PlayStation 한국 스토어 기준입니다. 실제 결제 전 게임 또는 스토어 결제 화면의 금액과 보너스를 최종 확인하세요.</p>
     </details>
   </div>`;
+  if (focusId) document.getElementById(focusId)?.focus?.();
 }
 
 document.getElementById('pity-calc').addEventListener('click', e => {
@@ -826,10 +1014,48 @@ document.getElementById('pity-calc').addEventListener('click', e => {
     save(); renderPityCalc();
     return;
   }
-  const addBtn = e.target.closest('[data-addlunite]');
-  if (addBtn) {
-    state.calc.lunite = Math.max(0, +state.calc.lunite || 0) + +addBtn.dataset.addlunite;
-    save(); renderPityCalc();
+  if (e.target.closest('#calc-add-purchase')) {
+    const result = addSelectedLunitePurchase();
+    if (!result.ok) {
+      if (result.reason === 'limit') toast('충전 계획은 최대 100개까지 추가할 수 있어요');
+      else toast('같은 팩의 첫 충전 보너스는 한 번만 적용할 수 있어요');
+      save(); renderPityCalc('calc-add-purchase');
+      return;
+    }
+    save(); renderPityCalc('calc-add-purchase');
+    toast(`₩${lunitePurchasePrice(result.purchase).toLocaleString()} 구매 계획을 추가했어요`);
+    return;
+  }
+  const removePurchase = e.target.closest('[data-remove-purchase]');
+  if (removePurchase) {
+    const index = Number(removePurchase.dataset.removePurchase);
+    if (Number.isInteger(index) && index >= 0 && index < state.calc.purchases.length) {
+      state.calc.purchases.splice(index, 1);
+      state.calc.purchaseFirst = false;
+      const nextIndex = Math.min(index, state.calc.purchases.length - 1);
+      const nextFocus = nextIndex >= 0 ? `calc-remove-purchase-${nextIndex}` : 'calc-add-purchase';
+      save(); renderPityCalc(nextFocus);
+    }
+    return;
+  }
+  if (e.target.closest('#calc-clear-purchases')) {
+    state.calc.purchases = [];
+    state.calc.purchaseFirst = false;
+    save(); renderPityCalc('calc-add-purchase');
+    return;
+  }
+  if (e.target.closest('#calc-legacy-keep')) {
+    state.calc.legacyLuniteReview = false;
+    save(); renderPityCalc('calc-lunite');
+    toast('현재 달빛을 보유값으로 확인했어요');
+    return;
+  }
+  if (e.target.closest('#calc-legacy-clear')) {
+    if (!confirm('기존 달빛 값을 0으로 초기화할까요?')) return;
+    state.calc.lunite = 0;
+    state.calc.legacyLuniteReview = false;
+    save(); renderPityCalc('calc-lunite');
+    toast('기존 달빛 값을 0으로 초기화했어요');
     return;
   }
   if (e.target.closest('#calc-apply-btn')) {
@@ -844,9 +1070,14 @@ document.getElementById('pity-calc').addEventListener('click', e => {
   }
 });
 
+document.getElementById('pity-calc').addEventListener('input', e => {
+  updateCalcValueInput(e.target);
+});
+
 document.getElementById('pity-calc').addEventListener('change', e => {
   const id = e.target.id;
   const v = Math.max(0, +e.target.value || 0);
+  if (updateCalcValueInput(e.target, { commit: true })) return;
   if (id === 'pity-char-group' && pityGroupIds('char').includes(e.target.value)) {
     state.pity.selectedCharGroup = e.target.value;
   } else if (id === 'pity-weapon-group' && pityGroupIds('weapon').includes(e.target.value)) {
@@ -860,12 +1091,20 @@ document.getElementById('pity-calc').addEventListener('change', e => {
     group.count = Math.min(GACHA.WEAPON_MAX - 1, v);
     group.effectOwner = null;
   }
-  else if (id === 'calc-astrite') state.calc.astrite = v;
-  else if (id === 'calc-lunite') state.calc.lunite = v;
-  else if (id === 'calc-chart') state.calc.charTickets = v;
-  else if (id === 'calc-weapont') state.calc.weaponTickets = v;
+  else if (id === 'calc-platform' && LUNITE_PLATFORM_IDS.has(e.target.value)) {
+    state.calc.purchasePlatform = e.target.value;
+  }
+  else if (id === 'calc-pack' && LUNITE_PACK_BASES.has(Number(e.target.value))) {
+    state.calc.purchasePack = Number(e.target.value);
+    state.calc.purchaseFirst = false;
+  }
+  else if (id === 'calc-first') {
+    const firstUsed = state.calc.purchases.some(purchase => purchase.first && purchase.base === state.calc.purchasePack);
+    state.calc.purchaseFirst = e.target.checked === true && !firstUsed;
+  }
   else return;
-  save(); renderPityCalc();
+  const restoreFocus = ['calc-platform', 'calc-pack', 'calc-first'].includes(id) ? id : '';
+  save(); renderPityCalc(restoreFocus);
 });
 
 // 진행 중인 배너 기록만 해당 천장 그룹과 겹치는 일정을 갱신합니다.
@@ -1513,7 +1752,7 @@ function renderRecords() {
     const charRecs = recs.filter(r => r.type === 'char');
     const weaponRecs = recs.filter(r => r.type === 'weapon');
     stats.innerHTML = `
-      <div class="stat-tile"><div class="lbl">총 소모 뽑기</div><div class="val">${totalPulls.toLocaleString()}뽑</div><div class="sub">약 ${(paidPulls * ASTRITE_PER_PULL).toLocaleString()} 아스트라이트${freePulls ? ` · 무료 ${freePulls}뽑 제외` : ''}</div></div>
+      <div class="stat-tile"><div class="lbl">총 소모 뽑기</div><div class="val">${totalPulls.toLocaleString()}뽑</div><div class="sub">약 ${(paidPulls * ASTRITE_PER_PULL).toLocaleString()} 별의 소리${freePulls ? ` · 무료 ${freePulls}뽑 제외` : ''}</div></div>
       <div class="stat-tile"><div class="lbl">획득 기록</div><div class="val">${recs.length}건</div><div class="sub">캐릭터 ${charRecs.length} · 전무 ${weaponRecs.length}</div></div>
       <div class="stat-tile"><div class="lbl">평균 운 (상위 %)</div><div class="val">${avgLuck.toFixed(1)}%</div><div class="sub"><span class="${grade.cls}"><span class="grade">${grade.label}</span></span></div></div>
       <div class="stat-tile"><div class="lbl">픽뚫 횟수</div><div class="val">${charRecs.filter(r => r.lost).length}회</div><div class="sub">캐릭터 기록 기준</div></div>`;
