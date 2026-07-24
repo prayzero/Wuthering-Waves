@@ -295,9 +295,24 @@ main { max-width: 1080px; margin: 0 auto; padding: 20px 16px 80px; }
 /* ---------- 파티 편성 ---------- */
 .roster-strip-wrap { margin-bottom: 14px; }
 .roster-strip {
-  display: flex; gap: 10px; overflow-x: auto; padding: 12px;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 12px;
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
 }
+.roster-role-group {
+  min-width: 0; padding: 10px; border-radius: 11px;
+  background: var(--surface-2); border: 1px solid var(--grid);
+}
+.roster-role-group h3 {
+  display: flex; align-items: center; gap: 5px; margin: 0 0 9px;
+  color: var(--ink-2); font-size: 0.78rem;
+}
+.role-count {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px;
+  margin-left: auto; padding: 0 6px; border-radius: 999px; background: rgba(156, 200, 240, 0.12);
+  color: var(--accent); font-size: 0.68rem; font-variant-numeric: tabular-nums;
+}
+.roster-role-list { display: flex; gap: 8px; overflow-x: auto; padding: 2px 1px 5px; min-height: 78px; }
+.role-empty { align-self: center; color: var(--muted); font-size: 0.7rem; white-space: nowrap; }
 .roster-chip {
   display: flex; flex-direction: column; align-items: center; gap: 4px;
   cursor: grab; flex: none; width: 66px;
@@ -315,7 +330,8 @@ main { max-width: 1080px; margin: 0 auto; padding: 20px 16px 80px; }
 
 .party-list { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
 .party-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
-.party-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.party-card.has-conflict { border-color: rgba(236, 131, 90, 0.65); }
+.party-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .party-name {
   background: transparent; border: 1px solid transparent; color: var(--ink);
   font-weight: 700; font-size: 0.95rem; border-radius: 6px; padding: 4px 8px;
@@ -326,6 +342,12 @@ main { max-width: 1080px; margin: 0 auto; padding: 20px 16px 80px; }
   background: var(--surface-2); border: 1px solid var(--border); color: var(--ink-2);
   border-radius: 8px; padding: 5px 6px; font-size: 0.74rem; max-width: 130px;
 }
+.party-mode-note {
+  display: flex; align-items: center; gap: 5px; margin: 0 0 12px; color: var(--muted);
+  font-size: 0.7rem; line-height: 1.35;
+}
+.party-mode-note.content-mode { color: var(--blue); }
+.party-mode-note.conflict { color: var(--serious); font-weight: 700; }
 .ct-party { display: flex; align-items: center; gap: 6px; padding: 5px 0; flex-wrap: wrap; }
 .ct-party .avatar.small { width: 30px; height: 30px; font-size: 0.62rem; border-radius: 8px; }
 .ct-party .avatar.small .el-dot { width: 11px; height: 11px; right: -3px; bottom: -3px; }
@@ -615,11 +637,29 @@ dialog h3 { margin: 0 0 14px; font-size: 1.05rem; }
 .check-row input { width: auto; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 
-.picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 10px; max-height: 46vh; overflow-y: auto; padding: 2px; }
-.picker-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; border: none; background: transparent; padding: 4px; border-radius: 10px; }
-.picker-cell:hover { background: var(--surface-2); }
+#picker-modal { max-width: 640px; }
+.picker-groups { display: grid; gap: 10px; max-height: 54vh; overflow-y: auto; padding: 2px; }
+.picker-role-group {
+  padding: 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2);
+}
+.picker-role-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.picker-role-head h4 { margin: 0; color: var(--ink); font-size: 0.82rem; }
+.picker-role-head > span { color: var(--muted); font-size: 0.68rem; }
+.picker-role-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 8px; }
+.picker-role-empty { grid-column: 1 / -1; margin: 5px 2px; color: var(--muted); font-size: 0.72rem; }
+.picker-cell {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0;
+  cursor: pointer; border: 1px solid transparent; background: transparent; padding: 6px 4px; border-radius: 10px;
+}
+.picker-cell:hover:not(:disabled), .picker-cell:focus-visible {
+  background: rgba(156, 200, 240, 0.1); border-color: rgba(156, 200, 240, 0.35);
+}
 .picker-cell .nm { font-size: 0.7rem; color: var(--ink-2); }
-.picker-cell:disabled { cursor: not-allowed; opacity: 0.55; }
+.picker-cell:disabled { cursor: not-allowed; opacity: 0.55; border-color: var(--grid); }
+.picker-state {
+  max-width: 100%; color: var(--muted); font-size: 0.58rem; line-height: 1.25;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .picker-note { color: var(--muted); font-size: 0.75rem; margin-top: 10px; }
 
 /* ---------- 토스트 ---------- */
@@ -648,6 +688,7 @@ footer { max-width: 1080px; margin: 0 auto; padding: 0 16px 40px; color: var(--m
     grid-template-columns: minmax(0, 1fr);
   }
   .party-card, .bc-card, .content-card, .rate-card { min-width: 0; }
+  .roster-strip { grid-template-columns: minmax(0, 1fr); }
   .party-slots { gap: 6px; }
   .bc-card, .content-card { padding: 13px; }
   .bc-head { align-items: flex-start; flex-wrap: wrap; }

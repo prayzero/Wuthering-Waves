@@ -78,6 +78,7 @@ vm.runInContext(`${dataSource}\n${appSource}\n;globalThis.__qa = {
   scheduleGoalPlan, calculatorPullsForSchedule, purchasePlanTotals,
   lunitePurchasePrice, lunitePurchaseAmount, addSelectedLunitePurchase, renderPityCalc, calculatorResultMarkup,
   applyRecordSideEffects, revertRecordSideEffects, rebaseRecordEffectsForDeletion, esc,
+  partyRoleKey, memberPlacementIssue, generalModeConflicts, setMember, openPicker,
   getState: () => state, setState: value => { state = value; }
 };`, context, { filename: 'app-bundle.js' });
 
@@ -101,6 +102,58 @@ const legacy = app.normalizeStateData({
 assert.equal(legacy.pity.charGroups['char-event'].count, 37, 'v1 캐릭터 천장 마이그레이션');
 assert.equal(legacy.pity.charGroups['char-event'].guaranteed, true, 'v1 확정 상태 마이그레이션');
 assert.equal(legacy.pity.weaponGroups['weapon-event'].count, 21, 'v1 전무 천장 마이그레이션');
+
+assert.equal(app.partyRoleKey({ role: '딜러' }), 'dealer', '딜러 역할 분류');
+assert.equal(app.partyRoleKey({ role: '딜러/힐러' }), 'dealer', '복합 역할은 주 역할인 딜러로 분류');
+assert.equal(app.partyRoleKey({ role: '서포터/서브딜러' }), 'subdealer', '서브딜러 역할 분류');
+assert.equal(app.partyRoleKey({ role: '서브딜러/힐러' }), 'subdealer', '복합 역할은 주 역할인 서브딜러로 분류');
+assert.equal(app.partyRoleKey({ role: '힐러/버퍼' }), 'healer', '힐러 역할 분류');
+assert.equal(app.partyRoleKey({}), 'dealer', '역할 없는 커스텀 캐릭터 기본 분류');
+const customRoleState = app.normalizeStateData({
+  parties: [],
+  customChars: [{ id: 'custom-healer', name: '테스트 힐러', rarity: 5, element: 'spectro', role: '힐러' }],
+});
+assert.equal(customRoleState.customChars[0].role, '힐러', '커스텀 캐릭터 역할 저장');
+
+const partyState = app.normalizeStateData({
+  owned: { jiyan: true, yinlin: true, shorekeeper: true },
+  parties: [
+    { id: 'general-a', name: '일반 A', members: ['jiyan', null, null], tag: '' },
+    { id: 'general-b', name: '일반 B', members: [null, null, null], tag: '' },
+    { id: 'content-a', name: '탑 파티', members: [null, null, null], tag: 'tower' },
+  ],
+});
+app.setState(partyState);
+assert.equal(app.memberPlacementIssue('general-b', 0, 'jiyan')?.code, 'other-general-party',
+  '일반 파티 사이 캐릭터 중복 차단');
+assert.equal(app.memberPlacementIssue('content-a', 0, 'jiyan'), null,
+  '콘텐츠 파티는 다른 파티 캐릭터 재사용 허용');
+assert.equal(app.setMember('general-b', 0, 'jiyan', { silent: true }), false,
+  '일반 파티 중복 편성 저장 차단');
+assert.equal(app.setMember('content-a', 0, 'jiyan', { silent: true }), true,
+  '콘텐츠 파티 중복 편성 저장 허용');
+assert.equal(app.memberPlacementIssue('content-a', 1, 'jiyan')?.code, 'same-party',
+  '콘텐츠 파티 안의 동일 캐릭터 중복은 차단');
+assert.deepEqual(Array.from(app.generalModeConflicts(partyState.parties[2])), ['jiyan'],
+  '콘텐츠를 해제할 때 일반 파티 충돌 감지');
+
+app.openPicker('general-b', 0);
+const pickerHtml = elements.get('picker-grid').innerHTML;
+assert.match(pickerHtml, /딜러/, '캐릭터 선택 창 딜러 그룹 렌더링');
+assert.match(pickerHtml, /서브딜러/, '캐릭터 선택 창 서브딜러 그룹 렌더링');
+assert.match(pickerHtml, /힐러/, '캐릭터 선택 창 힐러 그룹 렌더링');
+assert.match(pickerHtml, /일반 A 편성 중/, '다른 일반 파티 캐릭터 선택 불가 사유 표시');
+assert.doesNotMatch(pickerHtml, /미보유/, '캐릭터 선택 창에는 보유 캐릭터만 표시');
+
+const partyChange = elements.get('party-list').listeners.change?.[0];
+const tagTarget = {
+  value: '',
+  dataset: { partyTag: 'content-a' },
+  closest(selector) { return selector === '[data-party-tag]' ? this : null; },
+};
+partyChange({ target: tagTarget });
+assert.equal(partyState.parties[2].tag, 'tower', '중복 상태에서는 콘텐츠 선택 해제 차단');
+assert.equal(tagTarget.value, 'tower', '차단 시 콘텐츠 선택값 복원');
 
 const xssInput = {
   parties: [],
@@ -358,4 +411,4 @@ const weaponRecord = { id: 'record-weapon', season: '3.5-전반', type: 'weapon'
 app.applyRecordSideEffects(weaponRecord);
 assert.equal(effectState.schedules[0].saved, 100, '전무 기록이 캐릭터 전용 일정을 차감하지 않음');
 
-console.log('앱 회귀 테스트 통과: 마이그레이션, 충전 계획, 가져오기, 목표 계산, 천장·일정 효과');
+console.log('앱 회귀 테스트 통과: 파티 역할·중복 규칙, 마이그레이션, 충전 계획, 가져오기, 목표 계산, 천장·일정 효과');
