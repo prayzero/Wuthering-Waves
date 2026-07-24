@@ -120,19 +120,23 @@ const partyState = app.normalizeStateData({
   parties: [
     { id: 'general-a', name: '일반 A', members: ['jiyan', null, null], tag: '' },
     { id: 'general-b', name: '일반 B', members: [null, null, null], tag: '' },
-    { id: 'content-a', name: '탑 파티', members: [null, null, null], tag: 'tower' },
+    { id: 'content-a', name: '탑 파티', members: ['yinlin', null, null], tag: 'tower' },
   ],
 });
 app.setState(partyState);
-assert.equal(app.memberPlacementIssue('general-b', 0, 'jiyan')?.code, 'other-general-party',
+assert.equal(app.memberPlacementIssue('general-b', 0, 'jiyan')?.code, 'other-party',
   '일반 파티 사이 캐릭터 중복 차단');
-assert.equal(app.memberPlacementIssue('content-a', 0, 'jiyan'), null,
+assert.equal(app.memberPlacementIssue('general-b', 0, 'yinlin')?.code, 'other-party',
+  '일반 파티는 콘텐츠 파티에서 사용 중인 캐릭터도 차단');
+assert.equal(app.memberPlacementIssue('content-a', 1, 'jiyan'), null,
   '콘텐츠 파티는 다른 파티 캐릭터 재사용 허용');
 assert.equal(app.setMember('general-b', 0, 'jiyan', { silent: true }), false,
   '일반 파티 중복 편성 저장 차단');
-assert.equal(app.setMember('content-a', 0, 'jiyan', { silent: true }), true,
+assert.equal(app.setMember('general-b', 0, 'yinlin', { silent: true }), false,
+  '일반 파티는 콘텐츠 파티 캐릭터 중복 저장도 차단');
+assert.equal(app.setMember('content-a', 1, 'jiyan', { silent: true }), true,
   '콘텐츠 파티 중복 편성 저장 허용');
-assert.equal(app.memberPlacementIssue('content-a', 1, 'jiyan')?.code, 'same-party',
+assert.equal(app.memberPlacementIssue('content-a', 2, 'jiyan')?.code, 'same-party',
   '콘텐츠 파티 안의 동일 캐릭터 중복은 차단');
 assert.deepEqual(Array.from(app.generalModeConflicts(partyState.parties[2])), ['jiyan'],
   '콘텐츠를 해제할 때 일반 파티 충돌 감지');
@@ -143,6 +147,7 @@ assert.match(pickerHtml, /딜러/, '캐릭터 선택 창 딜러 그룹 렌더링
 assert.match(pickerHtml, /서브딜러/, '캐릭터 선택 창 서브딜러 그룹 렌더링');
 assert.match(pickerHtml, /힐러/, '캐릭터 선택 창 힐러 그룹 렌더링');
 assert.match(pickerHtml, /일반 A 편성 중/, '다른 일반 파티 캐릭터 선택 불가 사유 표시');
+assert.match(pickerHtml, /탑 파티 편성 중/, '콘텐츠 파티 캐릭터도 일반 파티에서 선택 불가 사유 표시');
 assert.doesNotMatch(pickerHtml, /미보유/, '캐릭터 선택 창에는 보유 캐릭터만 표시');
 
 const partyChange = elements.get('party-list').listeners.change?.[0];

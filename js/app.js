@@ -1265,12 +1265,11 @@ function memberPlacementIssue(partyId, idx, charId, { ignoreSlots = [] } = {}) {
   if (!party.tag) {
     const otherParty = state.parties.find(item =>
       item.id !== party.id &&
-      !item.tag &&
       item.members.some((member, memberIdx) =>
         member === charId && !ignoredPartySlot(ignoreSlots, item.id, memberIdx)));
     if (otherParty) {
       return {
-        code: 'other-general-party',
+        code: 'other-party',
         party: otherParty,
         message: `${otherParty.name} 편성 중`,
       };
@@ -1284,6 +1283,14 @@ function generalModeConflicts(party) {
   return [...new Set(party.members.filter(Boolean))].filter(charId =>
     state.parties.some(item =>
       item.id !== party.id &&
+      item.members.includes(charId)));
+}
+
+function existingGeneralPartyConflicts(party) {
+  if (!party || party.tag) return [];
+  return [...new Set(party.members.filter(Boolean))].filter(charId =>
+    state.parties.some(item =>
+      item.id !== party.id &&
       !item.tag &&
       item.members.includes(charId)));
 }
@@ -1291,7 +1298,7 @@ function generalModeConflicts(party) {
 function placementToast(issue) {
   if (!issue) return '';
   if (issue.code === 'same-party') return '이미 이 파티에 있는 캐릭터예요';
-  if (issue.code === 'other-general-party') {
+  if (issue.code === 'other-party') {
     return `일반 파티에서는 "${issue.party.name}"과 같은 캐릭터를 쓸 수 없어요`;
   }
   return issue.message;
@@ -1330,12 +1337,12 @@ function renderParties() {
     return;
   }
   wrap.innerHTML = state.parties.map(p => {
-    const conflicts = !p.tag ? generalModeConflicts(p) : [];
+    const conflicts = existingGeneralPartyConflicts(p);
     const modeText = p.tag
       ? '콘텐츠 파티 · 다른 파티와 캐릭터 중복 가능'
       : conflicts.length
         ? '일반 파티 · 기존 중복 캐릭터를 빼 주세요'
-        : '일반 파티 · 다른 일반 파티와 캐릭터 중복 불가';
+        : '일반 파티 · 다른 모든 파티와 캐릭터 중복 불가';
     return `
     <div class="party-card ${conflicts.length ? 'has-conflict' : ''}" data-party="${p.id}">
       <div class="party-head">
@@ -1565,7 +1572,7 @@ function openPicker(partyId, idx) {
   document.getElementById('picker-modal-title').textContent = `${party.name} · ${idx + 1}번 슬롯`;
   document.getElementById('picker-note').textContent = party.tag
     ? '콘텐츠 파티는 다른 파티에서 사용 중인 캐릭터도 선택할 수 있어요. 같은 파티 안에서는 중복할 수 없습니다.'
-    : '일반 파티끼리는 같은 캐릭터를 중복 편성할 수 없습니다. 콘텐츠를 선택한 파티는 중복 편성이 가능합니다.';
+    : '일반 파티는 다른 모든 파티에서 사용 중인 캐릭터를 선택할 수 없습니다. 콘텐츠를 선택한 파티만 중복 편성이 가능합니다.';
   document.getElementById('picker-modal').showModal();
 }
 
