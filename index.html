@@ -67,11 +67,11 @@
         <h2>파티 편성</h2>
         <span class="spacer"></span>
         <button class="primary-btn" id="add-party-btn">+ 파티 추가</button>
-        <p class="desc">보유 중인 캐릭터를 원하는 슬롯으로 드래그 &amp; 드롭하거나, 빈 슬롯을 클릭해 추가하세요. 파티는 최대 3명이고, 용도 라벨(탑/해역/매트릭스)을 붙이면 컨텐츠 탭에 연결돼요.</p>
+        <p class="desc">보유 캐릭터를 딜러·서브딜러·힐러별로 확인하고, 빈 슬롯을 눌러 선택하거나 원하는 슬롯으로 드래그하세요. 일반 파티는 다른 모든 파티에서 사용 중인 캐릭터를 선택할 수 없고, 콘텐츠를 선택한 파티만 중복 편성이 가능해요.</p>
       </div>
       <div class="roster-strip-wrap">
         <div class="roster-strip" id="roster-strip"></div>
-        <p class="strip-hint">보유 캐릭터만 표시됩니다. <button type="button" class="link-btn" id="goto-roster">보유 캐릭터 탭</button>에서 캐릭터를 클릭해 보유 처리하면 여기에 나타나요.</p>
+        <p class="strip-hint">보유 캐릭터만 역할별로 표시됩니다. <button type="button" class="link-btn" id="goto-roster">보유 캐릭터 탭</button>에서 캐릭터를 클릭해 보유 처리하면 여기에 나타나요.</p>
       </div>
       <div class="party-list" id="party-list"></div>
     </div>
@@ -337,8 +337,8 @@
 <!-- ================= 모달: 파티 캐릭터 선택 ================= -->
 <dialog id="picker-modal" aria-labelledby="picker-modal-title">
   <h3 id="picker-modal-title">캐릭터 선택</h3>
-  <div class="picker-grid" id="picker-grid"></div>
-  <p class="picker-note">흐리게 표시된 캐릭터는 미보유 상태예요. [보유 캐릭터] 탭에서 클릭해 보유 처리하면 선택할 수 있어요.</p>
+  <div class="picker-groups" id="picker-grid"></div>
+  <p class="picker-note" id="picker-note">보유 캐릭터를 역할별로 선택할 수 있어요.</p>
   <div class="modal-actions">
     <button type="button" class="ghost-btn" data-close>닫기</button>
   </div>
@@ -429,6 +429,14 @@
           <option value="spectro">회절</option><option value="havoc">인멸</option>
         </select>
       </div>
+    </div>
+    <div class="form-row">
+      <label for="cus-role">파티 역할</label>
+      <select id="cus-role">
+        <option value="딜러">딜러</option>
+        <option value="서브딜러">서브딜러</option>
+        <option value="힐러">힐러</option>
+      </select>
     </div>
     <div class="modal-actions">
       <button type="button" class="ghost-btn" data-close>취소</button>

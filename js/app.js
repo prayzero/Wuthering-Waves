@@ -12,6 +12,12 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const SCHEDULE_GOALS = new Set(['명함', '1돌', '2돌', '3돌', '4돌', '5돌', '6돌', '명함+전무', '전무만']);
 const LUNITE_PACK_BASES = new Set(LUNITE_PACKS.map(pack => pack.base));
 const LUNITE_PLATFORM_IDS = new Set(Object.keys(LUNITE_PLATFORMS));
+const PARTY_ROLE_GROUPS = Object.freeze([
+  { id: 'dealer', label: '딜러', icon: '⚔' },
+  { id: 'subdealer', label: '서브딜러', icon: '✦' },
+  { id: 'healer', label: '힐러', icon: '✚' },
+]);
+const PARTY_ROLE_LABELS = new Set(PARTY_ROLE_GROUPS.map(group => group.label));
 
 const defaultPity = () => ({
   selectedCharGroup: DEFAULT_CHAR_PITY_GROUP,
@@ -279,7 +285,8 @@ function normalizeStateData(input, { strict = false } = {}) {
     const rarity = Number(item.rarity) === 4 ? 4 : 5;
     const element = hasOwn(ELEMENTS, item.element) ? item.element : 'fusion';
     const weapon = hasOwn(WEAPONS, item.weapon) ? item.weapon : undefined;
-    return [{ id, name, rarity, element, group: rarity === 5 ? 'limited' : 'four', ...(weapon ? { weapon } : {}) }];
+    const role = PARTY_ROLE_LABELS.has(item.role) ? item.role : '딜러';
+    return [{ id, name, rarity, element, role, group: rarity === 5 ? 'limited' : 'four', ...(weapon ? { weapon } : {}) }];
   });
 
   const charIds = new Set([...builtInIds, ...customIds]);
@@ -1222,6 +1229,81 @@ function rebaseRecordEffectsForDeletion(rec) {
    2. 파티 편성 (드래그 & 드롭)
    ================================================================ */
 
+function partyRoleKey(character) {
+  const role = String(character?.role || '');
+  if (role.startsWith('힐러')) return 'healer';
+  if (role.startsWith('서브딜러') || role.startsWith('오프필드')) return 'subdealer';
+  if (role.startsWith('딜러') || role.startsWith('버스트 딜러') || role.startsWith('주인공')) return 'dealer';
+  if (role.includes('힐') || role.includes('회복')) return 'healer';
+  if (['서브딜러', '서포터', '버퍼', '탱커', '오프필드'].some(keyword => role.includes(keyword))) {
+    return 'subdealer';
+  }
+  return 'dealer';
+}
+
+function partyRoleGroup(character) {
+  return PARTY_ROLE_GROUPS.find(group => group.id === partyRoleKey(character)) || PARTY_ROLE_GROUPS[0];
+}
+
+function ignoredPartySlot(ignoreSlots, partyId, idx) {
+  return ignoreSlots.some(slot => slot.partyId === partyId && slot.idx === idx);
+}
+
+function memberPlacementIssue(partyId, idx, charId, { ignoreSlots = [] } = {}) {
+  if (!charId) return null;
+  const party = state.parties.find(item => item.id === partyId);
+  if (!party) return { code: 'missing-party', message: '파티를 찾을 수 없어요' };
+
+  const sameParty = party.members.some((member, memberIdx) =>
+    member === charId &&
+    memberIdx !== idx &&
+    !ignoredPartySlot(ignoreSlots, party.id, memberIdx));
+  if (sameParty) {
+    return { code: 'same-party', party, message: '현재 파티에 편성 중' };
+  }
+
+  if (!party.tag) {
+    const otherParty = state.parties.find(item =>
+      item.id !== party.id &&
+      item.members.some((member, memberIdx) =>
+        member === charId && !ignoredPartySlot(ignoreSlots, item.id, memberIdx)));
+    if (otherParty) {
+      return {
+        code: 'other-party',
+        party: otherParty,
+        message: `${otherParty.name} 편성 중`,
+      };
+    }
+  }
+  return null;
+}
+
+function generalModeConflicts(party) {
+  if (!party) return [];
+  return [...new Set(party.members.filter(Boolean))].filter(charId =>
+    state.parties.some(item =>
+      item.id !== party.id &&
+      item.members.includes(charId)));
+}
+
+function existingGeneralPartyConflicts(party) {
+  if (!party || party.tag) return [];
+  return [...new Set(party.members.filter(Boolean))].filter(charId =>
+    state.parties.some(item =>
+      item.id !== party.id &&
+      !item.tag &&
+      item.members.includes(charId)));
+}
+
+function placementToast(issue) {
+  if (!issue) return '';
+  if (issue.code === 'same-party') return '이미 이 파티에 있는 캐릭터예요';
+  if (issue.code === 'other-party') {
+    return `일반 파티에서는 "${issue.party.name}"과 같은 캐릭터를 쓸 수 없어요`;
+  }
+  return issue.message;
+}
+
 function renderRosterStrip() {
   const strip = document.getElementById('roster-strip');
   const owned = allChars().filter(c => isOwned(c.id));
@@ -1229,11 +1311,23 @@ function renderRosterStrip() {
     strip.innerHTML = `<div class="empty-note" style="border:none;width:100%">보유 캐릭터가 없어요. [보유 캐릭터] 탭에서 캐릭터를 클릭해 등록해 주세요.</div>`;
     return;
   }
-  strip.innerHTML = owned.map(c => `
-    <div class="roster-chip" draggable="true" data-drag-char="${c.id}">
-      ${avatarHTML(c)}
-      <span class="nm">${esc(c.name)}</span>
-    </div>`).join('');
+  strip.innerHTML = PARTY_ROLE_GROUPS.map(group => {
+    const characters = owned.filter(character => partyRoleKey(character) === group.id);
+    return `
+      <section class="roster-role-group" aria-labelledby="roster-role-${group.id}">
+        <h3 id="roster-role-${group.id}">
+          <span aria-hidden="true">${group.icon}</span> ${group.label}
+          <span class="role-count">${characters.length}</span>
+        </h3>
+        <div class="roster-role-list">
+          ${characters.length ? characters.map(character => `
+            <div class="roster-chip" draggable="true" data-drag-char="${character.id}" title="${esc(character.role || group.label)}">
+              ${avatarHTML(character)}
+              <span class="nm">${esc(character.name)}</span>
+            </div>`).join('') : '<span class="role-empty">보유 캐릭터 없음</span>'}
+        </div>
+      </section>`;
+  }).join('');
 }
 
 function renderParties() {
@@ -1242,16 +1336,26 @@ function renderParties() {
     wrap.innerHTML = `<div class="empty-note">파티가 없어요. [+ 파티 추가]로 새 파티를 만들어 보세요.</div>`;
     return;
   }
-  wrap.innerHTML = state.parties.map(p => `
-    <div class="party-card" data-party="${p.id}">
+  wrap.innerHTML = state.parties.map(p => {
+    const conflicts = existingGeneralPartyConflicts(p);
+    const modeText = p.tag
+      ? '콘텐츠 파티 · 다른 파티와 캐릭터 중복 가능'
+      : conflicts.length
+        ? '일반 파티 · 기존 중복 캐릭터를 빼 주세요'
+        : '일반 파티 · 다른 모든 파티와 캐릭터 중복 불가';
+    return `
+    <div class="party-card ${conflicts.length ? 'has-conflict' : ''}" data-party="${p.id}">
       <div class="party-head">
         <input class="party-name" value="${esc(p.name)}" maxlength="16" data-party-name="${p.id}" aria-label="${esc(p.name)} 이름">
-        <select class="party-tag" data-party-tag="${p.id}" title="용도 라벨 — 컨텐츠 탭에 연결돼요" aria-label="${esc(p.name)} 용도 라벨">
-          <option value="">라벨 없음</option>
+        <select class="party-tag" data-party-tag="${p.id}" title="콘텐츠를 선택하면 다른 파티와 캐릭터를 중복 편성할 수 있어요" aria-label="${esc(p.name)} 콘텐츠 선택">
+          <option value="">일반 파티</option>
           ${state.contents.map(c => `<option value="${c.id}" ${p.tag === c.id ? 'selected' : ''}>${esc(c.icon || '')} ${esc(c.name)}</option>`).join('')}
         </select>
         <button class="icon-btn danger-btn" data-del-party="${p.id}" title="파티 삭제" aria-label="${esc(p.name)} 삭제">✕</button>
       </div>
+      <p class="party-mode-note ${conflicts.length ? 'conflict' : p.tag ? 'content-mode' : ''}">
+        <span aria-hidden="true">${p.tag ? '↻' : conflicts.length ? '!' : '🔒'}</span> ${modeText}
+      </p>
       <div class="party-slots">
         ${p.members.map((m, i) => {
           const ch = m ? charById(m) : null;
@@ -1267,7 +1371,8 @@ function renderParties() {
           </button>`;
         }).join('')}
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 document.getElementById('add-party-btn').addEventListener('click', () => {
@@ -1309,18 +1414,31 @@ partyList.addEventListener('change', e => {
   const tagSel = e.target.closest('[data-party-tag]');
   if (tagSel) {
     const p = state.parties.find(x => x.id === tagSel.dataset.partyTag);
-    p.tag = tagSel.value;
-    save(); renderContents();
-    const ct = state.contents.find(c => c.id === tagSel.value);
+    if (!p) return;
+    const nextTag = tagSel.value;
+    if (!nextTag && p.tag && generalModeConflicts(p).length) {
+      const names = generalModeConflicts(p)
+        .map(charId => charById(charId)?.name)
+        .filter(Boolean)
+        .join(', ');
+      tagSel.value = p.tag;
+      toast(`${names || '중복 캐릭터'}를 다른 일반 파티에서 먼저 빼 주세요`);
+      return;
+    }
+    p.tag = nextTag;
+    save(); renderContents(); renderParties();
+    const ct = state.contents.find(c => c.id === nextTag);
     if (ct) toast(`"${p.name}" 파티를 ${ct.name}에 연결했어요`);
+    else toast(`"${p.name}" 파티를 일반 파티로 변경했어요`);
   }
 });
 
 function setMember(partyId, idx, charId, { silent = false } = {}) {
   const p = state.parties.find(x => x.id === partyId);
   if (!p) return false;
-  if (charId && p.members.includes(charId) && p.members[idx] !== charId) {
-    if (!silent) toast('이미 이 파티에 있는 캐릭터예요');
+  const issue = memberPlacementIssue(partyId, idx, charId);
+  if (issue) {
+    if (!silent) toast(placementToast(issue));
     return false;
   }
   p.members[idx] = charId;
@@ -1386,10 +1504,19 @@ document.addEventListener('drop', e => {
       pTo.members[fromIdx] = displaced ?? null;
       pTo.members[toIdx] = charId;
     } else {
-      if (pTo.members.includes(charId)) { toast('이미 이 파티에 있는 캐릭터예요'); return; }
-      if (displaced && displaced !== charId &&
-          pFrom.members.some((id, i) => i !== fromIdx && id === displaced)) {
-        toast('교환하면 출발 파티에 같은 캐릭터가 중복돼요');
+      const ignoreSource = [{ partyId: fromParty, idx: fromIdx }];
+      const targetIssue = memberPlacementIssue(toParty, toIdx, charId, { ignoreSlots: ignoreSource });
+      if (targetIssue) {
+        toast(placementToast(targetIssue));
+        return;
+      }
+      const sourceIssue = displaced
+        ? memberPlacementIssue(fromParty, fromIdx, displaced, {
+          ignoreSlots: [{ partyId: toParty, idx: toIdx }],
+        })
+        : null;
+      if (sourceIssue) {
+        toast(`교환할 수 없어요: ${placementToast(sourceIssue)}`);
         return;
       }
       pFrom.members[fromIdx] = displaced ?? null;
@@ -1409,18 +1536,43 @@ let pickerTarget = null;
 function openPicker(partyId, idx) {
   pickerTarget = { partyId, idx };
   const party = state.parties.find(p => p.id === partyId);
+  if (!party) return;
   const grid = document.getElementById('picker-grid');
-  const chars = allChars();
-  const owned = chars.filter(c => isOwned(c.id));
-  const unowned = chars.filter(c => !isOwned(c.id));
-  const cell = (c, disabled) => `
-    <button class="picker-cell" data-pick="${c.id}" ${disabled ? 'disabled' : ''}>
-      ${avatarHTML(c, { small: false, gray: disabled })}
-      <span class="nm">${esc(c.name)}</span>
-    </button>`;
-  grid.innerHTML =
-    owned.map(c => cell(c, party.members.includes(c.id))).join('') +
-    unowned.map(c => cell(c, true)).join('');
+  const owned = allChars().filter(c => isOwned(c.id));
+  const cell = character => {
+    const issue = memberPlacementIssue(partyId, idx, character.id);
+    const group = partyRoleGroup(character);
+    const ariaLabel = issue
+      ? `${character.name}, 선택 불가: ${issue.message}`
+      : `${character.name}, ${group.label}로 선택`;
+    return `
+      <button type="button" class="picker-cell" data-pick="${character.id}" ${issue ? 'disabled' : ''}
+        aria-label="${esc(ariaLabel)}"
+        title="${esc(issue?.message || character.role || group.label)}">
+        ${avatarHTML(character, { small: false, gray: Boolean(issue) })}
+        <span class="nm">${esc(character.name)}</span>
+        ${issue ? `<span class="picker-state">${esc(issue.message)}</span>` : ''}
+      </button>`;
+  };
+  grid.innerHTML = owned.length
+    ? PARTY_ROLE_GROUPS.map(group => {
+      const characters = owned.filter(character => partyRoleKey(character) === group.id);
+      return `
+        <section class="picker-role-group" aria-labelledby="picker-role-${group.id}">
+          <div class="picker-role-head">
+            <h4 id="picker-role-${group.id}"><span aria-hidden="true">${group.icon}</span> ${group.label}</h4>
+            <span>${characters.length}명</span>
+          </div>
+          <div class="picker-role-list">
+            ${characters.length ? characters.map(cell).join('') : '<p class="picker-role-empty">보유 캐릭터가 없어요.</p>'}
+          </div>
+        </section>`;
+    }).join('')
+    : '<div class="empty-note">보유 캐릭터가 없어요. 보유 캐릭터 탭에서 먼저 등록해 주세요.</div>';
+  document.getElementById('picker-modal-title').textContent = `${party.name} · ${idx + 1}번 슬롯`;
+  document.getElementById('picker-note').textContent = party.tag
+    ? '콘텐츠 파티는 다른 파티에서 사용 중인 캐릭터도 선택할 수 있어요. 같은 파티 안에서는 중복할 수 없습니다.'
+    : '일반 파티는 다른 모든 파티에서 사용 중인 캐릭터를 선택할 수 없습니다. 콘텐츠를 선택한 파티만 중복 편성이 가능합니다.';
   document.getElementById('picker-modal').showModal();
 }
 
@@ -1537,6 +1689,7 @@ document.getElementById('custom-form').addEventListener('submit', e => {
     name,
     rarity,
     element: document.getElementById('cus-element').value,
+    role: document.getElementById('cus-role').value,
     group: rarity === 5 ? 'limited' : 'four',
   });
   save(); renderRoster(); renderRosterStrip();
