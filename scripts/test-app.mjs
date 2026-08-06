@@ -79,7 +79,12 @@ vm.runInContext(`${dataSource}\n${appSource}\n;globalThis.__qa = {
   lunitePurchasePrice, lunitePurchaseAmount, addSelectedLunitePurchase, renderPityCalc, calculatorResultMarkup,
   applyRecordSideEffects, revertRecordSideEffects, rebaseRecordEffectsForDeletion, esc,
   partyRoleKey, memberPlacementIssue, generalModeConflicts, setMember, openPicker,
-  getState: () => state, setState: value => { state = value; }
+  getState: () => state, setState: value => { state = value; },
+  getContentDefaults: () => clone(CONTENT_DEFAULTS),
+  getLegacyContentDefaults: () => clone(LEGACY_CONTENT_DEFAULTS_V3),
+  replaceContentDefaults: value => {
+    CONTENT_DEFAULTS.splice(0, CONTENT_DEFAULTS.length, ...clone(value));
+  }
 };`, context, { filename: 'app-bundle.js' });
 
 const app = context.__qa;
@@ -102,6 +107,59 @@ const legacy = app.normalizeStateData({
 assert.equal(legacy.pity.charGroups['char-event'].count, 37, 'v1 캐릭터 천장 마이그레이션');
 assert.equal(legacy.pity.charGroups['char-event'].guaranteed, true, 'v1 확정 상태 마이그레이션');
 assert.equal(legacy.pity.weaponGroups['weapon-event'].count, 21, 'v1 전무 천장 마이그레이션');
+
+const realContentDefaults = app.getContentDefaults();
+const legacyContentDefaults = app.getLegacyContentDefaults();
+const refreshedContentDefaults = legacyContentDefaults.map((content, index) => ({
+  ...content,
+  name: `${content.name} 최신`,
+  period: content.period + index + 1,
+  start: `2026-09-0${index + 1}`,
+  rules: `${content.rules} 최신 규칙`,
+  buff: `${content.buff}\n최신 버프`,
+  stages: [{ name: `최신 단계 ${index + 1}`, mobs: `최신 적 ${index + 1}` }],
+}));
+app.replaceContentDefaults(refreshedContentDefaults);
+
+const migratedV3Contents = app.normalizeStateData({
+  schemaVersion: 3,
+  parties: [],
+  contents: legacyContentDefaults,
+});
+assert.equal(migratedV3Contents.schemaVersion, 4, 'v3 저장 데이터 스키마 갱신');
+assert.equal(JSON.stringify(migratedV3Contents.contents), JSON.stringify(refreshedContentDefaults),
+  '수정하지 않은 v3 컨텐츠 기본값을 최신 기본값으로 갱신');
+
+const customizedV3Contents = structuredClone(legacyContentDefaults);
+Object.assign(customizedV3Contents[0], {
+  name: '내 탑',
+  period: 7,
+  start: '2026-08-01',
+  rules: '내 규칙',
+  buff: '내 버프',
+  stages: [{ name: '내 단계', mobs: '내 적' }],
+});
+delete customizedV3Contents[1].rules;
+const migratedCustomV3Contents = app.normalizeStateData({
+  schemaVersion: 3,
+  parties: [],
+  contents: customizedV3Contents,
+});
+assert.equal(JSON.stringify(migratedCustomV3Contents.contents[0]), JSON.stringify(customizedV3Contents[0]),
+  'v3에서 사용자가 수정한 컨텐츠 필드는 보존');
+assert.equal(migratedCustomV3Contents.contents[1].rules, refreshedContentDefaults[1].rules,
+  'v3에서 누락된 컨텐츠 필드는 최신 기본값으로 보완');
+assert.equal(JSON.stringify(migratedCustomV3Contents.contents[1].stages), JSON.stringify(refreshedContentDefaults[1].stages),
+  'v3에서 수정하지 않은 나머지 필드는 최신 기본값으로 갱신');
+
+const preservedV4Contents = app.normalizeStateData({
+  schemaVersion: 4,
+  parties: [],
+  contents: legacyContentDefaults,
+});
+assert.equal(JSON.stringify(preservedV4Contents.contents), JSON.stringify(legacyContentDefaults),
+  'v4 저장 컨텐츠는 최신 기본값과 달라도 그대로 보존');
+app.replaceContentDefaults(realContentDefaults);
 
 assert.equal(app.partyRoleKey({ role: '딜러' }), 'dealer', '딜러 역할 분류');
 assert.equal(app.partyRoleKey({ role: '딜러/힐러' }), 'dealer', '복합 역할은 주 역할인 딜러로 분류');
@@ -197,7 +255,7 @@ assert.equal(legacyCalc.calc.legacyLuniteReview, false, '달빛이 없는 기존
 const ambiguousLegacyCalc = app.normalizeStateData({ schemaVersion: 2, parties: [], calc: { lunite: 8080 } });
 assert.equal(ambiguousLegacyCalc.calc.lunite, 8080, '기존 달빛 값은 임의로 삭제하지 않음');
 assert.equal(ambiguousLegacyCalc.calc.legacyLuniteReview, true, '기존 달빛 출처 확인 안내 표시');
-const currentCalc = app.normalizeStateData({ schemaVersion: 3, parties: [], calc: { lunite: 8080 } });
+const currentCalc = app.normalizeStateData({ schemaVersion: 4, parties: [], calc: { lunite: 8080 } });
 assert.equal(currentCalc.calc.legacyLuniteReview, false, '현재 버전 보유 달빛은 재확인하지 않음');
 
 const kuroRegular = { base: 6480, platform: 'kuro', first: false };
@@ -265,7 +323,7 @@ const calcTarget = ({ id = '', value = '', checked = false, dataSelector = '', d
   },
 });
 
-const eventState = app.normalizeStateData({ schemaVersion: 3, parties: [], calc: {} });
+const eventState = app.normalizeStateData({ schemaVersion: 4, parties: [], calc: {} });
 app.setState(eventState);
 app.renderPityCalc();
 documentStub.getElementById('calc-platform').focusCount = 0;
