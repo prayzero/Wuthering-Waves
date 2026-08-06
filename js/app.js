@@ -3,7 +3,51 @@
    ================================================================ */
 
 const STORE_KEY = 'wuwa-planner-v1';
-const STATE_SCHEMA_VERSION = 3;
+const STATE_SCHEMA_VERSION = 4;
+const CONTENT_DEFAULTS_REFRESH_VERSION = 4;
+const LEGACY_CONTENT_DEFAULTS_V3 = [
+  {
+    id: 'tower',
+    icon: '🗼',
+    name: '역경의 탑 (심경 구역)',
+    period: 28,
+    start: '2026-06-22',
+    rules: '37시즌. 스테이지·심경 간섭은 28일마다 전면 교체, 도전·보상은 14일마다 초기화(중간 리셋 7/6). 심경 구역 피로도 40, 잔향·울림의 탑 층당 1/2/3/4, 심연의 탑 층당 5.',
+    buff: '잔향의 탑: 기류 저항 -10% · 피해 시 방어력 25% 무시 · 이상 효과 보유 적 받는 피해 +20%\n심연의 탑(1~2층): 회절·인멸 저항 -10%, 용융·응결 저항 +10% · 크리 피해 +25% · 변주 시 강공/일반 피해 +40%\n울림의 탑: 전도 저항 -10% · 변주 시 공격력 +20% · 공명 스킬 시 해방 피해 +30%',
+    stages: [
+      { name: '잔향의 탑', mobs: '1층 페이 이그니스·미스터 매직, 2층 심판하는 전사·심연의 위병, 3층 갈기늑대·암흑·추방자 두목·흑야 기사, 4층 잔성·밀리너·음험한 백로' },
+      { name: '심연의 탑', mobs: '1층 반디의 군세, 2층 파트리시우스 귀족·서리의 기생갑·지옥불 기사, 3층 플로라 메카 레인디어·소용돌이 곰·크로나클라우·폭주의 고릴라, 4층 이름없는 탐색자·플뢰르 드 리스' },
+      { name: '울림의 탑', mobs: '1층 거대 인형, 2층 거암 투사·오열하는 전사, 3층 유령 인형, 4층 탄식의 고룡' },
+    ],
+  },
+  {
+    id: 'sea',
+    icon: '🌊',
+    name: '해역 (죽음의 노래와 바닷속 폐허)',
+    period: 28,
+    start: '2026-07-06',
+    rules: '19시즌 (7/6 05:00 ~ 8/3 04:59 확정). 4주 시즌제, 리셋 시 재생 해역(해곡·급류)만 초기화되고 금기의 해역은 유지. 2파티 동시 편성.',
+    buff: '피해·처치로 연소 수치 회복, 최대치에서 타오르는 조수 진입(지속 30초)\n공격 명중한 적 5초간 받는 최종 피해 +60%\n조화 소실 적을 스킬로 명중하면 조화도 파괴 피해 발생',
+    stages: [
+      { name: '12단계 · 끝 없는 심연', mobs: '적 받는 최종 피해 +30% · 모든 증표 무제한 휴대' },
+      { name: '상단', mobs: '칵찰찰, 플로라 메카 레인디어, 오열하는 전사, 유령 인형' },
+      { name: '하단', mobs: '파종 호박벌, 초록색 왜가리, 오열하는 전사, 유령 인형' },
+    ],
+  },
+  {
+    id: 'matrix',
+    icon: '🧩',
+    name: '매트릭스 더블 폰스',
+    period: 125,
+    start: '2026-07-10',
+    rules: 'S2 단계1 「위험한 경지의 강습」 — 시즌 종료: 3.8 업데이트 시(11월 중순 추정). 안정 프로토콜 최대 3파티 + 특이점 확장 무제한. 출전당 피로도 1(서포터 계열 2), 무기·에코 캐릭터 귀속, 방랑자는 속성 무관 1회.',
+    buff: '공용: 적 받는 최종 피해 +20%, 공명 스킬 최종 피해 +20%\n이상 효과: 이상 부여 시 받는 최종 피해 +25%(30초), 암흑 부여 시 내 최종 피해 +30%(15초)\n에코: 에코 어빌리티 최종 피해 +30%, 용융 +20%, 강공격 +20%\n조화도 파괴: 조화 파동 최종 피해 +150%, 조화도·이탈 부여 시 +25%(30초)',
+    stages: [
+      { name: '등장 몹', mobs: '매트릭스 클러스터, 애곡하는 아익스, 플뢰르 드 리스, 리액터 허스크' },
+      { name: '특이점 확장', mobs: '매트릭스 미믹 추가' },
+    ],
+  },
+];
 const DEFAULT_CHAR_PITY_GROUP = 'char-event';
 const DEFAULT_WEAPON_PITY_GROUP = 'weapon-event';
 const SAFE_ID_RE = /^[A-Za-z0-9_-]{1,80}$/;
@@ -143,6 +187,17 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+function contentFieldValue(item, def, legacy, field, sourceSchemaVersion) {
+  if (sourceSchemaVersion >= CONTENT_DEFAULTS_REFRESH_VERSION) return item[field];
+  const missing = !hasOwn(item, field);
+  const matchesLegacy = legacy && hasOwn(legacy, field) && (
+    field === 'stages'
+      ? JSON.stringify(item[field]) === JSON.stringify(legacy[field])
+      : item[field] === legacy[field]
+  );
+  return missing || matchesLegacy ? def[field] : item[field];
+}
+
 function pityGroupIds(kind) {
   const field = kind === 'char' ? 'charPityGroup' : 'weaponPityGroup';
   const base = kind === 'char' ? DEFAULT_CHAR_PITY_GROUP : DEFAULT_WEAPON_PITY_GROUP;
@@ -270,6 +325,7 @@ function normalizeStateData(input, { strict = false } = {}) {
   if (strict) assertImportShape(input);
   const raw = isPlainObject(input) ? input : {};
   const result = defaultState();
+  const sourceSchemaVersion = cleanInt(raw.schemaVersion, 0, STATE_SCHEMA_VERSION, 0);
 
   const builtInIds = new Set(CHARACTERS.map(c => c.id));
   const customIds = new Set();
@@ -352,7 +408,14 @@ function normalizeStateData(input, { strict = false } = {}) {
   result.contents = CONTENT_DEFAULTS.map(def => {
     const item = rawContents.find(c => isPlainObject(c) && c.id === def.id);
     if (!item) return clone(def);
-    const stages = Array.isArray(item.stages) ? item.stages.slice(0, 50).flatMap(stage => {
+    const legacy = LEGACY_CONTENT_DEFAULTS_V3.find(content => content.id === def.id);
+    const nameValue = contentFieldValue(item, def, legacy, 'name', sourceSchemaVersion);
+    const periodValue = contentFieldValue(item, def, legacy, 'period', sourceSchemaVersion);
+    const startValue = contentFieldValue(item, def, legacy, 'start', sourceSchemaVersion);
+    const rulesValue = contentFieldValue(item, def, legacy, 'rules', sourceSchemaVersion);
+    const buffValue = contentFieldValue(item, def, legacy, 'buff', sourceSchemaVersion);
+    const stagesValue = contentFieldValue(item, def, legacy, 'stages', sourceSchemaVersion);
+    const stages = Array.isArray(stagesValue) ? stagesValue.slice(0, 50).flatMap(stage => {
       if (!isPlainObject(stage)) return [];
       const name = cleanString(stage.name, 80);
       const mobs = cleanString(stage.mobs, 1000);
@@ -361,11 +424,11 @@ function normalizeStateData(input, { strict = false } = {}) {
     return {
       id: def.id,
       icon: def.icon,
-      name: cleanString(item.name, 24) || def.name,
-      period: cleanInt(item.period, 1, 999, def.period),
-      start: validDate(item.start) ? item.start : def.start,
-      rules: cleanString(item.rules, 2000) || def.rules,
-      buff: cleanString(item.buff, 3000) || def.buff,
+      name: cleanString(nameValue, 24) || def.name,
+      period: cleanInt(periodValue, 1, 999, def.period),
+      start: validDate(startValue) ? startValue : def.start,
+      rules: cleanString(rulesValue, 2000) || def.rules,
+      buff: cleanString(buffValue, 3000) || def.buff,
       stages,
     };
   });
@@ -388,7 +451,6 @@ function normalizeStateData(input, { strict = false } = {}) {
     ? Number(raw.calc.purchasePack) : 6480;
   const purchaseFirstUsed = purchases.some(purchase => purchase.first && purchase.base === purchasePack);
   const lunite = cleanInt(raw.calc?.lunite, 0, 1000000000, 0);
-  const sourceSchemaVersion = cleanInt(raw.schemaVersion, 0, STATE_SCHEMA_VERSION, 0);
   result.calc = {
     astrite: cleanInt(raw.calc?.astrite, 0, 1000000000, 0),
     lunite,
@@ -1741,7 +1803,7 @@ function renderBannerCards() {
     const key = bannerKey(b);
     const label = `Ver ${b.ver} · ${b.phase}`;
 
-    // 유출(미확정) 배너는 정보 카드로만 표시
+    // 일정·픽업 순서 미확정 배너는 예고 정보 카드로만 표시
     if (b.leaked) {
       return `
       <div class="bc-card bc-leak">
@@ -2268,12 +2330,12 @@ function renderMatDetail() {
       <div class="mat-rows">
         <div class="mat-row">
           <span class="tier-dot" style="background:${TIER_COLORS[0]}">특산</span>
-          <span class="mn">${asc[0] ? esc(asc[0]) : '<i>확인 불가 (3.5 신규 지역)</i>'}</span>
+          <span class="mn">${asc[0] ? esc(asc[0]) : '<i>공식 데이터 미확인</i>'}</span>
           <span class="cnt">×${ASC_TOTALS.specialty}</span>
         </div>
         <div class="mat-row">
           <span class="tier-dot" style="background:${TIER_COLORS[2]}">보스</span>
-          <span class="mn">${asc[1] ? esc(asc[1]) : '<i>확인 불가 (3.5 신규 보스)</i>'}</span>
+          <span class="mn">${asc[1] ? esc(asc[1]) : '<i>공식 데이터 미확인</i>'}</span>
           <span class="cnt">×${ASC_TOTALS.boss}</span>
         </div>
         <div class="mat-row">
@@ -2288,7 +2350,7 @@ function renderMatDetail() {
         </div>
       </div>
     </div>
-    <p class="mat-note">※ 수량은 포르테 풀강(전 노드) / 돌파(0→6돌파, Lv.90 상한) 기준 공통 수치. 주간 재료는 스킬 1개 1→10에 ×4씩. Lv.90 경험치까지 포함하면 ${esc(ASC_TOTALS.exp)} + 클램 코인 총 ${ASC_TOTALS.creditsWithExp}이 추가로 들어요. 재료명은 한국어 정식 명칭(2026-07-11 DB 대조) 기준.</p>
+    <p class="mat-note">※ 수량은 포르테 풀강(전 노드) / 돌파(0→6돌파, Lv.90 상한) 기준 공통 수치. 주간 재료는 스킬 1개 1→10에 ×4씩. Lv.90 경험치까지 포함하면 ${esc(ASC_TOTALS.exp)} + 클램 코인 총 ${ASC_TOTALS.creditsWithExp}이 추가로 들어요. 재료명은 한국어 정식 명칭(2026-08-06 DB 대조) 기준.</p>
   </div>`;
 
   document.getElementById('edit-mats-btn').addEventListener('click', () => openMatModal(c));

@@ -109,7 +109,7 @@ try {
   const context = vm.createContext({});
   vm.runInContext(`${read('js/data.js')}\n;globalThis.__qa = {
     CHARACTERS, BANNERS, CONTENT_DEFAULTS, ELEMENTS, WEAPONS, CHAR_MATS, ASC_MATS,
-    SIG_WEAPONS, FORGE_FAMILIES, DROP_FAMILIES, WEEKLY_BOSS_MATS,
+    SIG_WEAPONS, FORGE_FAMILIES, DROP_FAMILIES, WEEKLY_BOSS_MATS, LUNITE_PRICE_CHECKED,
     charPickupPmf, weaponPickupPmf
   };`, context, { filename: 'js/data.js' });
   const data = context.__qa;
@@ -142,9 +142,17 @@ try {
 
   const collab = data.BANNERS.find(b => b.ver === '3.4' && b.phase === '콜라보');
   const selection = data.BANNERS.find(b => b.ver === '3.5' && b.phase === '선택형');
+  const currentBanner = data.BANNERS.find(b => b.ver === '3.5' && b.phase === '후반');
+  const nextPreview = data.BANNERS.find(b => b.ver === '3.6' && b.phase === '공개 예정');
   check(collab?.charPityGroup && collab?.weaponPityGroup, '3.4 콜라보 별도 천장 그룹이 없습니다.');
   check(selection?.charPityGroup && selection?.weaponPityGroup, '3.5 선택형 별도 천장 그룹이 없습니다.');
   check(selection?.freePulls === 10, '3.5 선택형 무료 10뽑 데이터가 없습니다.');
+  check(currentBanner?.start === '2026-07-30' && currentBanner?.end === '2026-08-19', '3.5 후반 공식 일정이 최신값이 아닙니다.');
+  check(currentBanner?.pickup?.includes('suisui') && currentBanner?.rerun?.includes('aemeath'), '3.5 후반 픽업 구성이 최신값이 아닙니다.');
+  check(nextPreview?.leaked === true && nextPreview?.leakNames?.some(name => name.includes('청초')) &&
+    nextPreview?.leakNames?.some(name => name.includes('경연')), '3.6 공식 예고 데이터가 없습니다.');
+  check(data.CHARACTERS.find(c => c.id === 'suisui')?.role.startsWith('힐러'), '수수 역할이 힐러로 분류되지 않았습니다.');
+  check(data.CHARACTERS.find(c => c.id === 'rover')?.role.includes('전도'), '방랑자 전도 속성이 역할 설명에 없습니다.');
 
   for (const character of data.CHARACTERS) {
     check(Object.hasOwn(data.CHAR_MATS, character.id), `스킬 재료 누락: ${character.id}`);
@@ -168,6 +176,10 @@ try {
     check(Array.isArray(content.stages), `컨텐츠 단계 배열 오류: ${content.id}`);
     contentIds.add(content.id);
   }
+  check(data.CONTENT_DEFAULTS.find(c => c.id === 'tower')?.start === '2026-07-20', '역경의 탑 38시즌 시작일이 아닙니다.');
+  check(data.CONTENT_DEFAULTS.find(c => c.id === 'sea')?.start === '2026-08-03', '해역 20시즌 시작일이 아닙니다.');
+  check(data.CONTENT_DEFAULTS.find(c => c.id === 'matrix')?.start === '2026-07-17', '종말 매트릭스 2주기 1단계 시작일이 아닙니다.');
+  check(data.LUNITE_PRICE_CHECKED === '2026-08-06', '결제 가격 확인일이 최신값이 아닙니다.');
 
   for (const [label, pmf, expectedLength] of [['캐릭터', data.charPickupPmf(), 161], ['전무', data.weaponPickupPmf(), 81]]) {
     check(pmf.length === expectedLength, `${label} 확률 분포 길이 오류: ${pmf.length}`);
