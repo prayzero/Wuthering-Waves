@@ -2266,6 +2266,54 @@ function renderMatStrip() {
     </button>`).join('');
 }
 
+function calculateProgressionWaveplates(character = {}) {
+  const isRover = character?.id === 'rover';
+  const totalCredits = ASC_TOTALS.levelCredits + ASC_TOTALS.credits + FORTE_TOTALS.credits;
+  const forgeT1Equivalent = FORTE_TOTALS.forge.reduce((sum, count, tier) => sum + count * (3 ** tier), 0);
+  const combinedEnemy = FORTE_TOTALS.drop.map((count, tier) => count + ASC_TOTALS.enemy[tier]);
+
+  const expRuns = Math.ceil(ASC_TOTALS.exp / WAVEPLATE_FARMING.exp.reward);
+  const forgeRuns = Math.ceil(forgeT1Equivalent / WAVEPLATE_FARMING.forge.t1Average);
+  const bossRuns = isRover ? 0 : Math.ceil(ASC_TOTALS.boss / WAVEPLATE_FARMING.boss.average);
+  const weeklyRuns = Math.ceil(FORTE_TOTALS.weekly / WAVEPLATE_FARMING.weekly.reward);
+  const incidentalCredits =
+    expRuns * WAVEPLATE_FARMING.exp.credits +
+    forgeRuns * WAVEPLATE_FARMING.forge.credits +
+    bossRuns * WAVEPLATE_FARMING.boss.credits +
+    weeklyRuns * WAVEPLATE_FARMING.weekly.credits;
+  const creditNeeded = Math.max(0, totalCredits - incidentalCredits);
+  const creditRuns = Math.ceil(creditNeeded / WAVEPLATE_FARMING.credits.reward);
+
+  const runs = { exp: expRuns, forge: forgeRuns, boss: bossRuns, weekly: weeklyRuns, credits: creditRuns };
+  const waveplates = {
+    exp: expRuns * WAVEPLATE_FARMING.exp.cost,
+    forge: forgeRuns * WAVEPLATE_FARMING.forge.cost,
+    boss: bossRuns * WAVEPLATE_FARMING.boss.cost,
+    weekly: weeklyRuns * WAVEPLATE_FARMING.weekly.cost,
+    credits: creditRuns * WAVEPLATE_FARMING.credits.cost,
+  };
+  const totalWaveplates = Object.values(waveplates).reduce((sum, value) => sum + value, 0);
+  const bossRunRange = isRover ? [0, 0] : [
+    Math.ceil(ASC_TOTALS.boss / WAVEPLATE_FARMING.boss.max),
+    Math.ceil(ASC_TOTALS.boss / WAVEPLATE_FARMING.boss.min),
+  ];
+
+  return {
+    isRover,
+    totalCredits,
+    combinedEnemy,
+    forgeT1Equivalent,
+    runs,
+    waveplates,
+    incidentalCredits,
+    creditNeeded,
+    totalWaveplates,
+    days: totalWaveplates / WAVEPLATE_FARMING.perDay,
+    bossRunRange,
+    weeklyCycles: Math.ceil(weeklyRuns / WAVEPLATE_FARMING.weekly.claimsPerWeek),
+  };
+}
+
 function renderMatDetail() {
   const wrap = document.getElementById('mat-detail');
   const c = selectedMatChar ? charById(selectedMatChar) : null;
@@ -2277,6 +2325,13 @@ function renderMatDetail() {
   const forgeFam = FORGE_FAMILIES[m.forge];
   const dropFam = DROP_FAMILIES[m.drop];
   const asc = ASC_MATS[c.id] || [null, null];
+  const progression = calculateProgressionWaveplates(c);
+  const num = value => Number(value).toLocaleString('ko-KR');
+  const days = progression.days.toFixed(1).replace(/\.0$/, '');
+  const bossRange = progression.isRover ? '' :
+    ` <small>(${progression.bossRunRange[0]}~${progression.bossRunRange[1]}회)</small>`;
+  const bossWaveplateRange = progression.isRover ? '' :
+    ` <small>(${num(progression.bossRunRange[0] * WAVEPLATE_FARMING.boss.cost)}~${num(progression.bossRunRange[1] * WAVEPLATE_FARMING.boss.cost)})</small>`;
   const tierRow = (label, i, cnt) => `
     <div class="mat-row">
       <span class="tier-dot" style="background:${TIER_COLORS[i]}">T${i + 1}</span>
@@ -2321,7 +2376,7 @@ function renderMatDetail() {
         <div class="mat-row">
           <span class="tier-dot" style="background:#8f8d85">💰</span>
           <span class="mn">클램 코인</span>
-          <span class="cnt">${FORTE_TOTALS.credits}</span>
+          <span class="cnt">${num(FORTE_TOTALS.credits)}</span>
         </div>
       </div>
     </div>
@@ -2334,9 +2389,9 @@ function renderMatDetail() {
           <span class="cnt">×${ASC_TOTALS.specialty}</span>
         </div>
         <div class="mat-row">
-          <span class="tier-dot" style="background:${TIER_COLORS[2]}">보스</span>
+          <span class="tier-dot" style="background:${TIER_COLORS[2]}">${progression.isRover ? '임무' : '보스'}</span>
           <span class="mn">${asc[1] ? esc(asc[1]) : '<i>공식 데이터 미확인</i>'}</span>
-          <span class="cnt">×${ASC_TOTALS.boss}</span>
+          <span class="cnt">×${progression.isRover ? 5 : ASC_TOTALS.boss}</span>
         </div>
         <div class="mat-row">
           <span class="tier-dot" style="background:${TIER_COLORS[1]}">몹</span>
@@ -2346,11 +2401,70 @@ function renderMatDetail() {
         <div class="mat-row">
           <span class="tier-dot" style="background:#8f8d85">💰</span>
           <span class="mn">클램 코인</span>
-          <span class="cnt">${ASC_TOTALS.credits}</span>
+          <span class="cnt">${num(ASC_TOTALS.credits)}</span>
         </div>
       </div>
     </div>
-    <p class="mat-note">※ 수량은 포르테 풀강(전 노드) / 돌파(0→6돌파, Lv.90 상한) 기준 공통 수치. 주간 재료는 스킬 1개 1→10에 ×4씩. Lv.90 경험치까지 포함하면 ${esc(ASC_TOTALS.exp)} + 클램 코인 총 ${ASC_TOTALS.creditsWithExp}이 추가로 들어요. 재료명은 한국어 정식 명칭(2026-08-06 DB 대조) 기준.</p>
+    <p class="mat-note">※ 수량은 포르테 풀강(전 노드) / 돌파(0→6돌파, Lv.90 상한) 기준 공통 수치. 주간 재료는 스킬 1개 1→10에 ×4씩. Lv.1→90은 공명자 EXP ${num(ASC_TOTALS.exp)}(특급 공명 촉진제 ×${ASC_TOTALS.premiumPotions} 상당)와 클램 코인 ${num(ASC_TOTALS.levelCredits + ASC_TOTALS.credits)}이 들어요. 재료명은 한국어 정식 명칭(2026-08-06 DB 대조) 기준.</p>
+  </div>
+  <div class="progress-calc-card" aria-label="Lv.90 포르테 만렙 육성 계산">
+    <div class="progress-calc-head">
+      <div>
+        <span class="progress-kicker">육성 비용 · 게이지 계산</span>
+        <h3>Lv.1→90 + 포르테 전 노드 만렙</h3>
+      </div>
+      <span class="pill">SOL3 단계 8 기준</span>
+    </div>
+    <div class="progress-summary">
+      <div class="progress-stat"><span>총 클램 코인</span><b>${num(progression.totalCredits)}</b><small>레벨·돌파·포르테 합계</small></div>
+      <div class="progress-stat"><span>공명자 EXP</span><b>${num(ASC_TOTALS.exp)}</b><small>특급 촉진제 ${ASC_TOTALS.premiumPotions}개 상당</small></div>
+      <div class="progress-stat accent"><span>예상 결정 웨이브 플레이트</span><b>${num(progression.totalWaveplates)}</b><small>자연 회복 약 ${days}일</small></div>
+      <div class="progress-stat"><span>주간 제한</span><b>${progression.weeklyCycles}주차</b><small>주간 보스 ${progression.runs.weekly}회 보상</small></div>
+    </div>
+    <div class="banner-table-wrap progression-table-wrap">
+      <table class="banner-table progression-table">
+        <thead><tr><th>파밍 항목</th><th>최고 난이도 1회 보상</th><th>필요 횟수</th><th>게이지</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="cname">공명자 EXP</td>
+            <td>평균 ${num(WAVEPLATE_FARMING.exp.reward)} EXP</td>
+            <td>${progression.runs.exp}회</td>
+            <td><b>${num(progression.waveplates.exp)}</b></td>
+          </tr>
+          <tr>
+            <td class="cname">${esc(forgeFam.name)} 단조 재료</td>
+            <td>T1 환산 평균 ${WAVEPLATE_FARMING.forge.t1Average}개</td>
+            <td>약 ${progression.runs.forge}회</td>
+            <td><b>약 ${num(progression.waveplates.forge)}</b></td>
+          </tr>
+          <tr>
+            <td class="cname">${progression.isRover ? '방랑자 돌파 재료' : esc(asc[1] || '강적 돌파 재료')}</td>
+            <td>${progression.isRover ? '스토리 획득 · 게이지 없음' : `${WAVEPLATE_FARMING.boss.min}~${WAVEPLATE_FARMING.boss.max}개`}</td>
+            <td>${progression.isRover ? '신비한 암호 5개' : `약 ${progression.runs.boss}회${bossRange}`}</td>
+            <td><b>${progression.isRover ? '0' : `약 ${num(progression.waveplates.boss)}`}</b>${bossWaveplateRange}</td>
+          </tr>
+          <tr>
+            <td class="cname">${m.weekly ? esc(m.weekly) : '주간 보스 재료'}</td>
+            <td>${WAVEPLATE_FARMING.weekly.reward}개 · 주 ${WAVEPLATE_FARMING.weekly.claimsPerWeek}회 제한</td>
+            <td>${progression.runs.weekly}회</td>
+            <td><b>${num(progression.waveplates.weekly)}</b></td>
+          </tr>
+          <tr>
+            <td class="cname">부족한 클램 코인</td>
+            <td>${num(WAVEPLATE_FARMING.credits.reward)} 클램</td>
+            <td>${progression.runs.credits}회</td>
+            <td><b>${num(progression.waveplates.credits)}</b></td>
+          </tr>
+          <tr class="world-farm-row">
+            <td class="cname">월드 파밍</td>
+            <td colspan="2">특산물 ×${ASC_TOTALS.specialty} · ${esc(dropFam.name)} T1~T4 ×${progression.combinedEnemy.join('/')}</td>
+            <td><b>0</b></td>
+          </tr>
+        </tbody>
+        <tfoot><tr><th colspan="3">예상 총 게이지</th><th>${num(progression.totalWaveplates)}</th></tr></tfoot>
+      </table>
+    </div>
+    <p class="progress-note">다른 재료를 캐며 함께 받는 클램 코인 ${num(progression.incidentalCredits)}을 총비용에서 먼저 뺀 계산이에요. 경험치·강적·단조 보상은 SOL3 단계 8 실측 평균이라 실제 드롭에 따라 달라지고, 이벤트·상점·2배 보상·이미 보유한 재료는 반영하지 않았어요.</p>
   </div>`;
 
   document.getElementById('edit-mats-btn').addEventListener('click', () => openMatModal(c));

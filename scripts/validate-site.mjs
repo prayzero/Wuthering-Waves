@@ -110,6 +110,7 @@ try {
   vm.runInContext(`${read('js/data.js')}\n;globalThis.__qa = {
     CHARACTERS, BANNERS, CONTENT_DEFAULTS, ELEMENTS, WEAPONS, CHAR_MATS, ASC_MATS,
     SIG_WEAPONS, FORGE_FAMILIES, DROP_FAMILIES, WEEKLY_BOSS_MATS, LUNITE_PRICE_CHECKED,
+    ASC_TOTALS, FORTE_TOTALS, WAVEPLATE_FARMING,
     charPickupPmf, weaponPickupPmf
   };`, context, { filename: 'js/data.js' });
   const data = context.__qa;
@@ -180,6 +181,17 @@ try {
   check(data.CONTENT_DEFAULTS.find(c => c.id === 'sea')?.start === '2026-08-03', '해역 20시즌 시작일이 아닙니다.');
   check(data.CONTENT_DEFAULTS.find(c => c.id === 'matrix')?.start === '2026-07-17', '종말 매트릭스 2주기 1단계 시작일이 아닙니다.');
   check(data.LUNITE_PRICE_CHECKED === '2026-08-06', '결제 가격 확인일이 최신값이 아닙니다.');
+
+  check(data.ASC_TOTALS.exp === 2438000 && data.ASC_TOTALS.premiumPotions === 122,
+    'Lv.1→90 경험치 총량이 올바르지 않습니다.');
+  check(data.ASC_TOTALS.levelCredits + data.ASC_TOTALS.credits + data.FORTE_TOTALS.credits === 3053300,
+    'Lv.90 + 포르테 만렙 클램 코인 총량이 올바르지 않습니다.');
+  check(JSON.stringify(data.FORTE_TOTALS.forge) === JSON.stringify([25, 28, 55, 67]),
+    '포르테 단조 재료 총량이 올바르지 않습니다.');
+  check(data.WAVEPLATE_FARMING.checked === '2026-08-07', '웨이브 플레이트 파밍 수치 확인일이 최신값이 아닙니다.');
+  check(data.WAVEPLATE_FARMING.perDay === 240 && data.WAVEPLATE_FARMING.exp.cost === 40 &&
+    data.WAVEPLATE_FARMING.boss.cost === 60 && data.WAVEPLATE_FARMING.weekly.claimsPerWeek === 3,
+  '웨이브 플레이트 파밍 기준값이 올바르지 않습니다.');
 
   for (const [label, pmf, expectedLength] of [['캐릭터', data.charPickupPmf(), 161], ['전무', data.weaponPickupPmf(), 81]]) {
     check(pmf.length === expectedLength, `${label} 확률 분포 길이 오류: ${pmf.length}`);

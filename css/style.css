@@ -592,6 +592,33 @@ table.banner-table { width: 100%; border-collapse: collapse; font-size: 0.85rem;
 .mat-note { color: var(--muted); font-size: 0.74rem; margin-top: 10px; }
 .mat-empty { text-align: center; padding: 40px 16px; }
 
+.progress-calc-card {
+  margin-top: 16px; padding: 18px;
+  background: linear-gradient(145deg, rgba(57, 135, 229, 0.10), rgba(19, 26, 40, 0.96) 38%);
+  border: 1px solid rgba(156, 200, 240, 0.28); border-radius: var(--radius);
+}
+.progress-calc-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.progress-calc-head h3 { margin: 2px 0 0; font-size: 1.05rem; }
+.progress-kicker { color: var(--accent); font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.progress-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 14px; }
+.progress-stat {
+  display: flex; flex-direction: column; min-width: 0; padding: 11px 12px;
+  background: rgba(10, 14, 24, 0.58); border: 1px solid var(--border); border-radius: 10px;
+}
+.progress-stat.accent { border-color: rgba(156, 200, 240, 0.48); box-shadow: inset 0 0 20px rgba(57, 135, 229, 0.09); }
+.progress-stat span { color: var(--muted); font-size: 0.68rem; }
+.progress-stat b { margin: 2px 0; color: var(--ink); font-size: 1.08rem; font-variant-numeric: tabular-nums; }
+.progress-stat.accent b { color: var(--accent); }
+.progress-stat small { color: var(--ink-2); font-size: 0.64rem; line-height: 1.35; }
+.progression-table-wrap { border: 1px solid var(--border); border-radius: 10px; }
+.progression-table td.cname { color: var(--ink); font-weight: 700; }
+.progression-table td:last-child, .progression-table th:last-child { text-align: right; }
+.progression-table td small { color: var(--muted); }
+.progression-table .world-farm-row td { color: var(--muted); }
+.progression-table tfoot th { color: var(--accent); border-top: 1px solid rgba(156, 200, 240, 0.35); border-bottom: none; font-size: 0.84rem; }
+.progression-table tfoot th:last-child { font-size: 1rem; font-variant-numeric: tabular-nums; }
+.progress-note { margin: 10px 0 0; color: var(--muted); font-size: 0.72rem; }
+
 /* ---------- 확률 정보 ---------- */
 .rate-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
 .rate-card h3 { margin: 0 0 10px; font-size: 0.98rem; color: var(--accent); }
@@ -694,6 +721,9 @@ footer { max-width: 1080px; margin: 0 auto; padding: 0 16px 40px; color: var(--m
   .bc-head { align-items: flex-start; flex-wrap: wrap; }
   .bc-head .bc-dates { flex-basis: 100%; text-align: left; }
   .calc-rows, .purchase-summary, .form-2col { grid-template-columns: minmax(0, 1fr); }
+  .progress-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .progress-calc-card { padding: 14px; }
+  .progress-calc-head { align-items: flex-start; }
   .avatar { width: 50px; height: 50px; font-size: 1rem; }
   .schedule-card { flex-direction: column; }
   .schedule-actions { flex-direction: row; }

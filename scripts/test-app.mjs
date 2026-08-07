@@ -77,6 +77,7 @@ vm.runInContext(`${dataSource}\n${appSource}\n;globalThis.__qa = {
   normalizeStateData: (value, options) => normalizeStateData(JSON.parse(JSON.stringify(value)), options),
   scheduleGoalPlan, calculatorPullsForSchedule, purchasePlanTotals,
   lunitePurchasePrice, lunitePurchaseAmount, addSelectedLunitePurchase, renderPityCalc, calculatorResultMarkup,
+  calculateProgressionWaveplates,
   applyRecordSideEffects, revertRecordSideEffects, rebaseRecordEffectsForDeletion, esc,
   partyRoleKey, memberPlacementIssue, generalModeConflicts, setMember, openPicker,
   getState: () => state, setState: value => { state = value; },
@@ -99,6 +100,23 @@ const goals = {
 for (const [goal, expected] of Object.entries(goals)) {
   assert.equal(app.scheduleGoalPlan(goal).total, expected, `${goal} 목표 뽑기 수`);
 }
+
+const fullProgression = app.calculateProgressionWaveplates({ id: 'aemeath' });
+assert.equal(fullProgression.totalCredits, 3053300, 'Lv.90 + 포르테 만렙 총 클램 코인');
+assert.equal(fullProgression.forgeT1Equivalent, 2413, '단조 재료 T1 환산량');
+assert.deepEqual(Array.from(fullProgression.combinedEnemy), [29, 40, 52, 61], '돌파+포르테 일반 드롭 총합');
+assert.deepEqual({ ...fullProgression.runs }, { exp: 31, forge: 48, boss: 11, weekly: 9, credits: 26 },
+  '최고 난이도 평균 기준 파밍 횟수');
+assert.equal(fullProgression.incidentalCredits, 927800, '재료 파밍 중 획득하는 클램 코인 반영');
+assert.equal(fullProgression.totalWaveplates, 5400, '일반 공명자 풀육성 예상 게이지');
+assert.equal(fullProgression.days, 22.5, '자연 회복 기준 예상 일수');
+assert.deepEqual(Array.from(fullProgression.bossRunRange), [10, 12], '강적 드롭 범위별 횟수');
+assert.equal(fullProgression.weeklyCycles, 3, '주간 보스 보상 필요 주차');
+
+const roverProgression = app.calculateProgressionWaveplates({ id: 'rover' });
+assert.equal(roverProgression.runs.boss, 0, '방랑자는 강적 돌파 파밍 제외');
+assert.equal(roverProgression.waveplates.boss, 0, '방랑자 신비한 암호 게이지 0');
+assert.equal(roverProgression.totalWaveplates, 4780, '방랑자 풀육성 예상 게이지');
 
 const legacy = app.normalizeStateData({
   parties: [],

@@ -35,7 +35,7 @@ const context = vm.createContext({
   fetch: async request => { fetched += 1; return fetchImpl(request); },
   caches: {
     async open(name) { return cacheFor(name); },
-    async keys() { return ['other-app-v1', 'wuwa-planner-v14', 'wuwa-planner-v15', 'wuwa-planner-v16', 'wuwa-planner-v17', 'wuwa-planner-v18', 'wuwa-planner-v19', 'wuwa-planner-images-v1']; },
+    async keys() { return ['other-app-v1', 'wuwa-planner-v14', 'wuwa-planner-v15', 'wuwa-planner-v16', 'wuwa-planner-v17', 'wuwa-planner-v18', 'wuwa-planner-v19', 'wuwa-planner-v20', 'wuwa-planner-images-v1']; },
     async delete(name) { deleted.push(name); stores.delete(name); return true; },
   },
   self: {
@@ -60,13 +60,13 @@ async function dispatchFetch(request) {
 }
 
 await dispatchLifecycle('install');
-const shell = stores.get('wuwa-planner-v20');
+const shell = stores.get('wuwa-planner-v21');
 assert(shell?.has('./index.html'), '설치 시 앱 셸을 캐시해야 합니다.');
 assert(shell?.has('./js/app.js'), '설치 시 앱 로직을 캐시해야 합니다.');
 assert(shell?.has('./manifest.webmanifest'), '설치 시 앱 매니페스트를 캐시해야 합니다.');
 
 await dispatchLifecycle('activate');
-assert.deepEqual(deleted, ['wuwa-planner-v14', 'wuwa-planner-v15', 'wuwa-planner-v16', 'wuwa-planner-v17', 'wuwa-planner-v18', 'wuwa-planner-v19'], '자체 구버전 캐시만 삭제해야 합니다.');
+assert.deepEqual(deleted, ['wuwa-planner-v14', 'wuwa-planner-v15', 'wuwa-planner-v16', 'wuwa-planner-v17', 'wuwa-planner-v18', 'wuwa-planner-v19', 'wuwa-planner-v20'], '자체 구버전 캐시만 삭제해야 합니다.');
 
 const opaqueImage = { ok: false, type: 'opaque', clone() { return this; } };
 fetchImpl = async () => opaqueImage;
@@ -80,11 +80,11 @@ const networkCss = { ok: true, type: 'basic', clone() { return this; } };
 fetchImpl = async () => networkCss;
 const cssRequest = { url: 'https://example.test/css/style.css', method: 'GET', destination: 'style', mode: 'cors' };
 assert.equal(await dispatchFetch(cssRequest), networkCss, '같은 출처 네트워크 응답을 반환해야 합니다.');
-assert(writes.some(write => write.cache === 'wuwa-planner-v20' && write.request === cssRequest.url),
+assert(writes.some(write => write.cache === 'wuwa-planner-v21' && write.request === cssRequest.url),
   '같은 출처 정상 응답을 현재 셸 캐시에 저장해야 합니다.');
 
 const cachedJs = { ok: true, type: 'basic', cached: true };
-stores.get('wuwa-planner-v20').set('https://example.test/js/app.js', cachedJs);
+stores.get('wuwa-planner-v21').set('https://example.test/js/app.js', cachedJs);
 fetchImpl = async () => { throw new Error('offline'); };
 const jsResponse = await dispatchFetch({
   url: 'https://example.test/js/app.js', method: 'GET', destination: 'script', mode: 'cors',

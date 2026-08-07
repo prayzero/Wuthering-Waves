@@ -430,9 +430,10 @@ const ASC_TOTALS = {
   specialty: 60,
   boss: 46,
   enemy: [4, 12, 12, 4],
-  credits: '170,000',            // 순수 돌파 비용
-  exp: '특급 공명 촉진제 ×122',   // Lv.90 경험치 (전 캐릭터 공통)
-  creditsWithExp: '1,023,300',   // 경험치 포함 총 클램 코인
+  credits: 170000,               // 순수 돌파 비용
+  exp: 2438000,                  // Lv.1→90 필요 공명자 EXP
+  premiumPotions: 122,           // 특급 공명 촉진제 환산(1개 20,000 EXP)
+  levelCredits: 853300,          // 경험치 주입 비용
 };
 
 // 재료 등급 색 (T1~T4: 초록/파랑/보라/금)
@@ -443,7 +444,19 @@ const FORTE_TOTALS = {
   forge: [25, 28, 55, 67],       // 단조 재료 T1~T4
   drop:  [25, 28, 40, 57],       // 몹 드랍 T1~T4 (포르테분, 돌파분 별도)
   weekly: 26,                    // 주간 보스 재료 (주 3회 보상 제한)
-  credits: '2,030,000',          // 쉘 크레딧
+  credits: 2030000,              // 클램 코인
+};
+
+// SOL3 단계 8 파밍 환산값. 드롭형 보상은 커뮤니티 실측 평균이므로 결과는 예상치입니다.
+// 단조 재료 평균은 T1 환산(상위 등급 합성비 3:1), 2026-08-07 확인.
+const WAVEPLATE_FARMING = {
+  checked: '2026-08-07',
+  perDay: 240,
+  exp: { cost: 40, reward: 80000, credits: 4200, sample: 50 },
+  credits: { cost: 40, reward: 84000 },
+  forge: { cost: 40, t1Average: 51.09, credits: 4200, sample: 2421 },
+  boss: { cost: 60, average: 4.51, min: 4, max: 5, credits: 10000, sample: 317 },
+  weekly: { cost: 60, reward: 3, credits: 54000, claimsPerWeek: 3 },
 };
 
 /* ================================================================
