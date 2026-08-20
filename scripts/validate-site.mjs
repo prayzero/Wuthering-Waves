@@ -137,21 +137,29 @@ try {
     const refs = [...(banner.pickup || []), ...(banner.rerun || [])];
     check(new Set(refs).size === refs.length, `배너 내 캐릭터 중복: ${key}`);
     refs.forEach(id => check(charIds.has(id), `배너의 알 수 없는 캐릭터: ${key}/${id}`));
+    const fourStars = banner.fourStars || [];
+    check(new Set(fourStars).size === fourStars.length, `배너 내 4성 캐릭터 중복: ${key}`);
+    fourStars.forEach(id => check(data.CHARACTERS.find(character => character.id === id)?.rarity === 4,
+      `배너의 잘못된 4성 캐릭터: ${key}/${id}`));
     if (banner.charPityGroup) check(safeId(banner.charPityGroup), `잘못된 캐릭터 천장 그룹: ${key}`);
     if (banner.weaponPityGroup) check(safeId(banner.weaponPityGroup), `잘못된 전무 천장 그룹: ${key}`);
   }
 
   const collab = data.BANNERS.find(b => b.ver === '3.4' && b.phase === '콜라보');
   const selection = data.BANNERS.find(b => b.ver === '3.5' && b.phase === '선택형');
-  const currentBanner = data.BANNERS.find(b => b.ver === '3.5' && b.phase === '후반');
-  const nextPreview = data.BANNERS.find(b => b.ver === '3.6' && b.phase === '공개 예정');
+  const currentBanner = data.BANNERS.find(b => b.ver === '3.6' && b.phase === '전반');
+  const nextPreview = data.BANNERS.find(b => b.ver === '3.6' && b.phase === '후반 공식 예고');
   check(collab?.charPityGroup && collab?.weaponPityGroup, '3.4 콜라보 별도 천장 그룹이 없습니다.');
   check(selection?.charPityGroup && selection?.weaponPityGroup, '3.5 선택형 별도 천장 그룹이 없습니다.');
   check(selection?.freePulls === 10, '3.5 선택형 무료 10뽑 데이터가 없습니다.');
-  check(currentBanner?.start === '2026-07-30' && currentBanner?.end === '2026-08-19', '3.5 후반 공식 일정이 최신값이 아닙니다.');
-  check(currentBanner?.pickup?.includes('suisui') && currentBanner?.rerun?.includes('aemeath'), '3.5 후반 픽업 구성이 최신값이 아닙니다.');
-  check(nextPreview?.leaked === true && nextPreview?.leakNames?.some(name => name.includes('청초')) &&
-    nextPreview?.leakNames?.some(name => name.includes('경연')), '3.6 공식 예고 데이터가 없습니다.');
+  check(currentBanner?.start === '2026-08-20' && currentBanner?.end === '2026-09-10', '3.6 전반 공식 일정이 최신값이 아닙니다.');
+  check(currentBanner?.pickup?.includes('qingxiao') && currentBanner?.rerun?.includes('denia'), '3.6 전반 픽업 구성이 최신값이 아닙니다.');
+  check(currentBanner?.fourStars?.join(',') === 'yangyang,baizhi,sanhua', '3.6 전반 4성 픽업 구성이 최신값이 아닙니다.');
+  check(nextPreview?.leaked === true && nextPreview?.leakNames?.some(name => name.includes('경연')) &&
+    nextPreview?.leakNames?.some(name => name.includes('히유키')) &&
+    nextPreview?.leakNames?.some(name => name.includes('모니에')), '3.6 후반 공식 예고 데이터가 없습니다.');
+  check(data.SIG_WEAPONS.qingxiao === '옥빛 구름', '청초 전용 무기 공식명이 최신값이 아닙니다.');
+  check(data.SIG_WEAPONS.jingran === '수많은 인도', '경연 전용 무기 공식명이 최신값이 아닙니다.');
   check(data.CHARACTERS.find(c => c.id === 'suisui')?.role.startsWith('힐러'), '수수 역할이 힐러로 분류되지 않았습니다.');
   check(data.CHARACTERS.find(c => c.id === 'rover')?.role.includes('전도'), '방랑자 전도 속성이 역할 설명에 없습니다.');
 

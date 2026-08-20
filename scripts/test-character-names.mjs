@@ -37,6 +37,8 @@ const expectedNames = {
   baizhi: '설지',
   yuanwu: '연무',
   buling: '복링',
+  qingxiao: '청초',
+  jingran: '경연',
 };
 
 const actualNames = Object.fromEntries(audit.characters.map(character => [character.id, character.name]));
@@ -57,5 +59,8 @@ assert.ok(audit.seasons['2.3-후반'].includes('샤콘 픽업'), '샤콘 공식�
 assert.ok(audit.seasons['2.3-후반'].includes('샤코나 픽업'), '샤콘 이전 표기 시즌 매칭');
 assert.ok(audit.seasons['2.3-후반'].includes('로치아 픽업'), '복각 캐릭터 이전 표기 시즌 매칭');
 assert.ok(audit.seasons['3.5-전반'].includes('루크 헤르센 픽업'), '최근 복각 이전 표기 시즌 매칭');
+assert.ok(audit.seasons['3.6-전반'].includes('청초 픽업'), '3.6 전반 청초 시즌 매칭');
+assert.ok(audit.seasons['3.6-전반'].includes('천초 픽업'), '청초 이전 오기록 시즌 매칭');
+assert.ok(audit.seasons['3.6-전반'].includes('데니아 픽업'), '3.6 전반 데니아 복각 시즌 매칭');
 
 console.log(`캐릭터 이름 회귀 테스트 통과: 공식 표기 ${Object.keys(expectedNames).length}개`);

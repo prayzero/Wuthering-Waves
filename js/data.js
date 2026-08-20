@@ -1,7 +1,7 @@
 /* ================================================================
    WuWa 픽업 플래너 — 정적 데이터
    캐릭터 로스터 / 역대 픽업 배너 / 확률 모델 상수
-   기준일: 2026-08-06 (버전 3.5 후반 진행 중)
+   기준일: 2026-08-20 (버전 3.6 전반 진행 중)
    ================================================================ */
 
 // 속성 정의 (게임 내 고유 색상)
@@ -22,6 +22,7 @@ const WEAPONS = {
 // 캐릭터 아이콘 (wuthering.gg 공개 위키 CDN — 차단 시 이니셜 타일로 자동 대체)
 const WG = n => `https://wuthering.gg/_ipx/q_70&s_100x100/images/iconrolehead150/T_IconRoleHead150_${n}.png`;
 const TOPUP = f => `https://cdn.topuplive.com/cdn-cgi/image/quality=low,format=webp/uploads/images/goods/20260709/${f}.webp`;
+const ENCORE = n => `https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconRoleHead150/T_IconRoleHead150_${n}.webp`;
 
 // group: 'limited'(한정 5성) | 'standard'(상시 5성) | 'four'(4성)
 const CHARACTERS = [
@@ -61,6 +62,8 @@ const CHARACTERS = [
   { id: 'rebecca',     name: '레베카',     rarity: 5, element: 'electro', group: 'limited', ver: '3.4', weapon: 'pistols',    role: '버스트 딜러 (콜라보 무료)', img: WG('69_UI') },
   { id: 'xuanling',    name: '양양 · 현령', rarity: 5, element: 'havoc',   group: 'limited', ver: '3.5', weapon: 'sword',      role: '딜러 (양양 SP)',  img: TOPUP('1783586929_0ZcueR8hIW') },
   { id: 'suisui',      name: '수수',       rarity: 5, element: 'glacio',  group: 'limited', ver: '3.5', weapon: 'rectifier',  role: '힐러/서포터',     img: TOPUP('1783586993_DtAuOuxMBY') },
+  { id: 'qingxiao',    name: '청초',       rarity: 5, element: 'aero',    group: 'limited', ver: '3.6', weapon: 'sword',      role: '딜러',            img: ENCORE('73_UI') },
+  { id: 'jingran',     name: '경연',       rarity: 5, element: 'fusion',  group: 'limited', ver: '3.6', weapon: 'broadblade', role: '딜러',            img: ENCORE('74_UI') },
   // ---- 상시 5성 ----
   { id: 'rover',       name: '방랑자',     rarity: 5, element: 'spectro', group: 'standard', weapon: 'sword',      role: '주인공 (회절/인멸/기류/전도)', img: WG('5') },
   { id: 'calcharo',    name: '카카루',     rarity: 5, element: 'electro', group: 'standard', weapon: 'broadblade', role: '딜러',            img: WG('18') },
@@ -83,7 +86,7 @@ const CHARACTERS = [
   { id: 'buling',      name: '복링',       rarity: 4, element: 'electro', group: 'four', weapon: 'rectifier',  role: '서포터',       img: WG('58_UI') },
 ];
 
-/* ---- 역대 픽업 배너 (1.0 ~ 3.5 + 3.6 공식 예고, 복각 포함, 페이즈 단위) ----
+/* ---- 역대 픽업 배너 (1.0 ~ 3.6, 복각 포함, 페이즈 단위) ----
    pickup: 신규 픽업 캐릭터 id / rerun: 복각 캐릭터 id */
 const BANNERS = [
   { ver: '1.0', phase: '전반', start: '2024-05-23', end: '2024-06-13', pickup: ['jiyan'],       rerun: [], note: '출시 버전' },
@@ -127,8 +130,10 @@ const BANNERS = [
   { ver: '3.5', phase: '전반', start: '2026-07-10', end: '2026-07-30', pickup: ['xuanling'],    rerun: ['lynae', 'luukherssen'], note: '3.5는 KR 공식 공지 기준 07-10 시작(약 41일) · 최초의 기존 4성(양양) 5성 승격판' },
   { ver: '3.5', phase: '후반', start: '2026-07-30', end: '2026-08-19', pickup: ['suisui'],      rerun: ['aemeath'], note: 'KR 공식 일정 07-30 11:00 ~ 08-19 12:59 · 수수 전무 「노을에 깃든 이슬」' },
   { ver: '3.5', phase: '선택형', start: '2026-07-10', end: '2026-08-19', pickup: [],            rerun: ['jiyan', 'yinlin', 'jinhsi', 'changli', 'zhezhi', 'xiangliyao'], charPityGroup: 'char-select-35', weaponPityGroup: 'weapon-select-35', freePulls: 10, note: '택1 선택형 복각 배너 · 변경 가능 · 첫 10회 무료 · 천장 별도' },
-  { ver: '3.6', phase: '공개 예정', start: null, end: null, pickup: [], rerun: [], leaked: true,
-    leakNames: ['청초 · 기류/직검', '경연 · 용융/대검'], note: '공식 캐릭터 소개로 이름·속성·무기까지 공개. 역할·픽업 순서·일정·재료·전용 무기는 2026-08-06 현재 미발표' },
+  { ver: '3.6', phase: '전반', start: '2026-08-20', end: '2026-09-10', pickup: ['qingxiao'], rerun: ['denia'], fourStars: ['yangyang', 'baizhi', 'sanhua'],
+    note: 'KR 공식 일정: 3.6 업데이트 완료 후 ~ 09-10 10:59 · 청초 전무 「옥빛 구름」' },
+  { ver: '3.6', phase: '후반 공식 예고', start: null, end: null, pickup: [], rerun: [], fourStars: ['mortefi', 'aalto', 'yuanwu'], leaked: true,
+    leakNames: ['경연 · 신규', '히유키 · 복각', '모니에 · 복각'], note: '3.6 공식 방송 공개 · 4성 확률 UP: 모르테피·알토·연무 · 정확한 종료 시각은 후반 공식 공지 대기' },
 ];
 
 // 캐릭터명 변경 전 기록과의 호환용 (현 표기 → 예전 표기 목록)
@@ -138,6 +143,7 @@ const OLD_NAME_ALIASES = {
   '구원': ['추원'], '모니에': ['모르네'], '린네': ['리네'], '카르티시아': ['카르테시아'], '카카루': ['카카로'],
   '벨리나': ['버리나', '버디나'], '알토': ['아토'], '연무': ['위안우', '원무'], '단근': ['단진'], '파수인': ['수안인'],
   '양양 · 현령': ['현령'], '루크 · 헤르센': ['루크 헤르센'], '에이메스': ['에메스'], '설지': ['백지'], '복링': ['복령'],
+  '청초': ['천초'],
 };
 
 /* ---- 확률 모델 ----
@@ -216,8 +222,8 @@ function luckGrade(top) {
 }
 
 /* ================================================================
-   스킬(포르테) 육성 재료 — 검증 데이터 (Game8 및 캐릭터 DB 대조, 2026-08-06)
-   재료명은 한국어 정식 명칭 (wuthering.gg KR DB 대조, 2026-08-06) — 미확인분만 영어 유지
+   스킬(포르테) 육성 재료 — 검증 데이터 (게임 데이터 및 캐릭터 DB 대조, 2026-08-20)
+   재료명은 한국어 정식 명칭 (encore.moe KR DB 대조, 2026-08-20) — 미확인분만 영어 유지
    ================================================================ */
 
 // 단조(합성) 재료 세트 — 4단계 등급, 한국어 정식 명칭 (wuthering.gg KR DB 대조, 2026-08-06)
@@ -308,6 +314,8 @@ const CHAR_MATS = {
   lucilla:     ['string',     'mech',       '되묻는 우리 (We Who Question)'],
   xuanling:    ['polarizer',  'autopuppet', '하늘길 유리의 마음 (Skyward Glazed Heart)'],
   suisui:      ['string',     'autopuppet', '하늘길 유리의 마음 (Skyward Glazed Heart)'],
+  qingxiao:    ['polarizer',  'autopuppet', '되묻는 우리 (We Who Question)'],
+  jingran:     ['crystal',    'whisperin',  '하늘길 유리의 마음 (Skyward Glazed Heart)'],
   rover:       ['drip',       'whisperin',  '끊임없는 파괴 (Unending Destruction)'], // 회절 기준 (인멸: Dreamless Feather, 기류: When Irises Bloom)
   calcharo:    ['residue',    'ring',       '비문 고종 (Monument Bell)'],
   lingyang:    ['cadence',    'whisperin',  '끊임없는 파괴 (Unending Destruction)'],
@@ -328,7 +336,7 @@ const CHAR_MATS = {
   buling:      ['helix',      'whisperin',  '심해의 저주 (Curse of the Abyss)'],
 };
 
-// 전용 무기(전무) 이름 — 한국어 정식 명칭 (wuthering.gg KR 무기 목록 대조, 2026-08-06)
+// 전용 무기(전무) 이름 — 한국어 정식 명칭 (공식 공지·encore.moe KR 무기 목록 대조, 2026-08-20)
 // null = 확인 불가. 리네: 기존 'Starfield Calibrator' 표기가 모니에 전무로 정정되어 재확인 필요
 const SIG_WEAPONS = {
   jiyan: '청룡의 천장',            // Verdant Summit
@@ -366,6 +374,8 @@ const SIG_WEAPONS = {
   lucilla: '프리즈 프레임',        // Freeze Frame (기존 Forged Dwarf Star 표기는 데니아 전무로 정정)
   xuanling: '아득히 푸른 하늘',    // Azure Oath
   suisui: '노을에 깃든 이슬',      // Firstlight's Herald
+  qingxiao: '옥빛 구름',            // Glint of Clouds
+  jingran: '수많은 인도',           // Thousandfold Deliverance
 };
 
 // 돌파(레벨업) 재료 [지역 특산물, 필드 보스 드랍] — 몹 드랍은 스킬과 같은 계열, null = 확인 불가
@@ -405,6 +415,8 @@ const ASC_MATS = {
   lucilla:     ['물망초', '태양을 노리는 손끝'],
   xuanling:    ['노을빛 구름 깃털', '화염에 새겨진 정의'], // 인게임 확인
   suisui:      ['노을을 헤엄치는 비단 잉어', '화염에 새겨진 정의'],
+  qingxiao:    ['백은 칼날', '가짜 선인의 한숨'],
+  jingran:     ['노을빛 구름 깃털', '가짜 선인의 한숨'],
   rover:       ['공작화', '신비한 암호'], // Mysterious Code
   calcharo:    ['붓꽃', '번개의 성핵'],
   lingyang:    ['구름버섯', '음향의 성핵'],

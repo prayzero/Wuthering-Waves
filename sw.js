@@ -3,7 +3,7 @@
    배포 시 CACHE_VERSION을 올리면 이전 캐시가 정리됩니다. */
 
 const CACHE_PREFIX = 'wuwa-planner-';
-const CACHE_VERSION = 'wuwa-planner-v21';
+const CACHE_VERSION = 'wuwa-planner-v22';
 const IMAGE_CACHE = 'wuwa-planner-images-v1';
 const ACTIVE_CACHES = new Set([CACHE_VERSION, IMAGE_CACHE]);
 const APP_SHELL = [

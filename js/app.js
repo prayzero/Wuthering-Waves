@@ -1819,6 +1819,7 @@ function renderBannerCards() {
     const live = b.start <= t && t <= b.end;
     const pickupChars = (b.pickup || []).map(charById).filter(Boolean);
     const rerunChars = (b.rerun || []).map(charById).filter(Boolean);
+    const fourStarChars = (b.fourStars || []).map(charById).filter(Boolean);
     const seasons = new Set(bannerSeasonNames(b));
     const recs = state.records.filter(r => seasons.has(r.season));
 
@@ -1861,6 +1862,15 @@ function renderBannerCards() {
       <div class="bc-rerun">
         <span class="bc-rerun-lbl">복각</span>
         ${rerunChars.map(c => `
+        <span class="bc-rerun-chip" title="${esc(c.name)}">
+          ${avatarHTML(c, { small: true })}
+          <span class="rn">${esc(c.name)}</span>
+        </span>`).join('')}
+      </div>` : ''}
+      ${fourStarChars.length ? `
+      <div class="bc-rerun">
+        <span class="bc-rerun-lbl">4성 UP</span>
+        ${fourStarChars.map(c => `
         <span class="bc-rerun-chip" title="${esc(c.name)}">
           ${avatarHTML(c, { small: true })}
           <span class="rn">${esc(c.name)}</span>
