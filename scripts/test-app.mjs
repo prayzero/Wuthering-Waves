@@ -37,12 +37,16 @@ class FakeElement {
 const elements = new Map();
 const documentStub = {
   activeElement: null,
+  listeners: {},
   getElementById(id) {
     if (!elements.has(id)) elements.set(id, new FakeElement(id));
     return elements.get(id);
   },
   querySelectorAll() { return []; },
-  addEventListener() {},
+  addEventListener(type, handler) {
+    if (!this.listeners[type]) this.listeners[type] = [];
+    this.listeners[type].push(handler);
+  },
 };
 
 const storage = new Map();
@@ -79,10 +83,11 @@ vm.runInContext(`${dataSource}\n${appSource}\n;globalThis.__qa = {
   lunitePurchasePrice, lunitePurchaseAmount, addSelectedLunitePurchase, renderPityCalc, calculatorResultMarkup,
   calculateProgressionWaveplates,
   applyRecordSideEffects, revertRecordSideEffects, rebaseRecordEffectsForDeletion, esc,
-  partyRoleKey, memberPlacementIssue, generalModeConflicts, setMember, openPicker,
+  partyRoleKey, memberPlacementIssue, generalModeConflicts, setMember, openPicker, bannerIsActive, renderBannerCards,
   getState: () => state, setState: value => { state = value; },
   getContentDefaults: () => clone(CONTENT_DEFAULTS),
   getLegacyContentDefaults: () => clone(LEGACY_CONTENT_DEFAULTS_V3),
+  getV4ContentDefaults: () => clone(LEGACY_CONTENT_DEFAULTS_V4),
   replaceContentDefaults: value => {
     CONTENT_DEFAULTS.splice(0, CONTENT_DEFAULTS.length, ...clone(value));
   }
@@ -144,7 +149,7 @@ const migratedV3Contents = app.normalizeStateData({
   parties: [],
   contents: legacyContentDefaults,
 });
-assert.equal(migratedV3Contents.schemaVersion, 4, 'v3 저장 데이터 스키마 갱신');
+assert.equal(migratedV3Contents.schemaVersion, 5, 'v3 저장 데이터 스키마 갱신');
 assert.equal(JSON.stringify(migratedV3Contents.contents), JSON.stringify(refreshedContentDefaults),
   '수정하지 않은 v3 컨텐츠 기본값을 최신 기본값으로 갱신');
 
@@ -170,14 +175,60 @@ assert.equal(migratedCustomV3Contents.contents[1].rules, refreshedContentDefault
 assert.equal(JSON.stringify(migratedCustomV3Contents.contents[1].stages), JSON.stringify(refreshedContentDefaults[1].stages),
   'v3에서 수정하지 않은 나머지 필드는 최신 기본값으로 갱신');
 
-const preservedV4Contents = app.normalizeStateData({
+const v4ContentDefaults = app.getV4ContentDefaults();
+const migratedV4Contents = app.normalizeStateData({
   schemaVersion: 4,
+  parties: [],
+  contents: v4ContentDefaults,
+  owned: { jingran: true },
+});
+assert.equal(migratedV4Contents.schemaVersion, 5, 'v4 저장 데이터 스키마 갱신');
+assert.equal(migratedV4Contents.owned.jingran, true, '컨텐츠 갱신 시 보유 캐릭터 보존');
+assert.equal(JSON.stringify(migratedV4Contents.contents), JSON.stringify(refreshedContentDefaults),
+  '수정하지 않은 v4 컨텐츠 기본값을 최신 기본값으로 갱신');
+const customizedV4Contents = structuredClone(v4ContentDefaults);
+customizedV4Contents[0].buff = '직접 정한 버프';
+customizedV4Contents[1].stages = [{ name: '내 단계', mobs: '내 적' }];
+const migratedCustomV4Contents = app.normalizeStateData({ schemaVersion: 4, parties: [], contents: customizedV4Contents });
+assert.equal(migratedCustomV4Contents.contents[0].buff, '직접 정한 버프', 'v4 사용자 버프 보존');
+assert.equal(migratedCustomV4Contents.contents[0].rules, refreshedContentDefaults[0].rules, 'v4 수정하지 않은 규칙 갱신');
+assert.equal(JSON.stringify(migratedCustomV4Contents.contents[1].stages), JSON.stringify(customizedV4Contents[1].stages),
+  'v4 사용자 단계 보존');
+const preservedV5Contents = app.normalizeStateData({
+  schemaVersion: 5,
   parties: [],
   contents: legacyContentDefaults,
 });
-assert.equal(JSON.stringify(preservedV4Contents.contents), JSON.stringify(legacyContentDefaults),
-  'v4 저장 컨텐츠는 최신 기본값과 달라도 그대로 보존');
+assert.equal(JSON.stringify(preservedV5Contents.contents), JSON.stringify(legacyContentDefaults),
+  'v5 저장 컨텐츠는 최신 기본값과 달라도 그대로 보존');
 app.replaceContentDefaults(realContentDefaults);
+
+const timedBanner = { start: '2026-09-10', end: '2026-09-29',
+  startAt: '2026-09-10T11:00:00+09:00', endAt: '2026-09-29T12:59:59+09:00' };
+assert.equal(app.bannerIsActive(timedBanner, Date.parse('2026-09-10T10:59:59+09:00')), false, '픽업 시작 시각 전');
+assert.equal(app.bannerIsActive(timedBanner, Date.parse(timedBanner.startAt)), true, '픽업 시작 시각');
+assert.equal(app.bannerIsActive(timedBanner, Date.parse(timedBanner.endAt)), true, '픽업 종료 시각 포함');
+assert.equal(app.bannerIsActive(timedBanner, Date.parse('2026-09-29T13:00:00+09:00')), false, '픽업 종료 후');
+assert.equal(app.bannerIsActive({ ...timedBanner, leaked: true }, Date.parse('2026-09-16')), false, '예고는 진행 중이 아님');
+assert.equal(app.bannerIsActive({ start: '2026-07-16', end: '2026-07-16' }), true, '시각 없는 과거 배너 날짜 호환');
+
+app.setState(app.normalizeStateData({
+  parties: [],
+  records: [
+    { id: 'legacy-hiyuki', season: '히유키 픽업', type: 'char', charId: 'hiyuki', copy: 0, pulls: 70 },
+    { id: 'rerun-hiyuki', season: '3.6-후반', type: 'char', charId: 'hiyuki', copy: 1, pulls: 60 },
+  ],
+}));
+app.renderBannerCards();
+const bannerHtml = elements.get('banner-cards').innerHTML;
+assert.equal((bannerHtml.match(/data-del-record="legacy-hiyuki"/g) || []).length, 1,
+  '이름 기반 과거 기록은 복각 카드에 중복 표시하지 않음');
+const bannerSections = bannerHtml.split('data-banner="');
+assert.match(bannerSections.find(section => section.startsWith('3.3-전반"')), /data-del-record="legacy-hiyuki"/,
+  '이름 기반 기록은 기존 최초 배너에 유지');
+assert.match(bannerSections.find(section => section.startsWith('3.6-후반"')), /data-del-record="rerun-hiyuki"/,
+  '버전 키 기반 복각 기록은 해당 배너에 유지');
+assert.equal(app.getState().records[0].season, '히유키 픽업', '표시 수정으로 저장된 시즌명을 변경하지 않음');
 
 assert.equal(app.partyRoleKey({ role: '딜러' }), 'dealer', '딜러 역할 분류');
 assert.equal(app.partyRoleKey({ role: '딜러/힐러' }), 'dealer', '복합 역할은 주 역할인 딜러로 분류');
@@ -235,6 +286,48 @@ const tagTarget = {
 partyChange({ target: tagTarget });
 assert.equal(partyState.parties[2].tag, 'tower', '중복 상태에서는 콘텐츠 선택 해제 차단');
 assert.equal(tagTarget.value, 'tower', '차단 시 콘텐츠 선택값 복원');
+
+// 파티 변경 후 콘텐츠 탭을 다시 열어도 연결 파티가 이전 편성으로 남지 않아야 합니다.
+app.setState(app.normalizeStateData({
+  owned: { yinlin: true, shorekeeper: true },
+  parties: [
+    { id: 'linked', name: '연동 확인 파티', members: [null, null, null], tag: 'tower' },
+    { id: 'unlinked', name: '이동 목적지', members: [null, null, null], tag: '' },
+  ],
+}));
+assert.equal(app.setMember('linked', 0, 'yinlin'), true);
+assert.match(elements.get('content-grid').innerHTML, /title="음림 ·/, '멤버 추가가 연결 파티에 즉시 표시');
+app.setMember('linked', 0, null);
+assert.doesNotMatch(elements.get('content-grid').innerHTML, /title="음림 ·/, '멤버 제거가 연결 파티에 즉시 표시');
+
+app.setMember('linked', 0, 'shorekeeper');
+const dragSource = {
+  dataset: { dragChar: 'shorekeeper', partyId: 'linked', idx: '0' },
+  closest(selector) { return selector === '[data-drag-char]' ? this : null; },
+};
+documentStub.listeners.dragstart[0]({ target: dragSource, dataTransfer: { setData() {} } });
+const dropTarget = {
+  dataset: { partyId: 'unlinked', idx: '0' },
+  classList: { remove() {} },
+  closest(selector) { return selector === '[data-slot]' ? this : null; },
+};
+documentStub.listeners.drop[0]({ target: dropTarget, preventDefault() {} });
+assert.equal(app.getState().parties[1].members[0], 'shorekeeper', '드래그로 다른 파티 이동');
+assert.doesNotMatch(elements.get('content-grid').innerHTML, /title="파수인 ·/, '드래그 이동이 연결 파티에 즉시 표시');
+
+app.setMember('linked', 0, 'yinlin');
+const unownTarget = {
+  dataset: { toggleOwn: 'yinlin' },
+  closest(selector) { return selector === '[data-toggle-own]' ? this : null; },
+};
+elements.get('roster-grid').listeners.click[0]({ target: unownTarget });
+assert.doesNotMatch(elements.get('content-grid').innerHTML, /title="음림 ·/, '보유 해제에 따른 파티 제거도 즉시 표시');
+const deleteTarget = {
+  dataset: { delParty: 'linked' },
+  closest(selector) { return selector === '[data-del-party]' ? this : null; },
+};
+elements.get('party-list').listeners.click[0]({ target: deleteTarget });
+assert.doesNotMatch(elements.get('content-grid').innerHTML, /연동 확인 파티/, '파티 삭제가 연결 목록에 즉시 표시');
 
 const xssInput = {
   parties: [],

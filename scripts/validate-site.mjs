@@ -134,6 +134,12 @@ try {
     if (!banner.leaked) {
       check(validDate(banner.start) && validDate(banner.end) && banner.start <= banner.end, `배너 날짜 오류: ${key}`);
     }
+    for (const field of ['startAt', 'endAt']) {
+      if (banner[field]) check(Number.isFinite(Date.parse(banner[field])) &&
+        banner[field].startsWith(banner[field === 'startAt' ? 'start' : 'end']) &&
+        banner[field].endsWith('+09:00'), `배너 한국 시각 오류: ${key}/${field}`);
+    }
+    if (banner.startAt && banner.endAt) check(Date.parse(banner.startAt) <= Date.parse(banner.endAt), `배너 시각 순서 오류: ${key}`);
     const refs = [...(banner.pickup || []), ...(banner.rerun || [])];
     check(new Set(refs).size === refs.length, `배너 내 캐릭터 중복: ${key}`);
     refs.forEach(id => check(charIds.has(id), `배너의 알 수 없는 캐릭터: ${key}/${id}`));
@@ -147,17 +153,23 @@ try {
 
   const collab = data.BANNERS.find(b => b.ver === '3.4' && b.phase === '콜라보');
   const selection = data.BANNERS.find(b => b.ver === '3.5' && b.phase === '선택형');
-  const currentBanner = data.BANNERS.find(b => b.ver === '3.6' && b.phase === '전반');
-  const nextPreview = data.BANNERS.find(b => b.ver === '3.6' && b.phase === '후반 공식 예고');
+  const previousBanner = data.BANNERS.find(b => b.ver === '3.6' && b.phase === '전반');
+  const currentBanner = data.BANNERS.find(b => b.ver === '3.6' && b.phase === '후반');
+  const nextPreview = data.BANNERS.find(b => b.ver === '3.7' && b.phase === '공식 예고');
   check(collab?.charPityGroup && collab?.weaponPityGroup, '3.4 콜라보 별도 천장 그룹이 없습니다.');
   check(selection?.charPityGroup && selection?.weaponPityGroup, '3.5 선택형 별도 천장 그룹이 없습니다.');
   check(selection?.freePulls === 10, '3.5 선택형 무료 10뽑 데이터가 없습니다.');
-  check(currentBanner?.start === '2026-08-20' && currentBanner?.end === '2026-09-10', '3.6 전반 공식 일정이 최신값이 아닙니다.');
-  check(currentBanner?.pickup?.includes('qingxiao') && currentBanner?.rerun?.includes('denia'), '3.6 전반 픽업 구성이 최신값이 아닙니다.');
-  check(currentBanner?.fourStars?.join(',') === 'yangyang,baizhi,sanhua', '3.6 전반 4성 픽업 구성이 최신값이 아닙니다.');
-  check(nextPreview?.leaked === true && nextPreview?.leakNames?.some(name => name.includes('경연')) &&
-    nextPreview?.leakNames?.some(name => name.includes('히유키')) &&
-    nextPreview?.leakNames?.some(name => name.includes('모니에')), '3.6 후반 공식 예고 데이터가 없습니다.');
+  check(previousBanner?.start === '2026-08-20' && previousBanner?.end === '2026-09-10', '3.6 전반 공식 일정이 올바르지 않습니다.');
+  check(previousBanner?.pickup?.includes('qingxiao') && previousBanner?.rerun?.includes('denia'), '3.6 전반 픽업 구성이 올바르지 않습니다.');
+  check(previousBanner?.fourStars?.join(',') === 'yangyang,baizhi,sanhua', '3.6 전반 4성 픽업 구성이 올바르지 않습니다.');
+  check(currentBanner?.start === '2026-09-10' && currentBanner?.end === '2026-09-29', '3.6 후반 공식 일정이 최신값이 아닙니다.');
+  check(currentBanner?.startAt === '2026-09-10T11:00:00+09:00' &&
+    currentBanner?.endAt === '2026-09-29T12:59:59.999+09:00', '3.6 후반 한국 시작·종료 시각 오류');
+  check(currentBanner?.pickup?.join(',') === 'jingran' && currentBanner?.rerun?.join(',') === 'hiyuki,mornye', '3.6 후반 픽업 구성이 최신값이 아닙니다.');
+  check(currentBanner?.fourStars?.join(',') === 'mortefi,aalto,yuanwu', '3.6 후반 4성 픽업 구성이 최신값이 아닙니다.');
+  check(nextPreview?.leaked === true && !nextPreview?.start && !nextPreview?.end &&
+    nextPreview?.leakNames?.some(name => name.includes('여우의 별자리')) &&
+    nextPreview?.leakNames?.some(name => name.includes('쇄명')), '3.7 공식 예고 데이터가 없습니다.');
   check(data.SIG_WEAPONS.qingxiao === '옥빛 구름', '청초 전용 무기 공식명이 최신값이 아닙니다.');
   check(data.SIG_WEAPONS.jingran === '수많은 인도', '경연 전용 무기 공식명이 최신값이 아닙니다.');
   check(data.CHARACTERS.find(c => c.id === 'suisui')?.role.startsWith('힐러'), '수수 역할이 힐러로 분류되지 않았습니다.');
@@ -185,9 +197,9 @@ try {
     check(Array.isArray(content.stages), `컨텐츠 단계 배열 오류: ${content.id}`);
     contentIds.add(content.id);
   }
-  check(data.CONTENT_DEFAULTS.find(c => c.id === 'tower')?.start === '2026-07-20', '역경의 탑 38시즌 시작일이 아닙니다.');
-  check(data.CONTENT_DEFAULTS.find(c => c.id === 'sea')?.start === '2026-08-03', '해역 20시즌 시작일이 아닙니다.');
-  check(data.CONTENT_DEFAULTS.find(c => c.id === 'matrix')?.start === '2026-07-17', '종말 매트릭스 2주기 1단계 시작일이 아닙니다.');
+  check(data.CONTENT_DEFAULTS.find(c => c.id === 'tower')?.start === '2026-09-14', '역경의 탑 40시즌 시작일이 아닙니다.');
+  check(data.CONTENT_DEFAULTS.find(c => c.id === 'sea')?.start === '2026-08-31', '해역 21시즌 시작일이 아닙니다.');
+  check(data.CONTENT_DEFAULTS.find(c => c.id === 'matrix')?.start === '2026-08-20', '종말 매트릭스 2주기 2단계 시작일이 아닙니다.');
   check(data.LUNITE_PRICE_CHECKED === '2026-08-06', '결제 가격 확인일이 최신값이 아닙니다.');
 
   check(data.ASC_TOTALS.exp === 2438000 && data.ASC_TOTALS.premiumPotions === 122,

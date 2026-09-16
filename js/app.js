@@ -3,8 +3,8 @@
    ================================================================ */
 
 const STORE_KEY = 'wuwa-planner-v1';
-const STATE_SCHEMA_VERSION = 4;
-const CONTENT_DEFAULTS_REFRESH_VERSION = 4;
+const STATE_SCHEMA_VERSION = 5;
+const CONTENT_DEFAULTS_REFRESH_VERSION = 5;
 const LEGACY_CONTENT_DEFAULTS_V3 = [
   {
     id: 'tower',
@@ -45,6 +45,49 @@ const LEGACY_CONTENT_DEFAULTS_V3 = [
     stages: [
       { name: '등장 몹', mobs: '매트릭스 클러스터, 애곡하는 아익스, 플뢰르 드 리스, 리액터 허스크' },
       { name: '특이점 확장', mobs: '매트릭스 미믹 추가' },
+    ],
+  },
+];
+const LEGACY_CONTENT_DEFAULTS_V4 = [
+  {
+    id: 'tower',
+    icon: '🗼',
+    name: '역경의 탑 (심경 구역)',
+    period: 28,
+    start: '2026-07-20', // 38시즌: 2026-07-20 ~ 08-17 (중간 보상 초기화 08-03)
+    rules: '38시즌 (7/20 ~ 8/17). 스테이지·심경 간섭은 28일마다 전면 교체, 도전·보상은 14일마다 초기화(중간 리셋 8/3). 심경 구역 피로도 40, 잔향·울림의 탑 층당 1/2/3/4, 심연의 탑 층당 5.',
+    buff: '잔향의 탑: 적 인멸 저항 -10% · 일반 공격 피해를 입힐 때 전체 속성 피해 +5%(6초, 최대 8스택·퇴장 시 제거)\n심연의 탑(1~2층): 적 용융·회절 저항 -10%, 기류·전도 저항 +10% · 용융·회절 피해 +30% · 조화도·이탈 부여 시 공격력 +30%(30초)\n심연의 탑(3~4층): 전투 시작 60초 후 공격 명중 시 적 받는 최종 피해 +5%, 이후 5초마다 +5%(최대 +60%) · 적 전체 속성 저항 +15%(이상 효과·조화도·이탈 시 제거) · 조화도 파괴 스킬 후 파티 최종 피해 +10%(15초마다 1회, 최대 3스택) · 암흑 효과 부여 후 자신 최종 피해 +45%(30초)\n울림의 탑: 적 기류 저항 -10% · 변주 스킬 발동 시 크리티컬 피해 +20%, 일반 공격 피해 +40%(18초)',
+    stages: [
+      { name: '잔향의 탑', mobs: '1층 그린멜팅카멜레온(유체)·그린멜팅카멜레온, 2층 갈기늑대·불꽃·유령 인형 헤드/레프/라잇, 3층 칵찰찰·거암 투사·오열하는 전사·화살곰, 4층 유령 인형·탄식의 고룡' },
+      { name: '심연의 탑', mobs: '1층 폭주의 고릴라, 2층 보라색 왜가리·블레이드 댄서·이름없는 탐색자, 3층 스페이스트렉 탐색기·마이닝 메카 레인디어·방랑 기사·천둥의 비늘, 4층 조립식 로봇·뇌운의 비늘' },
+      { name: '울림의 탑', mobs: '1층 드레이크·응결, 2층 갈기늑대·눈꽃·유약 암괴, 3층 파트리시우스 귀족·글라디우스 귀족·메르카토르 귀족, 4층 반디의 군세' },
+    ],
+  },
+  {
+    id: 'sea',
+    icon: '🌊',
+    name: '해역 (죽음의 노래와 바닷속 폐허)',
+    period: 28,
+    start: '2026-08-03', // 20시즌: 2026-08-03 05:00 ~ 08-31 04:59 (KR)
+    rules: '20시즌 (8/3 05:00 ~ 8/31 04:59). 4주 시즌제, 리셋 시 재생 해역(해곡·급류)만 초기화되고 금기의 해역은 유지. 2파티 동시 편성.',
+    buff: '피해·처치로 연소 수치를 채우면 타오르는 조수 진입(30초) · 공격 명중한 적은 5초간 받는 최종 피해 +60% · 조화 소실 적에게 스킬 명중 시 조화도 파괴 피해 후 상태 종료\n「저편을 비추는 맑은 거울」: 암흑 효과 부여 후 자신 최종 피해 +60%(15초)\n「꿈을 건너는 은빛 베틀」: 적이 받는 용융 최종 피해 +30%, 용융 폭발 피해 +100% · 이상 효과 부여 시 공격력 +20%(5초)\n「영혼의 무게를 가늠하는 저울」: 조화도·이탈 부여 시 자신 최종 피해 +40%(30초) · 조화도 파괴 시 파티 전체 속성 피해 +30% 및 기류 피해 +30%(30초)',
+    stages: [
+      { name: '12단계 · 끝 없는 심연', mobs: '적 받는 최종 피해 +30% · 모든 증표 무제한 휴대 · 전반 협주 에너지 100%, 후반 공명 에너지 100%로 시작' },
+      { name: '전반', mobs: '쓸쓸한 아가씨·블레이드 댄서·구름 바다 요정·불굴의 호위' },
+      { name: '후반', mobs: '갈기늑대·천둥·보라색 왜가리·구름 바다 요정·불굴의 호위' },
+    ],
+  },
+  {
+    id: 'matrix',
+    icon: '🧩',
+    name: '종말 매트릭스 · 위험한 경지의 강습',
+    period: 34,
+    start: '2026-07-17', // 제2 도전 주기 1단계: 2026-07-17 ~ 3.6 점검 전
+    rules: '제2 도전 주기 1단계 「위험한 경지의 강습」(3.5~3.8). 단계는 버전 업데이트마다 갱신되며 현재 단계는 3.6 점검 전까지. 안정 프로토콜 최대 3파티 + 특이점 확장 무제한. 출전당 피로도 1, 위기 특수 요원 치사는 추가 피로도 1 보유. 강화 캐릭터: 치사·절지·음림·금희·장리·기염·상리요·로코코·브렌트·칸타렐라·카멜리아·페비·카를로타. 무기·에코는 캐릭터 귀속.',
+    buff: '공용: 적 받는 최종 피해 +20%, 적이 받는 공명 스킬 최종 피해 +20%\n이상 효과: 이상 부여 시 적 받는 최종 피해 +25%(30초), 암흑 부여 시 자신 최종 피해 +30%(15초)\n에코: 에코 어빌리티 최종 피해 +30%, 용융 최종 피해 +20%, 강공격 최종 피해 +20%\n조화도 파괴: 조화 파동 최종 피해 +150%, 조화도·이탈 부여 시 최종 피해 +25%(30초)\n특이점 점수 배율: 1라운드 ×1.00 · 2라운드 ×1.15 · 3라운드 이후 ×1.25',
+    stages: [
+      { name: '안정 프로토콜', mobs: '매트릭스 클러스터·애곡하는 아익스·플뢰르 드 리스·리액터 허스크' },
+      { name: '특이점 확장', mobs: '라운드 진행 시 적 강화 · 매트릭스 미믹 추가 점수' },
     ],
   },
 ];
@@ -408,7 +451,9 @@ function normalizeStateData(input, { strict = false } = {}) {
   result.contents = CONTENT_DEFAULTS.map(def => {
     const item = rawContents.find(c => isPlainObject(c) && c.id === def.id);
     if (!item) return clone(def);
-    const legacy = LEGACY_CONTENT_DEFAULTS_V3.find(content => content.id === def.id);
+    const legacyDefaults = sourceSchemaVersion < 4
+      ? LEGACY_CONTENT_DEFAULTS_V3 : LEGACY_CONTENT_DEFAULTS_V4;
+    const legacy = legacyDefaults.find(content => content.id === def.id);
     const nameValue = contentFieldValue(item, def, legacy, 'name', sourceSchemaVersion);
     const periodValue = contentFieldValue(item, def, legacy, 'period', sourceSchemaVersion);
     const startValue = contentFieldValue(item, def, legacy, 'start', sourceSchemaVersion);
@@ -652,9 +697,11 @@ function findBannerBySeason(season) {
   return BANNERS.find(b => !b.leaked && bannerSeasonNames(b).includes(season)) || null;
 }
 
-function bannerIsActive(banner) {
-  const t = today();
-  return !!banner && banner.start <= t && t <= banner.end;
+function bannerIsActive(banner, now = Date.now()) {
+  if (!banner || banner.leaked || !validDate(banner.start) || !validDate(banner.end)) return false;
+  const start = Date.parse(banner.startAt || `${banner.start}T00:00:00+09:00`);
+  const end = Date.parse(banner.endAt || `${banner.end}T23:59:59.999+09:00`);
+  return start <= now && now <= end;
 }
 
 function bannerContainsRecordTarget(banner, rec) {
@@ -1450,7 +1497,7 @@ partyList.addEventListener('click', e => {
     const target = state.parties.find(p => p.id === del.dataset.delParty);
     if (!target || !confirm(`"${target.name}" 파티를 삭제할까요?`)) return;
     state.parties = state.parties.filter(p => p.id !== del.dataset.delParty);
-    save(); renderParties();
+    save(); renderParties(); renderContents();
     return;
   }
   const rm = e.target.closest('[data-remove-member]');
@@ -1504,7 +1551,7 @@ function setMember(partyId, idx, charId, { silent = false } = {}) {
     return false;
   }
   p.members[idx] = charId;
-  save(); renderParties();
+  save(); renderParties(); renderContents();
   return true;
 }
 
@@ -1584,7 +1631,7 @@ document.addEventListener('drop', e => {
       pFrom.members[fromIdx] = displaced ?? null;
       pTo.members[toIdx] = charId;
     }
-    save(); renderParties();
+    save(); renderParties(); renderContents();
   } else {
     // 로스터에서 추가
     setMember(toParty, toIdx, charId);
@@ -1719,7 +1766,7 @@ document.getElementById('roster-grid').addEventListener('click', e => {
   } else {
     state.owned[id] = true;
   }
-  save(); renderRoster(); renderRosterStrip(); renderParties();
+  save(); renderRoster(); renderRosterStrip(); renderParties(); renderContents();
 });
 
 document.getElementById('roster-filter').addEventListener('click', e => {
@@ -1798,7 +1845,6 @@ function bcRecordRow(r) {
 
 function renderBannerCards() {
   const wrap = document.getElementById('banner-cards');
-  const t = today();
   wrap.innerHTML = [...BANNERS].reverse().map(b => {
     const key = bannerKey(b);
     const label = `Ver ${b.ver} · ${b.phase}`;
@@ -1816,12 +1862,12 @@ function renderBannerCards() {
       </div>`;
     }
 
-    const live = b.start <= t && t <= b.end;
+    const live = bannerIsActive(b);
     const pickupChars = (b.pickup || []).map(charById).filter(Boolean);
     const rerunChars = (b.rerun || []).map(charById).filter(Boolean);
     const fourStarChars = (b.fourStars || []).map(charById).filter(Boolean);
-    const seasons = new Set(bannerSeasonNames(b));
-    const recs = state.records.filter(r => seasons.has(r.season));
+    // 이름만 저장한 옛 기록은 기존 최초 배너에만 귀속해 복각 카드의 중복 표시를 막습니다.
+    const recs = state.records.filter(r => findBannerBySeason(r.season) === b);
 
     // 대상 선택지: 신규 → 복각 → 전무(신규/복각 순)
     const allChars = [...pickupChars.map(c => ({ c, tag: '신규' })), ...rerunChars.map(c => ({ c, tag: '복각' }))];
@@ -2179,8 +2225,8 @@ function renderContents() {
         <button class="icon-btn" data-edit-content="${c.id}" aria-label="${esc(c.name)} 정보 수정">수정</button>
       </div>
       <div class="reset-badge">
-        <div class="dd ${info.left <= 3 ? 'soon-reset' : ''}">${info.upcoming ? '시작까지' : '리셋까지'} D-${info.left}</div>
-        <div class="sub">${fmtShort(new Date(info.next))} 리셋</div>
+        <div class="dd ${info.left <= 3 ? 'soon-reset' : ''}">${info.upcoming ? '시작까지' : '주기 교체까지'} D-${info.left}</div>
+        <div class="sub">${fmtShort(new Date(info.next))} ${info.upcoming ? '시작' : '주기 갱신'}</div>
         <div class="reset-bar"><div class="fill" style="width:${(info.progress * 100).toFixed(1)}%"></div></div>
       </div>
       ${c.rules ? `<p class="ct-rules">${esc(c.rules)}</p>` : ''}
