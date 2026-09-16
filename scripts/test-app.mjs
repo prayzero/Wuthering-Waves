@@ -16,6 +16,7 @@ class FakeElement {
     this.open = false;
     this.style = {};
     this.dataset = {};
+    this.attributes = {};
     this.listeners = {};
     this.focusCount = 0;
     this.classList = { add() {}, remove() {}, toggle() {} };
@@ -25,8 +26,9 @@ class FakeElement {
     this.listeners[type].push(handler);
   }
   focus() { this.focusCount += 1; documentStub.activeElement = this; }
-  removeAttribute() {}
-  setAttribute() {}
+  removeAttribute(name) { delete this.attributes[name]; }
+  setAttribute(name, value) { this.attributes[name] = String(value); }
+  scrollIntoView(options) { this.lastScroll = options; }
   querySelector() { return new FakeElement(); }
   querySelectorAll() { return []; }
   showModal() { this.open = true; }
@@ -83,7 +85,14 @@ vm.runInContext(`${dataSource}\n${appSource}\n;globalThis.__qa = {
   lunitePurchasePrice, lunitePurchaseAmount, addSelectedLunitePurchase, renderPityCalc, calculatorResultMarkup,
   calculateProgressionWaveplates,
   applyRecordSideEffects, revertRecordSideEffects, rebaseRecordEffectsForDeletion, esc,
-  partyRoleKey, memberPlacementIssue, generalModeConflicts, setMember, openPicker, bannerIsActive, renderBannerCards,
+  partyRoleKey, memberPlacementIssue, generalModeConflicts, setMember, openPicker, bannerIsActive,
+  renderBannerCards: () => {
+    if (typeof historyFilter !== 'undefined') historyFilter = 'all';
+    renderBannerCards();
+  },
+  renderPlannerOverview, handleQuickNavigation, save,
+  getBanners: () => clone(BANNERS),
+  replaceBanners: value => { BANNERS.splice(0, BANNERS.length, ...clone(value)); },
   getState: () => state, setState: value => { state = value; },
   getContentDefaults: () => clone(CONTENT_DEFAULTS),
   getLegacyContentDefaults: () => clone(LEGACY_CONTENT_DEFAULTS_V3),
@@ -211,6 +220,76 @@ assert.equal(app.bannerIsActive(timedBanner, Date.parse(timedBanner.endAt)), tru
 assert.equal(app.bannerIsActive(timedBanner, Date.parse('2026-09-29T13:00:00+09:00')), false, '픽업 종료 후');
 assert.equal(app.bannerIsActive({ ...timedBanner, leaked: true }, Date.parse('2026-09-16')), false, '예고는 진행 중이 아님');
 assert.equal(app.bannerIsActive({ start: '2026-07-16', end: '2026-07-16' }), true, '시각 없는 과거 배너 날짜 호환');
+
+const originalBanners = app.getBanners();
+const overviewState = app.normalizeStateData({
+  owned: { jingran: true, qingxiao: true },
+  parties: [
+    { id: 'overview-a', name: '편성한 파티', members: ['jingran', null, null] },
+    { id: 'overview-b', name: '빈 파티', members: [null, null, null] },
+  ],
+});
+overviewState.schedules.push({ id: 'overview-schedule' });
+app.setState(overviewState);
+app.replaceBanners([
+  { ver: '이전', phase: '전반', start: '2026-09-01', end: '2026-09-29', pickup: ['qingxiao'], rerun: [] },
+  { ver: '3.6', phase: '후반', ...timedBanner, pickup: ['jingran'], rerun: ['hiyuki', 'mornye'], note: '<img onerror="alert(1)">' },
+  { ver: '미확정', phase: '예고', start: '2026-09-15', end: '2026-10-01', pickup: ['qingxiao'], leaked: true },
+]);
+app.renderPlannerOverview(Date.parse('2026-09-16T12:00:00+09:00'));
+const overviewHtml = elements.get('planner-overview').innerHTML;
+assert.match(overviewHtml, /Ver 3\.6 · 후반/, '대시보드는 현재 진행 중인 가장 최근 픽업만 표시');
+assert.doesNotMatch(overviewHtml, /Ver 이전|Ver 미확정/, '중복 진행 중 과거 픽업과 예고는 대시보드에서 제외');
+assert.match(overviewHtml, /경연/, '신규 공명자 표시');
+assert.match(overviewHtml, /히유키 · 모니에 복각/, '복각 공명자 함께 표시');
+assert.match(overviewHtml, /보유 캐릭터 2명/, '대시보드 보유 캐릭터 수');
+assert.match(overviewHtml, /편성 파티 1개/, '빈 파티는 편성 파티 수에서 제외');
+assert.match(overviewHtml, /픽업 계획 1개/, '대시보드 픽업 계획 수');
+assert.match(overviewHtml, /&lt;img onerror=&quot;alert\(1\)&quot;&gt;/, '배너 안내 HTML 이스케이프');
+app.renderPlannerOverview(Date.parse('2027-01-01T12:00:00+09:00'));
+assert.match(elements.get('planner-overview').innerHTML, /현재 진행 중인 확정 픽업이 없어요/, '확정 픽업이 없을 때 빈 상태');
+overviewState.owned.qingxiao = false;
+overviewState.parties[0].members = [null, null, null];
+overviewState.schedules = [];
+app.save();
+assert.match(elements.get('planner-overview').innerHTML, /보유 캐릭터 1명/, '저장 즉시 요약 보유 수 갱신');
+assert.match(elements.get('planner-overview').innerHTML, /편성 파티 0개/, '저장 즉시 요약 파티 수 갱신');
+assert.match(elements.get('planner-overview').innerHTML, /픽업 계획 0개/, '저장 즉시 요약 일정 수 갱신');
+app.replaceBanners(originalBanners);
+
+const navigationTabs = ['planner', 'materials', 'roster'].map(name => {
+  const button = new FakeElement(`nav-${name}`);
+  button.dataset.tab = name;
+  return button;
+});
+const navigationPanels = navigationTabs.map(button => new FakeElement(`tab-${button.dataset.tab}`));
+const originalQuerySelectorAll = documentStub.querySelectorAll;
+documentStub.querySelectorAll = selector => selector === '.tab-btn' ? navigationTabs
+  : selector === '.tab-panel' ? navigationPanels : [];
+app.handleQuickNavigation({ target: { closest: () => ({ dataset: { goTab: 'materials' } }) } });
+assert.equal(navigationTabs[1].attributes['aria-current'], 'page', '바로가기 실행 시 활성 메뉴 접근성 표시');
+assert.equal(navigationTabs[1].attributes['aria-controls'], 'tab-materials', '메뉴가 연결된 패널 식별');
+assert.equal(navigationTabs[1].focusCount, 1, '다른 탭 바로가기 키보드 포커스 이동');
+assert.equal(navigationPanels[0].hidden, true, '비활성 패널 숨김');
+assert.equal(navigationPanels[1].hidden, false, '활성 패널 표시');
+app.handleQuickNavigation({ target: { closest: () => ({ dataset: { jumpSection: 'wallet-section' } }) } });
+const walletSection = elements.get('wallet-section');
+assert.equal(walletSection.open, true, '재화 계산기 바로가기는 접힌 상세 영역도 펼침');
+assert.equal(walletSection.attributes.tabindex, '-1', '섹션은 순차 탭 순서에 추가하지 않고 프로그램 포커스만 허용');
+assert.equal(walletSection.focusCount, 1, '섹션 이동 시 키보드 포커스 이동');
+assert.equal(walletSection.lastScroll.block, 'start', '섹션 상단으로 이동');
+let keyPrevented = false;
+elements.get('tabs').listeners.keydown[0]({
+  key: 'End', target: { closest: () => navigationTabs[0] }, preventDefault() { keyPrevented = true; },
+});
+assert.equal(keyPrevented, true, '메뉴 탐색키의 페이지 스크롤 방지');
+assert.equal(navigationTabs[2].attributes['aria-current'], 'page', 'End 키로 마지막 메뉴 선택');
+assert.equal(navigationTabs[2].focusCount, 1, '메뉴 탐색키 포커스 이동');
+elements.get('tabs').listeners.keydown[0]({
+  key: 'ArrowRight', target: { closest: () => navigationTabs[2] }, preventDefault() {},
+});
+assert.equal(navigationTabs[0].attributes['aria-current'], 'page', '오른쪽 화살표로 첫 메뉴 순환');
+documentStub.querySelectorAll = originalQuerySelectorAll;
 
 app.setState(app.normalizeStateData({
   parties: [],

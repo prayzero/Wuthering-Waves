@@ -587,6 +587,7 @@ function loadState() {
 
 function save() {
   localStorage.setItem(STORE_KEY, JSON.stringify(state));
+  renderPlannerOverview();
 }
 
 /* ---------------- 공통 헬퍼 ---------------- */
@@ -727,6 +728,7 @@ function switchTab(name, { scroll = true, focus = false } = {}) {
   document.querySelectorAll('.tab-btn').forEach(b => {
     const active = b.dataset.tab === name;
     b.classList.toggle('active', active);
+    b.setAttribute('aria-controls', 'tab-' + b.dataset.tab);
     if (active) {
       b.setAttribute('aria-current', 'page');
       activeButton = b;
@@ -746,7 +748,104 @@ document.getElementById('tabs').addEventListener('click', e => {
   const btn = e.target.closest('.tab-btn');
   if (btn) switchTab(btn.dataset.tab);
 });
+document.getElementById('tabs').addEventListener('keydown', e => {
+  const current = e.target.closest('.tab-btn');
+  if (!current || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+  const buttons = Array.from(document.querySelectorAll('.tab-btn'));
+  if (!buttons.length) return;
+  const index = buttons.indexOf(current);
+  if (index < 0) return;
+  const next = e.key === 'Home' ? 0 : e.key === 'End' ? buttons.length - 1
+    : (index + (e.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length;
+  e.preventDefault();
+  switchTab(buttons[next].dataset.tab, { scroll: false, focus: true });
+});
 document.getElementById('goto-roster').addEventListener('click', () => switchTab('roster', { focus: true }));
+
+function handleQuickNavigation(e) {
+  const action = e.target.closest?.('[data-go-tab], [data-jump-section]');
+  if (!action) return;
+  const tab = action.dataset.goTab;
+  if (tab && ['planner', 'contents', 'materials', 'roster', 'history', 'rates'].includes(tab)) {
+    switchTab(tab, { focus: true });
+    return;
+  }
+  const sectionId = action.dataset.jumpSection;
+  if (!['party-section', 'schedule-section', 'wallet-section'].includes(sectionId)) return;
+  const section = document.getElementById(sectionId);
+  if (!section) return;
+  switchTab('planner', { scroll: false });
+  if (sectionId === 'wallet-section') section.open = true;
+  section.setAttribute('tabindex', '-1');
+  section.focus({ preventScroll: true });
+  const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  section.scrollIntoView?.({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
+}
+document.addEventListener('click', handleQuickNavigation);
+
+/* ---------------- 홈 대시보드 ---------------- */
+
+function renderPlannerOverview(now = Date.now()) {
+  const wrap = document.getElementById('planner-overview');
+  if (!wrap) return;
+  const characters = allChars();
+  const owned = characters.filter(character => isOwned(character.id)).length;
+  const parties = state.parties.filter(party => party.members.some(Boolean)).length;
+  const activeBanner = BANNERS.filter(banner => bannerIsActive(banner, now))
+    .sort((a, b) => Date.parse(b.startAt || b.start) - Date.parse(a.startAt || a.start))[0];
+  let bannerMarkup = `
+    <div class="overview-banner-empty">
+      <span class="overview-kicker">픽업 소식</span>
+      <h2>다음 만남을 준비할 시간</h2>
+      <p>현재 진행 중인 확정 픽업이 없어요. 지난 기록과 공개된 일정을 확인해 보세요.</p>
+      <button type="button" class="text-btn" data-go-tab="history">픽업 기록 보기 <span aria-hidden="true">↗</span></button>
+    </div>`;
+  if (activeBanner) {
+    const pickups = (activeBanner.pickup || []).map(charById).filter(Boolean);
+    const reruns = (activeBanner.rerun || []).map(charById).filter(Boolean);
+    const featured = pickups.length ? pickups : reruns;
+    bannerMarkup = `
+      <div class="overview-banner-top">
+        <span class="badge live">진행 중</span>
+        <span>Ver ${esc(activeBanner.ver)} · ${esc(activeBanner.phase)}</span>
+      </div>
+      <div class="overview-banner-character">
+        ${featured.map(character => avatarHTML(character)).join('')}
+        <div class="overview-banner-meta">
+          <span class="overview-kicker">${pickups.length ? '신규 공명자 픽업' : '복각 공명자 픽업'}</span>
+          <h2>${esc(featured.map(character => character.name).join(' · ') || '이벤트 픽업')}</h2>
+          ${pickups.length && reruns.length ? `<p>${esc(reruns.map(character => character.name).join(' · '))} 복각</p>` : ''}
+        </div>
+      </div>
+      <div class="overview-banner-footer">
+        <p class="overview-banner-dates">${esc(fmtDate(activeBanner.start))} — ${esc(fmtDate(activeBanner.end))}</p>
+        <button type="button" class="text-btn" data-go-tab="history">픽업 기록 보기 <span aria-hidden="true">↗</span></button>
+      </div>
+      ${activeBanner.note ? `<p class="overview-banner-note">${esc(activeBanner.note.split(' · ')[0])}</p>` : ''}`;
+  }
+  wrap.innerHTML = `
+    <div class="overview-copy">
+      <span class="overview-kicker">나만의 명조 플래너</span>
+      <h1>오늘의 계획을,<br>한눈에.</h1>
+      <p>함께할 파티부터 다음 픽업까지.<br>나의 공명자와 성장 계획을 한곳에서 관리하세요.</p>
+      <div class="overview-actions">
+        <button type="button" class="primary-btn" data-jump-section="party-section">파티 편성하기 <span aria-hidden="true">→</span></button>
+        <button type="button" class="ghost-btn" data-go-tab="materials">육성 비용 보기</button>
+      </div>
+    </div>
+    <div class="overview-banner">${bannerMarkup}</div>
+    <div class="overview-stats" aria-label="내 플래너 요약">
+      <button type="button" class="overview-stat" data-go-tab="roster" aria-label="보유 캐릭터 ${owned}명, 전체 ${characters.length}명. 보유 캐릭터 관리">
+        <span class="overview-stat-label">보유 캐릭터</span><strong>${owned}<small> / ${characters.length}</small></strong><span class="overview-stat-hint">공명자 관리 <span aria-hidden="true">↗</span></span>
+      </button>
+      <button type="button" class="overview-stat" data-jump-section="party-section" aria-label="편성 파티 ${parties}개. 파티 편성으로 이동">
+        <span class="overview-stat-label">편성 파티</span><strong>${parties}<small> 파티</small></strong><span class="overview-stat-hint">나의 조합 보기 <span aria-hidden="true">↗</span></span>
+      </button>
+      <button type="button" class="overview-stat" data-jump-section="schedule-section" aria-label="픽업 계획 ${state.schedules.length}개. 픽업 일정으로 이동">
+        <span class="overview-stat-label">픽업 계획</span><strong>${state.schedules.length}<small> 일정</small></strong><span class="overview-stat-hint">목표 확인하기 <span aria-hidden="true">↗</span></span>
+      </button>
+    </div>`;
+}
 
 /* ================================================================
    1. 픽업 일정
@@ -1699,19 +1798,28 @@ document.getElementById('picker-grid').addEventListener('click', e => {
 
 let rosterFilter = 'all';
 
+function characterMatchesSearch(character, query) {
+  const normalize = value => String(value || '').normalize('NFKC').replace(/[\s·ㆍ]/g, '').toLocaleLowerCase();
+  const search = normalize(query);
+  return !search || [character.name, ...(OLD_NAME_ALIASES[character.name] || [])]
+    .some(name => normalize(name).includes(search));
+}
+
 function renderRoster() {
   const grid = document.getElementById('roster-grid');
   const chars = allChars();
+  const query = document.getElementById('roster-search')?.value || '';
   const groups = [
     { key: 'limited', title: '한정 5성' },
     { key: 'standard', title: '상시 5성' },
     { key: 'four', title: '4성' },
   ];
 
-  const matches = c =>
+  const matchesGroup = c =>
     rosterFilter === 'all' ? true :
     rosterFilter === 'owned' ? isOwned(c.id) :
     c.group === rosterFilter;
+  const matches = c => matchesGroup(c) && characterMatchesSearch(c, query);
 
   grid.innerHTML = groups.map(g => {
     const list = chars.filter(c => c.group === g.key && matches(c));
@@ -1729,13 +1837,16 @@ function renderRoster() {
             ? `<button type="button" class="custom-char-delete" data-del-custom="${c.id}" aria-label="${esc(c.name)} 커스텀 캐릭터 삭제">삭제</button>` : ''}
         </div>`).join('')}
       </div>`;
-  }).join('') || `<div class="empty-note">조건에 맞는 캐릭터가 없어요.</div>`;
+  }).join('') || `<div class="empty-note">조건에 맞는 캐릭터가 없어요. 검색어를 지우거나 다른 필터를 선택해 주세요.</div>`;
 
   const total = chars.length;
   const ownedN = chars.filter(c => isOwned(c.id)).length;
+  const visibleN = chars.filter(matches).length;
   document.getElementById('own-summary').textContent =
-    `보유 ${ownedN} / ${total} — 클릭하면 보유 상태가 토글됩니다.`;
+    `보유 ${ownedN} / ${total} · 현재 ${visibleN}명 표시 — 카드를 누르면 보유 상태가 저장돼요.`;
 }
+
+document.getElementById('roster-search')?.addEventListener('input', renderRoster);
 
 document.getElementById('roster-grid').addEventListener('click', e => {
   const customDelete = e.target.closest('[data-del-custom]');
@@ -1843,9 +1954,24 @@ function bcRecordRow(r) {
   </div>`;
 }
 
+let historyFilter = 'current';
+
 function renderBannerCards() {
   const wrap = document.getElementById('banner-cards');
-  wrap.innerHTML = [...BANNERS].reverse().map(b => {
+  const recordedBanners = new Set(state.records.map(record => findBannerBySeason(record.season)).filter(Boolean));
+  const banners = [...BANNERS].reverse().filter(banner =>
+    historyFilter === 'current' ? banner.leaked || bannerIsActive(banner) :
+    historyFilter === 'records' ? recordedBanners.has(banner) : true);
+  if (historyFilter === 'current') banners.sort((a, b) => Number(bannerIsActive(b)) - Number(bannerIsActive(a)));
+  const filterLabels = { current: '현재 · 예고', records: '내 기록', all: '전체 픽업' };
+  const status = document.getElementById('banner-filter-status');
+  if (status) status.textContent = `${filterLabels[historyFilter]} · ${banners.length}개 픽업${historyFilter === 'records' ? ' · 기타 시즌 기록은 아래에서 확인하세요.' : ''}`;
+  document.querySelectorAll('#history-filter [data-history-filter]').forEach(button => {
+    const active = button.dataset.historyFilter === historyFilter;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
+  wrap.innerHTML = banners.map(b => {
     const key = bannerKey(b);
     const label = `Ver ${b.ver} · ${b.phase}`;
 
@@ -1935,11 +2061,20 @@ function renderBannerCards() {
       </div>
       <div class="bc-luck">${luckFoot}</div>
     </div>`;
-  }).join('');
+  }).join('') || `<div class="empty-note" style="grid-column:1/-1">${historyFilter === 'records'
+    ? '아직 저장한 픽업 기록이 없어요. 현재 픽업이나 전체 목록에서 첫 기록을 남겨 보세요.'
+    : '현재 진행 중이거나 예고된 픽업이 없어요. 전체 목록에서 지난 픽업을 확인할 수 있어요.'}</div>`;
 
   // 카드별 획득 회차 선택지 초기화
   wrap.querySelectorAll('.bc-card:not(.bc-leak)').forEach(card => refreshBcCopy(card));
 }
+
+document.getElementById('history-filter')?.addEventListener('click', event => {
+  const button = event.target.closest('[data-history-filter]');
+  if (!button || !['current', 'records', 'all'].includes(button.dataset.historyFilter)) return;
+  historyFilter = button.dataset.historyFilter;
+  renderBannerCards();
+});
 
 function refreshBcCopy(card) {
   const type = card.querySelector('.bc-target').value.split('|')[0];
@@ -2007,7 +2142,7 @@ function renderRecords() {
 
   // 통계 타일 (전체 기록 합산)
   if (!recs.length) {
-    stats.innerHTML = `<div class="empty-note" style="grid-column:1/-1">아래 픽업 카드에서 첫 뽑기 결과를 기록하면 통계가 표시돼요.</div>`;
+    stats.innerHTML = `<div class="empty-note" style="grid-column:1/-1">픽업 카드에서 첫 뽑기 결과를 기록하면 통계가 표시돼요.</div>`;
   } else {
     const totalPulls = recs.reduce((a, r) => a + r.pulls, 0);
     const freePulls = BANNERS.reduce((sum, banner) => {
@@ -2315,12 +2450,15 @@ function charMats(c) {
 
 function renderMatStrip() {
   const strip = document.getElementById('mat-char-strip');
-  strip.innerHTML = allChars().map(c => `
+  const query = document.getElementById('material-search')?.value || '';
+  strip.innerHTML = allChars().filter(character => characterMatchesSearch(character, query)).map(c => `
     <button class="mat-char ${selectedMatChar === c.id ? 'selected' : ''}" data-mat-char="${c.id}" aria-pressed="${selectedMatChar === c.id}">
       ${avatarHTML(c, { small: true })}
       <span class="nm">${esc(c.name)}</span>
-    </button>`).join('');
+    </button>`).join('') || '<div class="empty-note" style="grid-column:1/-1">검색 결과가 없어요. 캐릭터 이름을 다시 확인해 주세요.</div>';
 }
+
+document.getElementById('material-search')?.addEventListener('input', renderMatStrip);
 
 function calculateProgressionWaveplates(character = {}) {
   const isRover = character?.id === 'rover';
@@ -2411,6 +2549,14 @@ function renderMatDetail() {
       </div>
       <button class="ghost-btn" id="edit-mats-btn">재료 수정</button>
     </div>
+    <span class="progress-kicker">Lv.90 + 포르테 전 노드 만렙 · 육성 요약</span>
+    <div class="progress-summary mat-cost-summary">
+      <div class="progress-stat"><span>총 클램 코인</span><b>${num(progression.totalCredits)}</b><small>레벨·돌파·포르테 합계</small></div>
+      <div class="progress-stat"><span>공명자 EXP</span><b>${num(ASC_TOTALS.exp)}</b><small>특급 촉진제 ${ASC_TOTALS.premiumPotions}개 상당</small></div>
+      <div class="progress-stat accent"><span>예상 결정 웨이브 플레이트</span><b>${num(progression.totalWaveplates)}</b><small>자연 회복 약 ${days}일</small></div>
+      <div class="progress-stat"><span>주간 제한</span><b>${progression.weeklyCycles}주차</b><small>주간 보스 ${progression.runs.weekly}회 보상</small></div>
+    </div>
+    <details class="material-breakdown"><summary>필요한 돌파 · 포르테 재료 자세히 보기</summary>
     <div class="mat-section">
       <h4>🔨 단조 재료 — ${esc(forgeFam.name)}</h4>
       <div class="mat-rows">${forgeFam.tiers.map((t, i) => tierRow(t, i, FORTE_TOTALS.forge[i])).join('')}</div>
@@ -2462,20 +2608,15 @@ function renderMatDetail() {
       </div>
     </div>
     <p class="mat-note">※ 수량은 포르테 풀강(전 노드) / 돌파(0→6돌파, Lv.90 상한) 기준 공통 수치. 주간 재료는 스킬 1개 1→10에 ×4씩. Lv.1→90은 공명자 EXP ${num(ASC_TOTALS.exp)}(특급 공명 촉진제 ×${ASC_TOTALS.premiumPotions} 상당)와 클램 코인 ${num(ASC_TOTALS.levelCredits + ASC_TOTALS.credits)}이 들어요. 재료명은 한국어 정식 명칭(2026-08-06 DB 대조) 기준.</p>
+    </details>
   </div>
   <div class="progress-calc-card" aria-label="Lv.90 포르테 만렙 육성 계산">
     <div class="progress-calc-head">
       <div>
         <span class="progress-kicker">육성 비용 · 게이지 계산</span>
-        <h3>Lv.1→90 + 포르테 전 노드 만렙</h3>
+        <h3>필요한 파밍 횟수와 게이지</h3>
       </div>
       <span class="pill">SOL3 단계 8 기준</span>
-    </div>
-    <div class="progress-summary">
-      <div class="progress-stat"><span>총 클램 코인</span><b>${num(progression.totalCredits)}</b><small>레벨·돌파·포르테 합계</small></div>
-      <div class="progress-stat"><span>공명자 EXP</span><b>${num(ASC_TOTALS.exp)}</b><small>특급 촉진제 ${ASC_TOTALS.premiumPotions}개 상당</small></div>
-      <div class="progress-stat accent"><span>예상 결정 웨이브 플레이트</span><b>${num(progression.totalWaveplates)}</b><small>자연 회복 약 ${days}일</small></div>
-      <div class="progress-stat"><span>주간 제한</span><b>${progression.weeklyCycles}주차</b><small>주간 보스 ${progression.runs.weekly}회 보상</small></div>
     </div>
     <div class="banner-table-wrap progression-table-wrap">
       <table class="banner-table progression-table">
@@ -2541,6 +2682,7 @@ document.getElementById('mat-char-strip').addEventListener('click', e => {
   if (!btn) return;
   selectedMatChar = btn.dataset.matChar;
   renderMatStrip(); renderMatDetail();
+  document.getElementById('mat-detail')?.scrollIntoView?.({ block: 'start', behavior: 'auto' });
 });
 
 function openMatModal(c) {
@@ -2788,6 +2930,7 @@ window.addEventListener('appinstalled', () => {
 /* ---------------- 초기 렌더 ---------------- */
 
 function renderAll() {
+  renderPlannerOverview();
   renderSchedules();
   renderRosterStrip();
   renderParties();

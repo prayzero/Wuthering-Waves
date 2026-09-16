@@ -29,6 +29,7 @@ jobs:
           node scripts/validate-site.mjs
           node scripts/test-character-names.mjs
           node scripts/test-app.mjs
+          node scripts/test-ui.mjs
           node scripts/test-sw.mjs
 
   deploy:

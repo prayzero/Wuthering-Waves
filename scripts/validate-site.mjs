@@ -64,11 +64,13 @@ ids.forEach(id => {
 });
 
 const htmlLocalAssets = new Set();
+const htmlLocalRequests = new Set();
 for (const match of html.matchAll(/\b(?:src|href)=(['"])(.*?)\1/g)) {
   const value = match[2].split(/[?#]/)[0];
   if (!value || /^(?:https?:|data:|#)/.test(value)) continue;
   check(exists(value), `HTML 로컬 자산 누락: ${value}`);
   htmlLocalAssets.add(value.replace(/^\.\//, ''));
+  htmlLocalRequests.add(match[2].split('#')[0].replace(/^\.\//, ''));
 }
 for (const match of html.matchAll(/<label\b([^>]*)>([\s\S]*?)<\/label>/g)) {
   const forMatch = match[1].match(/\bfor=(['"])(.*?)\1/);
@@ -85,12 +87,15 @@ const sw = read('sw.js');
 const shellMatch = sw.match(/const APP_SHELL\s*=\s*\[([\s\S]*?)\];/);
 check(shellMatch, '서비스 워커 APP_SHELL을 찾을 수 없습니다.');
 const shellAssets = new Set();
+const shellRequests = new Set();
 for (const match of shellMatch?.[1].matchAll(/['"]\.\/([^'"]*)['"]/g) || []) {
-  const relative = match[1] || 'index.html';
+  const relative = match[1].split(/[?#]/)[0] || 'index.html';
   check(exists(relative), `APP_SHELL 파일 누락: ${relative}`);
   shellAssets.add(relative);
+  shellRequests.add(match[1] || 'index.html');
 }
 htmlLocalAssets.forEach(asset => check(shellAssets.has(asset), `HTML 핵심 자산이 APP_SHELL에 없습니다: ${asset}`));
+htmlLocalRequests.forEach(asset => check(shellRequests.has(asset), `버전 포함 자산이 오프라인 캐시에 없습니다: ${asset}`));
 check(sw.includes("const CACHE_PREFIX = 'wuwa-planner-'"), '서비스 워커 캐시 접두사가 없습니다.');
 check(sw.includes("k.startsWith(CACHE_PREFIX)"), '서비스 워커가 자체 캐시만 정리하지 않습니다.');
 check(sw.includes("e.request.destination !== 'image'"), '외부 이미지 런타임 캐시가 없습니다.');
