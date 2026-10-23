@@ -90,7 +90,8 @@ vm.runInContext(`${dataSource}\n${appSource}\n;globalThis.__qa = {
     if (typeof historyFilter !== 'undefined') historyFilter = 'all';
     renderBannerCards();
   },
-  renderPlannerOverview, handleQuickNavigation, save, cycleInfo, contentDataInfo, contentDateEnd, contentToday, renderContents,
+  renderPlannerOverview, handleQuickNavigation, save, cycleInfo, contentDateEnd, contentToday, renderContents,
+  contentDataInfo: (value, date) => contentDataInfo(JSON.parse(JSON.stringify(value)), date),
   getBanners: () => clone(BANNERS),
   replaceBanners: value => { BANNERS.splice(0, BANNERS.length, ...clone(value)); },
   getState: () => state, setState: value => { state = value; },
@@ -98,6 +99,7 @@ vm.runInContext(`${dataSource}\n${appSource}\n;globalThis.__qa = {
   getLegacyContentDefaults: () => clone(LEGACY_CONTENT_DEFAULTS_V3),
   getV4ContentDefaults: () => clone(LEGACY_CONTENT_DEFAULTS_V4),
   getV5ContentDefaults: () => clone(LEGACY_CONTENT_DEFAULTS_V5),
+  getV6ContentDefaults: () => clone(LEGACY_CONTENT_DEFAULTS_V6),
   replaceContentDefaults: value => {
     CONTENT_DEFAULTS.splice(0, CONTENT_DEFAULTS.length, ...clone(value));
   }
@@ -144,7 +146,7 @@ assert.equal(legacy.pity.weaponGroups['weapon-event'].count, 21, 'v1 전무 천�
 const realContentDefaults = app.getContentDefaults();
 const legacyContentDefaults = app.getLegacyContentDefaults();
 const withoutContentMetadata = value => JSON.parse(JSON.stringify(value), (key, item) =>
-  ['dataStart', 'dataEnd', 'verifiedAt', 'sourceUrl', 'dataStatus'].includes(key) ? undefined : item);
+  ['dataStart', 'dataEnd', 'verifiedAt', 'sourceUrl', 'dataStatus', 'sources'].includes(key) ? undefined : item);
 const refreshedContentDefaults = legacyContentDefaults.map((content, index) => ({
   ...content,
   name: `${content.name} 최신`,
@@ -158,6 +160,7 @@ const refreshedContentDefaults = legacyContentDefaults.map((content, index) => (
   verifiedAt: '2026-09-01',
   sourceUrl: 'https://wutheringwaves.kurogames.com/kr/main/news/detail/fixture',
   dataStatus: 'official',
+  sources: [],
 }));
 app.replaceContentDefaults(refreshedContentDefaults);
 
@@ -166,7 +169,7 @@ const migratedV3Contents = app.normalizeStateData({
   parties: [],
   contents: legacyContentDefaults,
 });
-assert.equal(migratedV3Contents.schemaVersion, 6, 'v3 저장 데이터 스키마 갱신');
+assert.equal(migratedV3Contents.schemaVersion, 7, 'v3 저장 데이터 스키마 갱신');
 assert.equal(JSON.stringify(migratedV3Contents.contents), JSON.stringify(refreshedContentDefaults),
   '수정하지 않은 v3 컨텐츠 기본값을 최신 기본값으로 갱신');
 
@@ -199,7 +202,7 @@ const migratedV4Contents = app.normalizeStateData({
   contents: v4ContentDefaults,
   owned: { jingran: true },
 });
-assert.equal(migratedV4Contents.schemaVersion, 6, 'v4 저장 데이터 스키마 갱신');
+assert.equal(migratedV4Contents.schemaVersion, 7, 'v4 저장 데이터 스키마 갱신');
 assert.equal(migratedV4Contents.owned.jingran, true, '컨텐츠 갱신 시 보유 캐릭터 보존');
 assert.equal(JSON.stringify(migratedV4Contents.contents), JSON.stringify(refreshedContentDefaults),
   '수정하지 않은 v4 컨텐츠 기본값을 최신 기본값으로 갱신');
@@ -243,7 +246,33 @@ for (const [index, content] of legacyContentDefaults.entries()) {
 }
 assert.equal(preservedV5Contents.contents[0].dataStatus, 'custom');
 assert.equal(JSON.stringify(app.normalizeStateData(migratedCustomV5).contents), JSON.stringify(migratedCustomV5.contents),
-  'v6 재로딩은 사용자 수정과 메타데이터를 그대로 보존');
+  'v7 재로딩은 사용자 수정과 메타데이터를 그대로 보존');
+
+const v6ContentDefaults = app.getV6ContentDefaults();
+const migratedV6Contents = app.normalizeStateData({ schemaVersion: 6, parties: [], contents: v6ContentDefaults });
+assert.equal(JSON.stringify(migratedV6Contents.contents), JSON.stringify(refreshedContentDefaults),
+  '미수정 v6 자료를 새 기본값과 검증 상태로 갱신');
+const customV6Contents = structuredClone(v6ContentDefaults);
+Object.assign(customV6Contents[0], { buff: '내 v6 버프', dataStatus: 'custom' });
+Object.assign(customV6Contents[1], { buff: '', stages: [], dataStatus: 'custom' });
+const customV6State = { schemaVersion: 6, parties: [{ id: 'preserved-party', name: '내 파티', members: ['jiyan', null, null], tag: '' }],
+  owned: { jiyan: true }, contents: customV6Contents };
+const migratedCustomV6 = app.normalizeStateData(customV6State);
+assert.equal(migratedCustomV6.contents[0].buff, '내 v6 버프');
+assert.equal(migratedCustomV6.contents[0].dataStart, customV6Contents[0].dataStart, 'v6 사용자 자료의 원래 시작일 유지');
+assert.equal(migratedCustomV6.contents[0].dataEnd, customV6Contents[0].dataEnd, 'v6 사용자 자료의 원래 종료일 유지');
+assert.equal(migratedCustomV6.contents[1].buff, '', '사용자 상태로 저장한 빈 버프를 최신 기본 버프로 덮지 않음');
+assert.equal(JSON.stringify(migratedCustomV6.contents[1].stages), '[]');
+assert.equal(migratedCustomV6.owned.jiyan, true);
+assert.equal(migratedCustomV6.parties[0].id, 'preserved-party');
+assert.equal(JSON.stringify(app.normalizeStateData(migratedCustomV6)), JSON.stringify(migratedCustomV6), 'v7 재저장·재로딩은 멱등');
+const metadataOnlyV6 = structuredClone(v6ContentDefaults);
+metadataOnlyV6[0].dataStart = '2026-08-01';
+metadataOnlyV6[0].dataEnd = '2026-08-29';
+const migratedMetadataOnlyV6 = app.normalizeStateData({ schemaVersion: 6, parties: [], contents: metadataOnlyV6 });
+assert.equal(migratedMetadataOnlyV6.contents[0].dataStart, '2026-08-01', 'v6 백업에서 따로 수정한 자료 기간 보존');
+assert.equal(migratedMetadataOnlyV6.contents[0].dataEnd, '2026-08-29');
+assert.equal(migratedMetadataOnlyV6.contents[0].dataStatus, 'custom', '기간을 수정한 자료를 새 기간의 검증 자료로 인증하지 않음');
 app.replaceContentDefaults(realContentDefaults);
 
 const forgedOfficial = app.normalizeStateData({ schemaVersion: 6, parties: [], contents: [{
@@ -255,7 +284,8 @@ assert.equal(app.contentDataInfo(forgedOfficial.contents[0], '2026-10-23').curre
 
 const contentFixture = { ...structuredClone(realContentDefaults[0]), start: '2026-10-12', period: 28,
   dataStart: '2026-10-12', dataEnd: '2026-11-09', verifiedAt: '2026-10-12', dataStatus: 'official',
-  sourceUrl: 'https://wutheringwaves.kurogames.com/kr/main/news/detail/fixture', buff: '검증 fixture 버프', stages: [] };
+  sourceUrl: 'https://wutheringwaves.kurogames.com/kr/main/news/detail/fixture', buff: '검증 fixture 버프', stages: [], sources: [] };
+app.replaceContentDefaults([contentFixture, ...realContentDefaults.slice(1)]);
 assert.equal(app.contentToday(Date.parse('2026-10-11T14:59:59Z')), '2026-10-11', '한국 자정 직전 날짜');
 assert.equal(app.contentToday(Date.parse('2026-10-11T15:00:00Z')), '2026-10-12', '한국 자정 당일 경계는 실행 환경 시간대와 무관');
 const beforeCycle = app.cycleInfo(contentFixture, '2026-10-11');
@@ -302,6 +332,38 @@ assert.match(elements.get('content-grid').innerHTML, /검증 fixture 버프/, '�
 assert.doesNotMatch(elements.get('content-grid').innerHTML, /이번 주기 버프|현재 주기 버프/);
 assert.match(elements.get('content-grid').innerHTML, /예상 주기/);
 app.setState(contentStateBeforeRender);
+
+const corroboratedFixture = { ...contentFixture, dataStatus: 'corroborated', sources: [
+  { label: '공식 일정', url: contentFixture.sourceUrl, kind: 'official', scope: '주기 일정만' },
+  { label: '커뮤니티 A', url: 'https://example.com/a', kind: 'community', scope: '이번 주기 버프·등장 몹' },
+  { label: '커뮤니티 B', url: 'https://example.org/b', kind: 'community', scope: '이번 주기 버프 교차 확인' },
+] };
+app.replaceContentDefaults([corroboratedFixture, ...realContentDefaults.slice(1)]);
+const trustedCorroborated = app.normalizeStateData({ schemaVersion: 7, parties: [], contents: [corroboratedFixture] }, { strict: true }).contents[0];
+assert.equal(trustedCorroborated.dataStatus, 'corroborated', '관리 기본값과 내용·기간·출처가 같은 교차 확인 자료만 유지');
+assert.equal(app.contentDataInfo(trustedCorroborated, '2026-10-23').official, false, '교차 확인은 공식 자료가 아님');
+assert.equal(app.contentDataInfo(trustedCorroborated, '2026-10-23').current, true);
+assert.equal(app.contentDataInfo(trustedCorroborated, '2026-10-23').label, '교차 확인 자료 · 비공식');
+assert.match(app.contentDataInfo(trustedCorroborated, '2026-10-11').label, /예정 주기/);
+assert.equal(app.contentDataInfo(trustedCorroborated, '2026-11-09').expired, true);
+assert.equal(app.contentDataInfo(trustedCorroborated, '2026-11-09').current, false);
+assert.match(app.contentDataInfo(trustedCorroborated, '2026-11-09').label, /이전 주기.*비공식/);
+const differentSource = corroboratedFixture.sources.map((source, index) => index === 1 ? { ...source, scope: '임의 변경 범위' } : source);
+for (const change of [{ buff: '조작 버프' }, { rules: '조작 규칙' }, { stages: [{ name: '내 층', mobs: '내 적' }] },
+  { dataStart: '2026-10-13' }, { dataEnd: '2026-11-10' }, { verifiedAt: '2026-10-23' },
+  { sourceUrl: 'https://example.net/forged' }, { sources: differentSource }, { sources: [] }, { dataStatus: 'official' }]) {
+  const normalized = app.normalizeStateData({ schemaVersion: 7, parties: [], contents: [{ ...corroboratedFixture, ...change }] }, { strict: true }).contents[0];
+  assert.equal(normalized.dataStatus, 'custom', '관리 기본값과 다른 인증 주장은 사용자 자료로 낮춤');
+  assert.equal(app.contentDataInfo(normalized, '2026-10-23').current, false);
+}
+for (const sources of [null, {}, [null], Array(13).fill(corroboratedFixture.sources[1]),
+  [{ ...corroboratedFixture.sources[1], url: 'javascript:alert(1)' }],
+  [{ ...corroboratedFixture.sources[1], kind: 'trusted' }],
+  [{ ...corroboratedFixture.sources[1], scope: '' }], [{ ...corroboratedFixture.sources[1], label: '' }]]) {
+  assert.throws(() => app.normalizeStateData({ schemaVersion: 7, parties: [], contents: [{ ...corroboratedFixture, sources }] }, { strict: true }),
+    /컨텐츠 출처/, '잘못된 출처 구조·URL·종류·빈 범위 거부');
+}
+app.replaceContentDefaults(realContentDefaults);
 
 const timedBanner = { start: '2026-09-10', end: '2026-09-29',
   startAt: '2026-09-10T11:00:00+09:00', endAt: '2026-09-29T12:59:59+09:00' };

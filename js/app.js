@@ -3,8 +3,8 @@
    ================================================================ */
 
 const STORE_KEY = 'wuwa-planner-v1';
-const STATE_SCHEMA_VERSION = 6;
-const CONTENT_DEFAULTS_REFRESH_VERSION = 6;
+const STATE_SCHEMA_VERSION = 7;
+const CONTENT_DEFAULTS_REFRESH_VERSION = 7;
 const LEGACY_CONTENT_DEFAULTS_V3 = [
   {
     id: 'tower',
@@ -132,6 +132,35 @@ const LEGACY_CONTENT_DEFAULTS_V5 = [
       { name: '안정 프로토콜', mobs: '애곡하는 아익스 / 만와뢰 · 잔해 / 이성(異性) 무장 / 천둥의 비늘' },
       { name: '특이점 확장', mobs: '라운드 진행 시 적 강화 · 매트릭스 미믹 추가 점수' },
     ],
+  },
+];
+const LEGACY_CONTENT_DEFAULTS_V6 = [
+  {
+    id: 'tower', icon: '🗼', name: '역경의 탑 (심경 구역)',
+    period: 28, start: '2026-10-12',
+    dataStart: '2026-10-12', dataEnd: '2026-11-09', verifiedAt: '2026-10-23',
+    sourceUrl: 'https://aki-gm-resources-back.aki-game.net/notice/image/FPYtMsiebdOVEMDU.jpg',
+    dataStatus: 'unverified',
+    rules: '공식 3.7 이벤트 노트 일정: 10/12~11/9, 다음 11/9~12/7. 날짜만 공개되어 실제 리셋 시각은 게임 내 안내를 확인해 주세요. 현재 주기의 버프와 등장 몹은 공식 자료 미확인입니다.',
+    buff: '', stages: [],
+  },
+  {
+    id: 'sea', icon: '🌊', name: '해역 (죽음의 노래와 바닷속 폐허)',
+    period: 28, start: '2026-09-28',
+    dataStart: '2026-09-28', dataEnd: '2026-10-26', verifiedAt: '2026-10-23',
+    sourceUrl: 'https://aki-gm-resources-back.aki-game.net/notice/image/FPYtMsiebdOVEMDU.jpg',
+    dataStatus: 'unverified',
+    rules: '공식 3.7 이벤트 노트 일정: 9/28~10/26, 다음 10/26~11/23. 날짜만 공개되어 실제 리셋 시각은 게임 내 안내를 확인해 주세요. 현재 주기의 버프와 등장 몹은 공식 자료 미확인입니다.',
+    buff: '', stages: [],
+  },
+  {
+    id: 'matrix', icon: '🧩', name: '종말 매트릭스 · 위험한 경지의 강습',
+    period: 36, start: '2026-10-07',
+    dataStart: '2026-10-07', dataEnd: '2026-11-12', verifiedAt: '2026-10-23',
+    sourceUrl: 'https://aki-gm-resources-back.aki-game.net/notice/image/FPYtMsiebdOVEMDU.jpg',
+    dataStatus: 'unverified',
+    rules: '공식 3.7 이벤트 노트 일정: 10/7~11/12. 실제 종료 시각과 다음 단계 일정은 미확인입니다. 제2 도전 주기 「위험한 경지의 강습」은 3.5~3.8에 걸쳐 진행됩니다. 안정 프로토콜 최대 3파티, 특이점 확장 파티 수 제한 없음, 출전당 피로도 1. 서로 다른 공명자 간 동일 무기·에코 동시 사용 불가. 현재 버프·강화 공명자·등장 몹은 공식 자료 미확인입니다.',
+    buff: '', stages: [],
   },
 ];
 const DEFAULT_CHAR_PITY_GROUP = 'char-event';
@@ -274,7 +303,7 @@ function clone(value) {
 }
 
 function contentFieldValue(item, def, legacy, field, sourceSchemaVersion) {
-  if (sourceSchemaVersion >= CONTENT_DEFAULTS_REFRESH_VERSION) return item[field];
+  if (sourceSchemaVersion >= CONTENT_DEFAULTS_REFRESH_VERSION || item.dataStatus === 'custom') return item[field];
   const missing = !hasOwn(item, field);
   const matchesLegacy = legacy && hasOwn(legacy, field) && (
     field === 'stages'
@@ -289,16 +318,52 @@ function contentSourceUrl(value) {
     /^https:\/\/[a-z0-9.-]+(?::\d+)?(?:[/?#][^\s<>"']*)?$/i.test(value) ? value : '';
 }
 
+function normalizeContentSources(value, { strict = false } = {}) {
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || value.length > 12) {
+    if (strict) throw new Error('컨텐츠 출처 목록은 최대 12개의 배열이어야 합니다.');
+    return [];
+  }
+  return value.flatMap(source => {
+    if (!isPlainObject(source) || !contentSourceUrl(source.url) ||
+        !['official', 'community'].includes(source.kind) ||
+        !cleanString(source.label, 120) || !cleanString(source.scope, 240)) {
+      if (strict) throw new Error('컨텐츠 출처의 이름·HTTPS 주소·종류·확인 범위가 필요합니다.');
+      return [];
+    }
+    return [{ label: cleanString(source.label, 120), url: source.url,
+      kind: source.kind, scope: cleanString(source.scope, 240) }];
+  });
+}
+
+function managedContentStatus(content, def = CONTENT_DEFAULTS.find(item => item.id === content.id)) {
+  if (!def || !['official', 'corroborated'].includes(def.dataStatus) || content.dataStatus !== def.dataStatus) return '';
+  const fields = ['period', 'start', 'rules', 'buff', 'stages', 'dataStart', 'dataEnd', 'verifiedAt'];
+  if (!fields.every(field => JSON.stringify(content[field]) === JSON.stringify(def[field])) ||
+      (content.sourceUrl || '') !== (def.sourceUrl || '') ||
+      JSON.stringify(normalizeContentSources(content.sources)) !== JSON.stringify(normalizeContentSources(def.sources))) return '';
+  if (!validDate(content.dataStart) || !validDate(content.dataEnd) || content.dataEnd <= content.dataStart ||
+      !validDate(content.verifiedAt)) return '';
+  const sources = normalizeContentSources(content.sources);
+  if (!contentSourceUrl(content.sourceUrl) && !sources.length) return '';
+  if (def.dataStatus === 'corroborated' && !sources.some(source => source.kind === 'community')) return '';
+  return def.dataStatus;
+}
+
 function contentDateEnd(start, period) {
   if (!validDate(start) || !Number.isInteger(Number(period)) || Number(period) < 1 || Number(period) > 999) return '';
   return new Date(Date.parse(`${start}T00:00:00Z`) + Number(period) * 86400000).toISOString().slice(0, 10);
 }
 
-function contentMetadata(item, content, def, sourceSchemaVersion) {
+function contentMetadata(item, content, def, sourceSchemaVersion, legacy) {
   const fields = ['period', 'start', 'rules', 'buff', 'stages'];
   const matchesDefault = fields.every(field => JSON.stringify(content[field]) === JSON.stringify(def[field]));
-  const source = sourceSchemaVersion < CONTENT_DEFAULTS_REFRESH_VERSION && matchesDefault ? def : item;
-  const customized = sourceSchemaVersion < CONTENT_DEFAULTS_REFRESH_VERSION && !matchesDefault;
+  const oldSchema = sourceSchemaVersion < CONTENT_DEFAULTS_REFRESH_VERSION;
+  const changedMetadata = sourceSchemaVersion >= 6 && oldSchema &&
+    ['dataStart', 'dataEnd', 'verifiedAt', 'sourceUrl', 'dataStatus', 'sources'].some(field =>
+      hasOwn(item, field) && JSON.stringify(item[field]) !== JSON.stringify(legacy?.[field] ?? (field === 'sources' ? [] : undefined)));
+  const customized = item.dataStatus === 'custom' || oldSchema && (!matchesDefault || changedMetadata);
+  const source = oldSchema && !customized ? def : item;
   // Keep a legacy user's text attached to the dates it was originally written for.
   const fallbackStart = customized && validDate(item.start) ? item.start : content.start;
   const fallbackPeriod = customized && contentDateEnd(fallbackStart, item.period) ? Number(item.period) : content.period;
@@ -306,17 +371,18 @@ function contentMetadata(item, content, def, sourceSchemaVersion) {
   const dataEnd = validDate(source.dataEnd) && source.dataEnd > dataStart
     ? source.dataEnd : contentDateEnd(dataStart, fallbackPeriod);
   const sourceUrl = contentSourceUrl(source.sourceUrl);
+  const sources = normalizeContentSources(source.sources);
   const verifiedAt = validDate(source.verifiedAt) ? source.verifiedAt : '';
   // Legacy overrides have no proof of an official source. Keep their text, and mark it as user data.
   // A backup cannot certify arbitrary text simply by supplying an HTTPS URL.
-  const official = !customized && matchesDefault && def.dataStatus === 'official' &&
-    source.dataStatus === 'official' && sourceUrl && verifiedAt &&
-    ['dataStart', 'dataEnd', 'verifiedAt', 'sourceUrl'].every(field => source[field] === def[field]) &&
-    validDate(source.dataStart) && validDate(source.dataEnd) && source.dataEnd > source.dataStart;
-  const untrustedClaim = source.dataStatus === 'official' && !official;
+  const certified = !customized && managedContentStatus({ ...content, dataStart: source.dataStart,
+    dataEnd: source.dataEnd, verifiedAt: source.verifiedAt, sourceUrl: source.sourceUrl,
+    sources: source.sources, dataStatus: source.dataStatus }, def);
+  const untrustedClaim = ['official', 'corroborated'].includes(source.dataStatus) && !certified;
   return { dataStart, dataEnd, verifiedAt: customized ? '' : verifiedAt,
     sourceUrl: customized ? '' : sourceUrl,
-    dataStatus: customized || untrustedClaim || source.dataStatus === 'custom' ? 'custom' : official ? 'official' : 'unverified' };
+    dataStatus: customized || untrustedClaim ? 'custom' : certified || 'unverified',
+    sources: customized ? [] : sources };
 }
 
 function pityGroupIds(kind) {
@@ -410,15 +476,16 @@ function assertImportShape(data) {
       throw new Error('컨텐츠 주기는 1~999일의 정수여야 합니다.');
     }
     if (item.dataStart && item.dataEnd && item.dataEnd <= item.dataStart) throw new Error('컨텐츠 자료 종료일은 시작일 이후여야 합니다.');
-    if (hasOwn(item, 'dataStatus') && !['official', 'unverified', 'custom'].includes(item.dataStatus)) {
+    if (hasOwn(item, 'dataStatus') && !['official', 'corroborated', 'unverified', 'custom'].includes(item.dataStatus)) {
       throw new Error('컨텐츠 자료 상태가 올바르지 않습니다.');
     }
     if (hasOwn(item, 'sourceUrl') && item.sourceUrl !== '' && !contentSourceUrl(item.sourceUrl)) {
       throw new Error('컨텐츠 출처는 올바른 HTTPS 주소여야 합니다.');
     }
-    if (item.dataStatus === 'official' && (!validDate(item.dataStart) || !validDate(item.dataEnd) ||
-        !validDate(item.verifiedAt) || !contentSourceUrl(item.sourceUrl))) {
-      throw new Error('공식 컨텐츠 자료의 적용 기간·확인일·출처가 필요합니다.');
+    const sources = normalizeContentSources(item.sources, { strict: true });
+    if (['official', 'corroborated'].includes(item.dataStatus) && (!validDate(item.dataStart) || !validDate(item.dataEnd) ||
+        !validDate(item.verifiedAt) || !(contentSourceUrl(item.sourceUrl) || sources.length))) {
+      throw new Error('확인된 컨텐츠 자료의 적용 기간·확인일·출처가 필요합니다.');
     }
   });
 }
@@ -549,7 +616,8 @@ function normalizeStateData(input, { strict = false } = {}) {
     const item = rawContents.find(c => isPlainObject(c) && c.id === def.id);
     if (!item) return clone(def);
     const legacyDefaults = sourceSchemaVersion < 4 ? LEGACY_CONTENT_DEFAULTS_V3
-      : sourceSchemaVersion < 5 ? LEGACY_CONTENT_DEFAULTS_V4 : LEGACY_CONTENT_DEFAULTS_V5;
+      : sourceSchemaVersion < 5 ? LEGACY_CONTENT_DEFAULTS_V4
+      : sourceSchemaVersion < 6 ? LEGACY_CONTENT_DEFAULTS_V5 : LEGACY_CONTENT_DEFAULTS_V6;
     const legacy = legacyDefaults.find(content => content.id === def.id);
     const nameValue = contentFieldValue(item, def, legacy, 'name', sourceSchemaVersion);
     const periodValue = contentFieldValue(item, def, legacy, 'period', sourceSchemaVersion);
@@ -573,7 +641,7 @@ function normalizeStateData(input, { strict = false } = {}) {
       buff: typeof buffValue === 'string' ? cleanString(buffValue, 3000) : def.buff,
       stages,
     };
-    return { ...content, ...contentMetadata(item, content, def, sourceSchemaVersion) };
+    return { ...content, ...contentMetadata(item, content, def, sourceSchemaVersion, legacy) };
   });
 
   result.matOverrides = Object.create(null);
@@ -2450,20 +2518,40 @@ function contentDataInfo(c, date = contentToday()) {
   const valid = validDate(date) && validDate(start) && validDate(end) && end > start;
   const expired = valid && date >= end;
   const upcoming = valid && date < start;
-  const official = c.dataStatus === 'official' && valid && validDate(c.verifiedAt) && !!contentSourceUrl(c.sourceUrl);
-  const custom = c.dataStatus === 'custom';
-  const current = official && !expired && !upcoming;
+  const managedStatus = managedContentStatus(c);
+  const official = managedStatus === 'official';
+  const corroborated = managedStatus === 'corroborated';
+  const custom = c.dataStatus === 'custom' || ['official', 'corroborated'].includes(c.dataStatus) && !managedStatus;
+  const current = (official || corroborated) && valid && !expired && !upcoming;
   const label = !valid ? '자료 적용 기간 확인 필요'
-    : expired ? (custom ? '이전 주기 사용자 자료' : '이전 주기 자료')
+    : expired ? (custom ? '이전 주기 사용자 자료' : corroborated ? '이전 주기 교차 확인 자료 · 비공식' : '이전 주기 자료')
     : custom ? (upcoming ? '예정 주기 사용자 자료' : '사용자 입력 자료')
     : official ? (upcoming ? '예정 주기 공식 자료' : '현재 주기 공식 자료')
+    : corroborated ? (upcoming ? '예정 주기 교차 확인 자료 · 비공식' : '교차 확인 자료 · 비공식')
     : upcoming ? '예정 자료 · 확인 필요' : '최신 정보 확인 필요';
   const note = expired ? '저장된 버프·등장 몹의 적용 기간이 지났습니다. 최신 정보 확인이 필요합니다.'
     : !valid ? '자료 날짜가 올바르지 않아 현재 적용 여부를 판단할 수 없습니다.'
     : custom ? '직접 수정한 자료입니다. 공식 최신 정보와 다를 수 있습니다.'
+    : corroborated ? '일정과 버프·등장 몹의 출처를 구분해 확인했습니다. 비공식 자료가 포함되어 있으므로 실제 내용은 게임 내에서 확인해 주세요.'
     : !official ? '저장된 버프·등장 몹의 공식 확인이 필요합니다.'
     : upcoming ? '아직 시작되지 않은 자료입니다.' : '아래 내용은 표시된 공식 자료의 적용 기간에 해당합니다.';
-  return { start, end, valid, expired, upcoming, official, custom, current, label, note };
+  return { start, end, valid, expired, upcoming, official, corroborated, custom, current, label, note };
+}
+
+function contentSourcesMarkup(c) {
+  const sources = normalizeContentSources(c.sources);
+  const def = CONTENT_DEFAULTS.find(item => item.id === c.id);
+  const managedSources = normalizeContentSources(def?.sources);
+  const links = sources.map(source => {
+    const managed = managedSources.some(item => JSON.stringify(item) === JSON.stringify(source));
+    const kind = managed ? (source.kind === 'official' ? '공식 출처' : '비공식 출처') : '사용자 참고 출처';
+    return `<li><a href="${esc(source.url)}" target="_blank" rel="noopener noreferrer">${kind} · ${esc(source.label)}</a><small>확인 범위: ${esc(source.scope)}</small></li>`;
+  });
+  if (contentSourceUrl(c.sourceUrl) && !sources.some(source => source.url === c.sourceUrl)) {
+    const label = c.sourceUrl === def?.sourceUrl ? '기존 자료 출처' : '사용자 참고 출처';
+    links.push(`<li><a href="${esc(c.sourceUrl)}" target="_blank" rel="noopener noreferrer">${label}</a></li>`);
+  }
+  return links.length ? `<details class="ct-source-details"><summary>출처 ${links.length}개 · 구분과 확인 범위</summary><ul class="ct-sources">${links.join('')}</ul></details>` : '';
 }
 
 function renderContents() {
@@ -2492,21 +2580,21 @@ function renderContents() {
         <div class="sub">${fmtShort(info.next)} 예상 · 한국 날짜 기준 · 실제 리셋 시각은 게임 내 확인</div>
         <div class="reset-bar"><div class="fill" style="width:${(info.progress * 100).toFixed(1)}%"></div></div>
       </div>` : ''}
-      <div class="ct-data-status ${data.current ? 'verified' : 'needs-review'}">
+      <div class="ct-data-status ${data.current ? data.corroborated ? 'corroborated' : 'verified' : 'needs-review'}">
         <strong>${esc(data.label)}</strong>
         <p>${esc(data.note)}</p>
         ${data.valid ? `<small>자료 기준 기간: ${esc(data.start)} ~ ${esc(data.end)} (일자 기준)</small>` : ''}
         ${validDate(c.verifiedAt) ? `<small>출처 확인일: ${esc(c.verifiedAt)}</small>` : ''}
-        ${contentSourceUrl(c.sourceUrl) ? `<a href="${esc(c.sourceUrl)}" target="_blank" rel="noopener noreferrer">${data.official ? '공식 원문' : '참고 출처'}</a>` : ''}
+        ${contentSourcesMarkup(c)}
       </div>
       ${data.expired ? '<details class="ct-archive"><summary>이전 주기 자료 보기</summary>' : ''}
       ${c.rules ? `<p class="ct-rules">${esc(c.rules)}</p>` : ''}
       <div class="ct-block">
-        <h4>✨ ${data.current ? '현재 주기 버프' : data.expired ? '이전 주기 버프' : data.upcoming ? '예정 자료의 버프' : '저장된 버프 · 확인 필요'}</h4>
+        <h4>✨ ${data.current ? `현재 주기 버프${data.corroborated ? ' · 비공식' : ''}` : data.expired ? '이전 주기 버프' : data.upcoming ? '예정 자료의 버프' : '저장된 버프 · 확인 필요'}</h4>
         <div class="ct-buff">${esc(c.buff || '버프 미입력')}</div>
       </div>
       <div class="ct-block">
-        <h4>👹 ${data.expired ? '이전 주기 등장 몹' : data.current ? '현재 주기 등장 몹' : '저장된 등장 몹'}</h4>
+        <h4>👹 ${data.expired ? '이전 주기 등장 몹' : data.current ? `현재 주기 등장 몹${data.corroborated ? ' · 비공식' : ''}` : '저장된 등장 몹'}</h4>
         ${stages || '<div class="empty-note" style="padding:14px">단계를 추가해 주세요</div>'}
       </div>
       ${data.expired ? '</details>' : ''}
@@ -2572,7 +2660,7 @@ document.getElementById('content-form').addEventListener('submit', e => {
     });
   if (previous !== JSON.stringify([c.start, c.period, c.rules, c.buff, c.stages])) {
     Object.assign(c, { dataStart: c.start, dataEnd: contentDateEnd(c.start, c.period),
-      dataStatus: 'custom', verifiedAt: '', sourceUrl: '' });
+      dataStatus: 'custom', verifiedAt: '', sourceUrl: '', sources: [] });
   }
   save(); renderContents();
   document.getElementById('content-modal').close();

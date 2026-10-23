@@ -93,6 +93,13 @@ vm.runInContext(`${data}\nBANNERS.push({ ver: '99.0', phase: '예고 검사', st
   getState: () => state,
   bannerCount: () => BANNERS.length,
   getSelectedMaterial: () => selectedMatChar,
+  setContentFixture: value => {
+    const content = clone(value);
+    const index = CONTENT_DEFAULTS.findIndex(item => item.id === content.id);
+    CONTENT_DEFAULTS[index] = clone(content);
+    state.contents = [content];
+    return content;
+  },
 };`, context, { filename: 'ui-test-bundle.js' });
 const ui = context.__ui;
 const el = id => documentStub.getElementById(id);
@@ -187,11 +194,10 @@ assert.doesNotMatch(el('banner-cards').innerHTML, /data-banner="2\.3-후반"/);
 assert.equal(JSON.stringify(ui.getState().records), recordsBeforeFilter, '픽업 필터는 기존 기록을 변경하지 않음');
 
 // The editor keeps unchanged official metadata, but never certifies newly edited text.
-const contentFixture = { id: 'tower', icon: '🗼', name: '검사 탑', start: '2026-09-10', period: 28,
+const contentFixture = ui.setContentFixture({ id: 'tower', icon: '🗼', name: '검사 탑', start: '2026-09-10', period: 28,
   rules: '검사 규칙', buff: '공식 검사 버프', stages: [{ name: '1층', mobs: '검사 적' }],
   dataStart: '2026-09-10', dataEnd: '2026-10-08', verifiedAt: '2026-09-10',
-  sourceUrl: 'https://wutheringwaves.kurogames.com/kr/main/news/detail/fixture', dataStatus: 'official' };
-ui.getState().contents = [contentFixture];
+  sourceUrl: 'https://wutheringwaves.kurogames.com/kr/main/news/detail/fixture', dataStatus: 'official', sources: [] });
 ui.renderContents();
 assert.match(el('content-grid').innerHTML, /현재 주기 공식 자료/);
 assert.match(el('content-grid').innerHTML, /현재 주기 버프/);
@@ -240,4 +246,43 @@ ui.renderContents();
 assert.match(el('content-grid').innerHTML, /주기 날짜 확인 필요/);
 assert.doesNotMatch(el('content-grid').innerHTML, /NaN|Invalid Date|현재 주기 버프/);
 
-console.log('UI checks passed: character/alias searches, combined filters, material selection, accessible history filters, stale content labels, content editing, and saved-data preservation.');
+const crossCheckedFixture = ui.setContentFixture({ id: 'tower', icon: '🗼', name: '교차 확인 탑', start: '2026-09-10', period: 28,
+  rules: '공식 일정과 비공식 전투 자료를 구분합니다.', buff: '검사 교차 버프', stages: [{ name: '검사 층', mobs: '검사 몹' }],
+  dataStart: '2026-09-10', dataEnd: '2026-10-08', verifiedAt: '2026-09-10', dataStatus: 'corroborated',
+  sourceUrl: 'https://example.com/official', sources: [
+    { label: '게임 공지', url: 'https://example.com/official', kind: 'official', scope: '일정만 확인' },
+    { label: '자료 A <img src=x>', url: 'https://example.com/community-a', kind: 'community', scope: '버프·등장 몹 <script>검사</script>' },
+    { label: '자료 B', url: 'https://example.org/community-b', kind: 'community', scope: '버프 교차 확인' },
+  ] });
+ui.renderContents();
+assert.match(el('content-grid').innerHTML, /교차 확인 자료 · 비공식/);
+assert.match(el('content-grid').innerHTML, /현재 주기 버프 · 비공식/);
+assert.match(el('content-grid').innerHTML, /현재 주기 등장 몹 · 비공식/);
+assert.doesNotMatch(el('content-grid').innerHTML, /현재 주기 공식 자료/);
+assert.match(el('content-grid').innerHTML, /공식 출처 · 게임 공지/);
+assert.match(el('content-grid').innerHTML, /확인 범위: 일정만 확인/);
+assert.match(el('content-grid').innerHTML, /비공식 출처 · 자료 A &lt;img src=x&gt;/);
+assert.match(el('content-grid').innerHTML, /버프·등장 몹 &lt;script&gt;검사&lt;\/script&gt;/);
+assert.doesNotMatch(el('content-grid').innerHTML, /<script>|<img src=x>/);
+assert.equal((el('content-grid').innerHTML.match(/href="https:\/\/example.com\/official"/g) || []).length, 1,
+  '기존 sourceUrl과 sources의 동일한 링크는 한 번만 표시');
+assert.equal((el('content-grid').innerHTML.match(/rel="noopener noreferrer"/g) || []).length, 3);
+fire('content-grid', 'click', editContentButton);
+fire('content-form', 'submit');
+assert.equal(crossCheckedFixture.dataStatus, 'corroborated', '내용 변경 없는 저장은 교차 확인 상태 보존');
+fire('content-grid', 'click', editContentButton);
+el('ct-buff').value = '다시 쓴 내 버프';
+fire('content-form', 'submit');
+assert.equal(crossCheckedFixture.dataStatus, 'custom');
+assert.equal(crossCheckedFixture.sources.length, 0, '직접 수정한 버프에 관리 출처를 인증처럼 붙이지 않음');
+assert.doesNotMatch(el('content-grid').innerHTML, /교차 확인 자료 · 비공식/);
+const pastCrossChecked = { ...JSON.parse(JSON.stringify(crossCheckedFixture)), start: '2026-08-01',
+  dataStart: '2026-08-01', dataEnd: '2026-08-29', dataStatus: 'corroborated', verifiedAt: '2026-08-01',
+  sources: [{ label: '과거 검사 자료', url: 'https://example.com/past', kind: 'community', scope: '과거 버프 확인' }] };
+ui.setContentFixture(pastCrossChecked);
+ui.renderContents();
+assert.match(el('content-grid').innerHTML, /이전 주기 교차 확인 자료 · 비공식/);
+assert.match(el('content-grid').innerHTML, /<details class="ct-archive">/);
+assert.doesNotMatch(el('content-grid').innerHTML, /현재 주기 버프/);
+
+console.log('UI checks passed: searches, filters, materials, history, expired and corroborated content, scoped source links, content editing, and saved-data preservation.');

@@ -215,16 +215,46 @@ try {
     check(validDate(content.dataStart) && validDate(content.dataEnd) && content.dataStart < content.dataEnd,
       `컨텐츠 자료 유효기간 오류: ${content.id}`);
     check(validDate(content.verifiedAt), `컨텐츠 확인일 오류: ${content.id}`);
-    check(['official', 'unverified', 'custom'].includes(content.dataStatus), `컨텐츠 출처 상태 오류: ${content.id}`);
+    check(['official', 'corroborated', 'unverified', 'custom'].includes(content.dataStatus), `컨텐츠 출처 상태 오류: ${content.id}`);
     check(/^https:\/\//.test(content.sourceUrl || ''), `컨텐츠 근거 URL 누락: ${content.id}`);
+    if (content.dataStatus === 'corroborated') {
+      check(Array.isArray(content.sources) && content.sources.length >= 3 && content.sources.length <= 12,
+        `교차 확인 출처 목록 오류: ${content.id}`);
+      const communityHosts = new Set();
+      for (const source of content.sources || []) {
+        check(typeof source.label === 'string' && source.label.length > 0 && typeof source.scope === 'string' && source.scope.length > 0,
+          `출처 명칭·확인 범위 누락: ${content.id}`);
+        check(['official', 'community'].includes(source.kind), `출처 구분 오류: ${content.id}`);
+        let url;
+        try { url = new URL(source.url); } catch {}
+        check(url?.protocol === 'https:', `안전하지 않은 출처 주소: ${content.id}`);
+        if (source.kind === 'community' && url) communityHosts.add(url.hostname.replace(/^api(?:-v2)?\./, ''));
+      }
+      check(communityHosts.size >= 2, `독립 출처가 부족합니다: ${content.id}`);
+      check(content.sources.some(s => s.kind === 'official' && s.scope.includes('일정')), `공식 일정 출처 누락: ${content.id}`);
+      check(content.buff.length > 0 && content.stages.length > 0, `교차 확인 전투 데이터 누락: ${content.id}`);
+    }
     contentIds.add(content.id);
   }
   check(data.CONTENT_DEFAULTS.find(c => c.id === 'tower')?.start === '2026-10-12', '공식 이벤트 노트 역경의 탑 일정 오류');
   check(data.CONTENT_DEFAULTS.find(c => c.id === 'sea')?.start === '2026-09-28', '공식 이벤트 노트 해역 일정 오류');
   check(data.CONTENT_DEFAULTS.find(c => c.id === 'matrix')?.start === '2026-10-07' &&
     data.CONTENT_DEFAULTS.find(c => c.id === 'matrix')?.dataEnd === '2026-11-12', '공식 이벤트 노트 매트릭스 일정 오류');
-  check(data.CONTENT_DEFAULTS.every(c => c.dataStatus === 'unverified' && !c.buff && c.stages.length === 0),
-    '공식 원문 미확인 버프/몹을 최신 기본값으로 노출합니다.');
+  check(data.CONTENT_DEFAULTS.every(c => c.dataStatus === 'corroborated'),
+    '비공식 교차 확인 전투 자료의 상태 표시가 올바르지 않습니다.');
+  const towerContent = data.CONTENT_DEFAULTS.find(c => c.id === 'tower');
+  check(towerContent.stages.length === 12 && towerContent.stages.find(s => s.name === '심연 4층')?.mobs.includes('크라운리스'),
+    '41시즌 탑의 층/보스가 올바르지 않습니다.');
+  check(towerContent.buff.includes('+55%(20초)') && towerContent.buff.includes('전도·회절 피해 제외'),
+    '41시즌 탑의 교차 확인 버프가 올바르지 않습니다.');
+  const seaContent = data.CONTENT_DEFAULTS.find(c => c.id === 'sea');
+  check(seaContent.buff.includes('껍데기만 남은 이상') && seaContent.buff.includes('+30%(15초)') &&
+    seaContent.stages.some(s => s.mobs.includes('미스터 매직')), '22시즌 해역의 증표/몹이 올바르지 않습니다.');
+  const matrixContent = data.CONTENT_DEFAULTS.find(c => c.id === 'matrix');
+  check(matrixContent.buff.includes('+11%(최대 5스택, 2초') && matrixContent.buff.includes('+55%(30초)'),
+    '매트릭스 실드 중첩/합일 대응 지속시간이 교차 확인값과 다릅니다.');
+  check(matrixContent.stages[1]?.mobs === '지옥불 기사 → 봉정계유 → 크라운리스 → 하늘의 기관 인형 · 겁살 → 매트릭스 미믹',
+    '매트릭스 특이점 보스 순서가 올바르지 않습니다.');
   check(data.LUNITE_PRICE_CHECKED === '2026-08-06', '결제 가격 확인일이 최신값이 아닙니다.');
 
   check(data.ASC_TOTALS.exp === 2438000 && data.ASC_TOTALS.premiumPotions === 122,

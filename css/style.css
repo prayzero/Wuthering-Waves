@@ -564,9 +564,13 @@ table.banner-table { width: 100%; border-collapse: collapse; font-size: 0.85rem;
 .ct-data-status { padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; font-size: .78rem; line-height: 1.6; overflow-wrap: anywhere; }
 .ct-data-status.needs-review { background: rgba(241,190,105,.08); border-color: rgba(241,190,105,.35); }
 .ct-data-status.verified { background: rgba(168,226,208,.05); }
+.ct-data-status.corroborated { background: rgba(156,200,240,.07); border-color: rgba(156,200,240,.3); }
 .ct-data-status p { margin: 5px 0; }
 .ct-data-status small { display: block; color: var(--muted); }
 .ct-data-status a { display: inline-block; margin-top: 5px; color: var(--accent); }
+.ct-sources { margin: 6px 0 0; padding-left: 16px; }
+.ct-sources li + li { margin-top: 5px; }
+.ct-source-details summary { margin-top: 8px; color: var(--accent); cursor: pointer; }
 .ct-archive summary { cursor: pointer; color: var(--muted); font-size: .8rem; padding: 4px 0; }
 .ct-archive[open] > :not(summary) { margin-top: 12px; }
 
