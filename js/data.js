@@ -1,7 +1,7 @@
 /* ================================================================
    WuWa 픽업 플래너 — 정적 데이터
    캐릭터 로스터 / 역대 픽업 배너 / 확률 모델 상수
-   기준일: 2026-09-16 (버전 3.6 후반 진행 중 · 3.7 공식 예고)
+   기준일: 2026-10-23 (공식 한국 공지 확인 · 버전 3.7 후반)
    ================================================================ */
 
 // 속성 정의 (게임 내 고유 색상)
@@ -64,6 +64,9 @@ const CHARACTERS = [
   { id: 'suisui',      name: '수수',       rarity: 5, element: 'glacio',  group: 'limited', ver: '3.5', weapon: 'rectifier',  role: '힐러/서포터',     img: TOPUP('1783586993_DtAuOuxMBY') },
   { id: 'qingxiao',    name: '청초',       rarity: 5, element: 'aero',    group: 'limited', ver: '3.6', weapon: 'sword',      role: '딜러',            img: ENCORE('73_UI') },
   { id: 'jingran',     name: '경연',       rarity: 5, element: 'fusion',  group: 'limited', ver: '3.6', weapon: 'broadblade', role: '딜러',            img: ENCORE('74_UI') },
+  { id: 'hsin',        name: '여우의 별자리', rarity: 5, element: 'electro', group: 'limited', ver: '3.7', weapon: 'rectifier', role: '딜러', img: 'https://wutheringwaves.kurogames.com/static4.0/assets/xin-4e9f5c0c.webp' },
+  // 역할은 공식 전투 스타일(빠른 협주·전도/공명 스킬 피해 부스트)에 따른 플래너 분류입니다.
+  { id: 'suoming',     name: '쇄명',       rarity: 5, element: 'electro', group: 'limited', ver: '3.7', weapon: 'sword', role: '서브딜러/서포터', img: 'https://wutheringwaves.kurogames.com/static4.0/assets/suoming-cc986429.webp' },
   // ---- 상시 5성 ----
   { id: 'rover',       name: '방랑자',     rarity: 5, element: 'spectro', group: 'standard', weapon: 'sword',      role: '주인공 (회절/인멸/기류/전도)', img: WG('5') },
   { id: 'calcharo',    name: '카카루',     rarity: 5, element: 'electro', group: 'standard', weapon: 'broadblade', role: '딜러',            img: WG('18') },
@@ -86,11 +89,12 @@ const CHARACTERS = [
   { id: 'buling',      name: '복링',       rarity: 4, element: 'electro', group: 'four', weapon: 'rectifier',  role: '서포터',       img: WG('58_UI') },
 ];
 
-/* ---- 역대 픽업 배너 (1.0 ~ 3.6 + 3.7 공식 예고, 복각 포함, 페이즈 단위) ----
+/* ---- 역대 픽업 배너 (1.0 ~ 3.7 후반, 복각 포함, 페이즈 단위) ----
    pickup: 신규 픽업 캐릭터 id / rerun: 복각 캐릭터 id
    startAt/endAt: 공식 확정 시각이 있는 경우 한국 표준시로 기록 (endAt 포함).
    3.6 후반 공식 공지: https://wutheringwaves.kurogames.com/en/main/news/detail/5431
-   3.7 공식 방송: https://www.youtube.com/watch?v=fY7pOAzNwq4 */
+   3.7 공식 KR 공지: https://aki-gm-resources-back.aki-game.net/gamenotice/G153/10cd7254d57e58ae560b15d51e34b4c8/ko.json
+   근거 공지 ID와 확인 범위: docs/data-sources-2026-10-23.md */
 const BANNERS = [
   { ver: '1.0', phase: '전반', start: '2024-05-23', end: '2024-06-13', pickup: ['jiyan'],       rerun: [], note: '출시 버전' },
   { ver: '1.0', phase: '후반', start: '2024-06-06', end: '2024-06-26', pickup: ['yinlin'],      rerun: [], note: '일정이 앞당겨져 기염과 일부 겹침' },
@@ -137,8 +141,10 @@ const BANNERS = [
     note: 'KR 공식 일정: 3.6 업데이트 완료 후 ~ 09-10 10:59 · 청초 전무 「옥빛 구름」' },
   { ver: '3.6', phase: '후반', start: '2026-09-10', end: '2026-09-29', startAt: '2026-09-10T11:00:00+09:00', endAt: '2026-09-29T12:59:59.999+09:00', pickup: ['jingran'], rerun: ['hiyuki', 'mornye'], fourStars: ['mortefi', 'aalto', 'yuanwu'],
     note: 'KR 공식 일정: 09-10 11:00 ~ 09-29 12:59 · 전무 「수많은 인도」·「서린 불꽃」·「별하늘 연산 측정기」 · 4성 무기: 멸망의 주파수·기묘한 울림·천공의 순간' },
-  { ver: '3.7', phase: '공식 예고', start: null, end: null, pickup: [], rerun: [], leaked: true,
-    leakNames: ['여우의 별자리 · 전도/증폭기', '쇄명 · 전도/직검'], note: '공식 선공개 공명자 · 09-19 20:00(KST) 프리뷰 특별 방송 예정 · 픽업 순서·상세 일정·복각은 공식 발표 대기 (09-16 기준)' },
+  { ver: '3.7', phase: '전반', start: '2026-09-30', end: '2026-10-22', pickup: ['hsin'], rerun: ['chisa', 'iuno'],
+    note: '공식 3.7 이벤트 노트 기준 · 3.7 업데이트 완료 후 시작 · 여우의 별자리 전무 「옥궐에 피는 꽃」' },
+  { ver: '3.7', phase: '후반', start: '2026-10-22', end: '2026-11-11', startAt: '2026-10-22T11:00:00+09:00', endAt: '2026-11-11T12:59:59.999+09:00', pickup: ['suoming'], rerun: ['lucilla', 'lynae'], fourStars: ['lumi', 'danjin', 'chixia'],
+    note: 'KR 공식 일정: 10-22 11:00 ~ 11-11 12:59 · 전무 「적막한 어둠」·「프리즈 프레임」·「스펙트럼 블래스터」 · 4성 무기: 행진의 서곡·역설의 격류·전우의 의리 (10-23 확인)' },
 ];
 
 // 캐릭터명 변경 전 기록과의 호환용 (현 표기 → 예전 표기 목록)
@@ -149,6 +155,7 @@ const OLD_NAME_ALIASES = {
   '벨리나': ['버리나', '버디나'], '알토': ['아토'], '연무': ['위안우', '원무'], '단근': ['단진'], '파수인': ['수안인'],
   '양양 · 현령': ['현령'], '루크 · 헤르센': ['루크 헤르센'], '에이메스': ['에메스'], '설지': ['백지'], '복링': ['복령'],
   '청초': ['천초'],
+  '여우의 별자리': ['Hsin', 'hsin', 'Xin', 'xin'], '쇄명': ['Suoming', 'suoming'],
 };
 
 /* ---- 확률 모델 ----
@@ -280,6 +287,7 @@ const WEEKLY_BOSS_MATS = {
   '기억 속 금빛 (Gold in Memory)':             '시길룸 (3.1 라하이로이)',
   '되묻는 우리 (We Who Question)':             '주간 보스 데니아 (3.3)',
   '하늘길 유리의 마음 (Skyward Glazed Heart)': '천괴중루 (3.5)',
+  'Remnant of the Wheel': '보스명·한국어 명칭 확인 필요 (3.7 공식 육성 가이드)',
 };
 
 // 캐릭터별 스킬 재료 [단조 세트, 몹 드랍, 주간 보스 재료] — Game8 검증 데이터
@@ -321,6 +329,9 @@ const CHAR_MATS = {
   suisui:      ['string',     'autopuppet', '하늘길 유리의 마음 (Skyward Glazed Heart)'],
   qingxiao:    ['polarizer',  'autopuppet', '되묻는 우리 (We Who Question)'],
   jingran:     ['crystal',    'whisperin',  '하늘길 유리의 마음 (Skyward Glazed Heart)'],
+  // 3.7 공식 영문 가이드의 소재 표를 직접 확인했습니다. 신규 명칭은 임의 번역하지 않습니다.
+  hsin:        ['string',     'autopuppet', 'Remnant of the Wheel'],
+  suoming:     ['polarizer',  'howler',     'Remnant of the Wheel'],
   rover:       ['drip',       'whisperin',  '끊임없는 파괴 (Unending Destruction)'], // 회절 기준 (인멸: Dreamless Feather, 기류: When Irises Bloom)
   calcharo:    ['residue',    'ring',       '비문 고종 (Monument Bell)'],
   lingyang:    ['cadence',    'whisperin',  '끊임없는 파괴 (Unending Destruction)'],
@@ -381,6 +392,8 @@ const SIG_WEAPONS = {
   suisui: '노을에 깃든 이슬',      // Firstlight's Herald
   qingxiao: '옥빛 구름',            // Glint of Clouds
   jingran: '수많은 인도',           // Thousandfold Deliverance
+  hsin: '옥궐에 피는 꽃',           // 공식 KR 3.7 업데이트 공지 50612
+  suoming: '적막한 어둠',           // 공식 KR 후반 무기 튜닝 공지 50594
 };
 
 // 돌파(레벨업) 재료 [지역 특산물, 필드 보스 드랍] — 몹 드랍은 스킬과 같은 계열, null = 확인 불가
@@ -422,6 +435,8 @@ const ASC_MATS = {
   suisui:      ['노을을 헤엄치는 비단 잉어', '화염에 새겨진 정의'],
   qingxiao:    ['백은 칼날', '가짜 선인의 한숨'],
   jingran:     ['노을빛 구름 깃털', '가짜 선인의 한숨'],
+  hsin:        ['Bloom of Hearkening', "Solidarity's Loneflame"],
+  suoming:     ['Miasmic Branch', "Forged Empyrean's Sigh"],
   rover:       ['공작화', '신비한 암호'], // Mysterious Code
   calcharo:    ['붓꽃', '번개의 성핵'],
   lingyang:    ['구름버섯', '음향의 성핵'],
@@ -480,55 +495,39 @@ const WAVEPLATE_FARMING = {
    엔드 컨텐츠 (탑 / 해역 / 매트릭스) 기본값
    주기·버프·몹은 게임 내 로테이션에 맞춰 직접 수정해서 사용
    ================================================================ */
-/* 2026-09-16 확인: 한국 서버 일정 + Encore 공개 게임 데이터(탑 40 / 해역 21 / 매트릭스 S2 2단계).
-   https://api.encore.moe/ko/toa/40
-   https://api-v2.encore.moe/api/ko/whiwa/21
-   https://api-v2.encore.moe/api/ko/dpmatrix/7
-   공식 주기 안내: https://aki-gm-resources-back.aki-game.net/gamenotice/G153/10cd7254d57e58ae560b15d51e34b4c8/ko.json */
+/* 2026-10-23 공식 KR 이벤트 노트에서 일정 확인.
+   https://aki-gm-resources-back.aki-game.net/notice/image/FPYtMsiebdOVEMDU.jpg
+   현재 버프·등장 몹은 공식 원문에서 확인되지 않아 빈 값으로 둡니다.
+   dataEnd는 일자 단위 표시 경계이며, 실제 리셋 시각 확정값이 아닙니다. */
 const CONTENT_DEFAULTS = [
   {
-    id: 'tower',
-    icon: '🗼',
-    name: '역경의 탑 (심경 구역)',
-    period: 28,
-    start: '2026-09-14', // 40시즌: 2026-09-14 ~ 10-12 (중간 보상 초기화 09-28)
-    rules: '40시즌 (9/14 ~ 10/12). 스테이지·심경 간섭은 28일마다 전면 교체, 도전·보상은 14일마다 초기화(중간 리셋 9/28). 심경 구역 피로도 40, 잔향·울림의 탑 층당 1/2/3/4, 심연의 탑 층당 5.',
-    buff: '잔향의 탑: 적 기류 저항 -10% · 피해를 입힐 때 적 방어력 25% 무시 · 이상 효과 보유 적이 받는 피해 +20%\n심연의 탑(1~2층): 적 전도·용융 저항 -10%, 인멸·응결 저항 +10% · 공격력 +30% · 변주 스킬 발동 시 전체 속성 피해 +30%(10초)\n심연의 탑(3~4층): 전투 시작 60초 후 공격 명중 시 적 받는 최종 피해 +5%, 이후 5초마다 +5%(최대 +60%) · 적 전체 속성 저항 +15%(전도·용융 피해 제외) · 적 받는 최종 피해 +20%, 전도 최종 피해 +50% · 실드 획득 시 자신 용융 피해 +12%(3초, 최대 10스택·지속시간 갱신)\n울림의 탑: 적 인멸 저항 -10% · 변주 시 공격력 +20%(15초) · 공명 스킬 발동 시 공명 해방 피해 +30%(5초)',
-    stages: [
-      { name: '잔향의 탑', mobs: '1층 드레이크·전도·경칩의 사냥꾼, 2층 갈기늑대·천둥·보라색 왜가리, 3층 거암 투사·블레이드 댄서·마접의 악사, 4층 방랑 기사·조립식 로봇' },
-      { name: '심연의 탑', mobs: '1층 음험한 백로, 2층 경전차 로봇·갈기늑대·눈꽃·스카·악몽의 유령, 3층 카피타네우스·순회나비·보이드 모스·흑월의 야수·돌아갈 곳이 없는 오류, 4층 하이와티아·애곡하는 아익스' },
-      { name: '울림의 탑', mobs: '1층 드레이크·응결, 2층 갈기늑대·눈꽃·유약 암괴, 3층 파트리시우스 귀족·글라디우스 귀족·메르카토르 귀족, 4층 반디의 군세' },
-    ],
+    id: 'tower', icon: '🗼', name: '역경의 탑 (심경 구역)',
+    period: 28, start: '2026-10-12',
+    dataStart: '2026-10-12', dataEnd: '2026-11-09', verifiedAt: '2026-10-23',
+    sourceUrl: 'https://aki-gm-resources-back.aki-game.net/notice/image/FPYtMsiebdOVEMDU.jpg',
+    dataStatus: 'unverified',
+    rules: '공식 3.7 이벤트 노트 일정: 10/12~11/9, 다음 11/9~12/7. 날짜만 공개되어 실제 리셋 시각은 게임 내 안내를 확인해 주세요. 현재 주기의 버프와 등장 몹은 공식 자료 미확인입니다.',
+    buff: '', stages: [],
   },
   {
-    id: 'sea',
-    icon: '🌊',
-    name: '해역 (죽음의 노래와 바닷속 폐허)',
-    period: 28,
-    start: '2026-08-31', // 21시즌: 2026-08-31 05:00 ~ 09-28 04:59 (KR 리셋 기준; API 날짜 표기는 08-30 ~ 09-27)
-    rules: '21시즌 (8/31 05:00 ~ 9/28 04:59). 4주 시즌제, 리셋 시 재생 해역(해곡·급류)만 초기화되고 금기의 해역은 유지. 2파티 동시 편성.',
-    buff: '피해·처치로 연소 수치를 채우면 타오르는 조수 진입(30초) · 공격 명중한 적은 5초간 받는 최종 피해 +60% · 조화 소실 적에게 스킬 명중 시 조화도 파괴 피해 후 상태 종료\n「허상을 비추는 등불」: 실드 획득 시 자신 용융 피해 +3%, 강공격 최종 피해 +2.5%(3초, 최대 15스택·지속시간 갱신)\n「심연을 바라보는 눈동자」: 적 받는 서리 효과 최종 피해 +50% · 서리 효과 부여 시 적 받는 응결 최종 피해 +50%(5초)\n「영혼의 무게를 가늠하는 저울」: 조화 밀집·이탈 부여 후 자신 최종 피해 +40%(30초) · 조화도 파괴 시 파티 전체 속성 피해 +30% 및 기류 피해 +30%(30초)',
-    stages: [
-      { name: '12단계 · 끝 없는 심연', mobs: '적 받는 최종 피해 +30% · 모든 증표 무제한 휴대 · 전반 협주 에너지 100%, 후반 공명 에너지 100%로 시작' },
-      { name: '전반', mobs: '삐리릭·불굴의 호위·경칩의 사냥꾼·보라색 왜가리' },
-      { name: '후반', mobs: '바위거미 S4형·조각상을 재구성하는 돌멩이·경칩의 사냥꾼·보라색 왜가리' },
-    ],
+    id: 'sea', icon: '🌊', name: '해역 (죽음의 노래와 바닷속 폐허)',
+    period: 28, start: '2026-09-28',
+    dataStart: '2026-09-28', dataEnd: '2026-10-26', verifiedAt: '2026-10-23',
+    sourceUrl: 'https://aki-gm-resources-back.aki-game.net/notice/image/FPYtMsiebdOVEMDU.jpg',
+    dataStatus: 'unverified',
+    rules: '공식 3.7 이벤트 노트 일정: 9/28~10/26, 다음 10/26~11/23. 날짜만 공개되어 실제 리셋 시각은 게임 내 안내를 확인해 주세요. 현재 주기의 버프와 등장 몹은 공식 자료 미확인입니다.',
+    buff: '', stages: [],
   },
   {
-    id: 'matrix',
-    icon: '🧩',
-    name: '종말 매트릭스 · 위험한 경지의 강습',
-    period: 41, // 09-30 갱신 예상; 최종 점검 공지에 따라 조정 필요
-    start: '2026-08-20', // 제2 도전 주기 2단계: 3.6 업데이트 후 ~ 3.7 점검 전
-    rules: '제2 도전 주기 2단계 「위험한 경지의 강습」(3.5~3.8). 현재 단계는 3.6 업데이트 후 ~ 3.7 점검 전까지이며, 다음 단계는 버전 업데이트 시 갱신. 다음 갱신일 9/30은 3.6 일정 기준 예상이며 최종 점검 공지를 우선합니다. 안정 프로토콜 최대 3파티 + 특이점 확장 무제한. 출전당 피로도 1, 위기 특수 요원 데니아는 추가 피로도 1 보유. 강화 캐릭터: 절지·음림·금희·장리·기염·상리요·로코코·브렌트·칸타렐라·카멜리아·페비·카를로타. 무기·에코는 캐릭터 귀속.',
-    buff: '공용: 적 받는 최종 피해 +20%, 적 받는 강공격 최종 피해 +20%\n이상 효과: 이상 부여 시 적 받는 최종 피해 +25%(30초) · 적 받는 서리 효과 최종 피해 +80%\n에코: 에코 어빌리티 최종 피해 +30%, 인멸 최종 피해 +20%, 공명 스킬 최종 피해 +20%\n조화도 파괴: 조화도·이탈 부여 시 파티 전체 최종 피해 +25%(30초) · 조화 밀집·이탈 부여 시 자신 최종 피해 +30%(15초)\n특이점 확장은 라운드가 진행될수록 적이 강화되며, 매트릭스 미믹으로 추가 점수를 획득',
-    stages: [
-      { name: '안정 프로토콜', mobs: '애곡하는 아익스 / 만와뢰 · 잔해 / 이성(異性) 무장 / 천둥의 비늘' },
-      { name: '특이점 확장', mobs: '라운드 진행 시 적 강화 · 매트릭스 미믹 추가 점수' },
-    ],
+    id: 'matrix', icon: '🧩', name: '종말 매트릭스 · 위험한 경지의 강습',
+    period: 36, start: '2026-10-07',
+    dataStart: '2026-10-07', dataEnd: '2026-11-12', verifiedAt: '2026-10-23',
+    sourceUrl: 'https://aki-gm-resources-back.aki-game.net/notice/image/FPYtMsiebdOVEMDU.jpg',
+    dataStatus: 'unverified',
+    rules: '공식 3.7 이벤트 노트 일정: 10/7~11/12. 실제 종료 시각과 다음 단계 일정은 미확인입니다. 제2 도전 주기 「위험한 경지의 강습」은 3.5~3.8에 걸쳐 진행됩니다. 안정 프로토콜 최대 3파티, 특이점 확장 파티 수 제한 없음, 출전당 피로도 1. 서로 다른 공명자 간 동일 무기·에코 동시 사용 불가. 현재 버프·강화 공명자·등장 몹은 공식 자료 미확인입니다.',
+    buff: '', stages: [],
   },
 ];
-
 /* ---- 재화 ----
    1뽑 = 별의 소리(Astrite) 160. 달빛(Lunite)은 1:1로 별의 소리 전환.
    쿠로게임즈 상품 정보 및 PlayStation 한국 스토어 기준 (2026-08-06 확인). */

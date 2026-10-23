@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="명조 도구">
 <link rel="apple-touch-icon" href="icons/app-180.v2.png">
-<link rel="stylesheet" href="css/style.css?v=24">
+<link rel="stylesheet" href="css/style.css?v=25">
 </head>
 <body>
 <a class="skip-link" href="#main-content">본문으로 건너뛰기</a>
@@ -106,7 +106,7 @@
     <div class="section">
       <div class="section-head">
         <h2>엔드 컨텐츠 로테이션</h2>
-        <p class="desc">탑 · 해역 · 매트릭스의 리셋 주기와 이번 주기의 버프, 등장 몹을 한눈에 확인하세요. 로테이션이 바뀌면 [수정]으로 갱신하면 됩니다 (자동 저장).</p>
+        <p class="desc">탑 · 해역 · 매트릭스의 예상 리셋 일정과 자료 기준일을 확인하세요. 지난 주기 자료와 공식 확인이 필요한 정보는 별도로 표시합니다. [수정]으로 직접 기록한 내용은 자동 저장됩니다.</p>
       </div>
       <div class="content-grid" id="content-grid"></div>
     </div>
@@ -242,6 +242,7 @@
 <footer>
   비공식 팬 제작 도구입니다. 게임 데이터 및 확률 정보의 출처는 명조: 워더링 웨이브 (KURO GAMES) 공식 공지이며, 소프트 천장 곡선은 커뮤니티 추정치입니다.
   모든 기록은 이 브라우저의 로컬 저장소에만 보관됩니다.
+  픽업·신규 공명자 자료: 2026-10-23 확인 · <a href="https://github.com/prayzero/Wuthering-Waves/blob/claude/gacha-tracker-party-hp0h9b/docs/data-sources-2026-10-23.md" target="_blank" rel="noopener noreferrer">공식 출처와 확인 범위</a>
 </footer>
 
 <!-- ================= 모달: 픽업 일정 ================= -->
@@ -362,7 +363,7 @@
     </div>
     <div class="form-2col">
       <div class="form-row">
-        <label for="ct-start">이번 주기 시작일</label>
+        <label for="ct-start">기록할 주기 시작일</label>
         <input type="date" id="ct-start" required>
       </div>
       <div class="form-row">
@@ -375,7 +376,7 @@
       <textarea id="ct-rules" rows="2"></textarea>
     </div>
     <div class="form-row">
-      <label for="ct-buff">이번 주기 버프</label>
+      <label for="ct-buff">해당 주기 버프</label>
       <textarea id="ct-buff" rows="2" placeholder="예: 응결 피해 +25%, 공명 해방 피해 +30%"></textarea>
     </div>
     <div class="form-row">
@@ -456,7 +457,7 @@
 <div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 <div class="chart-tip" id="chart-tip"></div>
 
-<script src="js/data.js?v=24"></script>
-<script src="js/app.js?v=24"></script>
+<script src="js/data.js?v=25"></script>
+<script src="js/app.js?v=25"></script>
 </body>
 </html>

@@ -160,7 +160,8 @@ try {
   const selection = data.BANNERS.find(b => b.ver === '3.5' && b.phase === '선택형');
   const previousBanner = data.BANNERS.find(b => b.ver === '3.6' && b.phase === '전반');
   const currentBanner = data.BANNERS.find(b => b.ver === '3.6' && b.phase === '후반');
-  const nextPreview = data.BANNERS.find(b => b.ver === '3.7' && b.phase === '공식 예고');
+  const phase37First = data.BANNERS.find(b => b.ver === '3.7' && b.phase === '전반');
+  const phase37Second = data.BANNERS.find(b => b.ver === '3.7' && b.phase === '후반');
   check(collab?.charPityGroup && collab?.weaponPityGroup, '3.4 콜라보 별도 천장 그룹이 없습니다.');
   check(selection?.charPityGroup && selection?.weaponPityGroup, '3.5 선택형 별도 천장 그룹이 없습니다.');
   check(selection?.freePulls === 10, '3.5 선택형 무료 10뽑 데이터가 없습니다.');
@@ -172,9 +173,20 @@ try {
     currentBanner?.endAt === '2026-09-29T12:59:59.999+09:00', '3.6 후반 한국 시작·종료 시각 오류');
   check(currentBanner?.pickup?.join(',') === 'jingran' && currentBanner?.rerun?.join(',') === 'hiyuki,mornye', '3.6 후반 픽업 구성이 최신값이 아닙니다.');
   check(currentBanner?.fourStars?.join(',') === 'mortefi,aalto,yuanwu', '3.6 후반 4성 픽업 구성이 최신값이 아닙니다.');
-  check(nextPreview?.leaked === true && !nextPreview?.start && !nextPreview?.end &&
-    nextPreview?.leakNames?.some(name => name.includes('여우의 별자리')) &&
-    nextPreview?.leakNames?.some(name => name.includes('쇄명')), '3.7 공식 예고 데이터가 없습니다.');
+  check(!data.BANNERS.some(b => b.ver === '3.7' && b.leaked), '출시된 3.7을 미공개 예고로 표시합니다.');
+  check(phase37First?.start === '2026-09-30' && phase37First?.end === '2026-10-22' &&
+    phase37First?.pickup?.join(',') === 'hsin' && phase37First?.rerun?.join(',') === 'chisa,iuno',
+    '3.7 전반 공식 이벤트 노트 구성 오류');
+  check(phase37Second?.startAt === '2026-10-22T11:00:00+09:00' &&
+    phase37Second?.endAt === '2026-11-11T12:59:59.999+09:00', '3.7 후반 한국 시간 오류');
+  check(phase37Second?.pickup?.join(',') === 'suoming' && phase37Second?.rerun?.join(',') === 'lucilla,lynae' &&
+    phase37Second?.fourStars?.join(',') === 'lumi,danjin,chixia', '3.7 후반 공식 픽업 구성 오류');
+  check(data.SIG_WEAPONS.hsin === '옥궐에 피는 꽃' && data.SIG_WEAPONS.suoming === '적막한 어둠', '3.7 전용 무기 공식명 오류');
+  check(data.CHAR_MATS.hsin?.join('|') === 'string|autopuppet|Remnant of the Wheel' &&
+    data.CHAR_MATS.suoming?.join('|') === 'polarizer|howler|Remnant of the Wheel', '3.7 공식 육성 가이드 스킬 소재 오류');
+  check(data.ASC_MATS.hsin?.[0] === 'Bloom of Hearkening' && data.ASC_MATS.hsin?.[1] === "Solidarity's Loneflame" &&
+    data.ASC_MATS.suoming?.[0] === 'Miasmic Branch' && data.ASC_MATS.suoming?.[1] === "Forged Empyrean's Sigh",
+    '3.7 공식 육성 가이드 돌파 소재 오류');
   check(data.SIG_WEAPONS.qingxiao === '옥빛 구름', '청초 전용 무기 공식명이 최신값이 아닙니다.');
   check(data.SIG_WEAPONS.jingran === '수많은 인도', '경연 전용 무기 공식명이 최신값이 아닙니다.');
   check(data.CHARACTERS.find(c => c.id === 'suisui')?.role.startsWith('힐러'), '수수 역할이 힐러로 분류되지 않았습니다.');
@@ -200,11 +212,19 @@ try {
     check(validDate(content.start), `컨텐츠 시작일 오류: ${content.id}`);
     check(Number.isInteger(content.period) && content.period > 0 && content.period <= 999, `컨텐츠 주기 오류: ${content.id}`);
     check(Array.isArray(content.stages), `컨텐츠 단계 배열 오류: ${content.id}`);
+    check(validDate(content.dataStart) && validDate(content.dataEnd) && content.dataStart < content.dataEnd,
+      `컨텐츠 자료 유효기간 오류: ${content.id}`);
+    check(validDate(content.verifiedAt), `컨텐츠 확인일 오류: ${content.id}`);
+    check(['official', 'unverified', 'custom'].includes(content.dataStatus), `컨텐츠 출처 상태 오류: ${content.id}`);
+    check(/^https:\/\//.test(content.sourceUrl || ''), `컨텐츠 근거 URL 누락: ${content.id}`);
     contentIds.add(content.id);
   }
-  check(data.CONTENT_DEFAULTS.find(c => c.id === 'tower')?.start === '2026-09-14', '역경의 탑 40시즌 시작일이 아닙니다.');
-  check(data.CONTENT_DEFAULTS.find(c => c.id === 'sea')?.start === '2026-08-31', '해역 21시즌 시작일이 아닙니다.');
-  check(data.CONTENT_DEFAULTS.find(c => c.id === 'matrix')?.start === '2026-08-20', '종말 매트릭스 2주기 2단계 시작일이 아닙니다.');
+  check(data.CONTENT_DEFAULTS.find(c => c.id === 'tower')?.start === '2026-10-12', '공식 이벤트 노트 역경의 탑 일정 오류');
+  check(data.CONTENT_DEFAULTS.find(c => c.id === 'sea')?.start === '2026-09-28', '공식 이벤트 노트 해역 일정 오류');
+  check(data.CONTENT_DEFAULTS.find(c => c.id === 'matrix')?.start === '2026-10-07' &&
+    data.CONTENT_DEFAULTS.find(c => c.id === 'matrix')?.dataEnd === '2026-11-12', '공식 이벤트 노트 매트릭스 일정 오류');
+  check(data.CONTENT_DEFAULTS.every(c => c.dataStatus === 'unverified' && !c.buff && c.stages.length === 0),
+    '공식 원문 미확인 버프/몹을 최신 기본값으로 노출합니다.');
   check(data.LUNITE_PRICE_CHECKED === '2026-08-06', '결제 가격 확인일이 최신값이 아닙니다.');
 
   check(data.ASC_TOTALS.exp === 2438000 && data.ASC_TOTALS.premiumPotions === 122,

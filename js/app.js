@@ -3,8 +3,8 @@
    ================================================================ */
 
 const STORE_KEY = 'wuwa-planner-v1';
-const STATE_SCHEMA_VERSION = 5;
-const CONTENT_DEFAULTS_REFRESH_VERSION = 5;
+const STATE_SCHEMA_VERSION = 6;
+const CONTENT_DEFAULTS_REFRESH_VERSION = 6;
 const LEGACY_CONTENT_DEFAULTS_V3 = [
   {
     id: 'tower',
@@ -87,6 +87,49 @@ const LEGACY_CONTENT_DEFAULTS_V4 = [
     buff: '공용: 적 받는 최종 피해 +20%, 적이 받는 공명 스킬 최종 피해 +20%\n이상 효과: 이상 부여 시 적 받는 최종 피해 +25%(30초), 암흑 부여 시 자신 최종 피해 +30%(15초)\n에코: 에코 어빌리티 최종 피해 +30%, 용융 최종 피해 +20%, 강공격 최종 피해 +20%\n조화도 파괴: 조화 파동 최종 피해 +150%, 조화도·이탈 부여 시 최종 피해 +25%(30초)\n특이점 점수 배율: 1라운드 ×1.00 · 2라운드 ×1.15 · 3라운드 이후 ×1.25',
     stages: [
       { name: '안정 프로토콜', mobs: '매트릭스 클러스터·애곡하는 아익스·플뢰르 드 리스·리액터 허스크' },
+      { name: '특이점 확장', mobs: '라운드 진행 시 적 강화 · 매트릭스 미믹 추가 점수' },
+    ],
+  },
+];
+const LEGACY_CONTENT_DEFAULTS_V5 = [
+  {
+    id: 'tower',
+    icon: '🗼',
+    name: '역경의 탑 (심경 구역)',
+    period: 28,
+    start: '2026-09-14', // 40시즌: 2026-09-14 ~ 10-12 (중간 보상 초기화 09-28)
+    rules: '40시즌 (9/14 ~ 10/12). 스테이지·심경 간섭은 28일마다 전면 교체, 도전·보상은 14일마다 초기화(중간 리셋 9/28). 심경 구역 피로도 40, 잔향·울림의 탑 층당 1/2/3/4, 심연의 탑 층당 5.',
+    buff: '잔향의 탑: 적 기류 저항 -10% · 피해를 입힐 때 적 방어력 25% 무시 · 이상 효과 보유 적이 받는 피해 +20%\n심연의 탑(1~2층): 적 전도·용융 저항 -10%, 인멸·응결 저항 +10% · 공격력 +30% · 변주 스킬 발동 시 전체 속성 피해 +30%(10초)\n심연의 탑(3~4층): 전투 시작 60초 후 공격 명중 시 적 받는 최종 피해 +5%, 이후 5초마다 +5%(최대 +60%) · 적 전체 속성 저항 +15%(전도·용융 피해 제외) · 적 받는 최종 피해 +20%, 전도 최종 피해 +50% · 실드 획득 시 자신 용융 피해 +12%(3초, 최대 10스택·지속시간 갱신)\n울림의 탑: 적 인멸 저항 -10% · 변주 시 공격력 +20%(15초) · 공명 스킬 발동 시 공명 해방 피해 +30%(5초)',
+    stages: [
+      { name: '잔향의 탑', mobs: '1층 드레이크·전도·경칩의 사냥꾼, 2층 갈기늑대·천둥·보라색 왜가리, 3층 거암 투사·블레이드 댄서·마접의 악사, 4층 방랑 기사·조립식 로봇' },
+      { name: '심연의 탑', mobs: '1층 음험한 백로, 2층 경전차 로봇·갈기늑대·눈꽃·스카·악몽의 유령, 3층 카피타네우스·순회나비·보이드 모스·흑월의 야수·돌아갈 곳이 없는 오류, 4층 하이와티아·애곡하는 아익스' },
+      { name: '울림의 탑', mobs: '1층 드레이크·응결, 2층 갈기늑대·눈꽃·유약 암괴, 3층 파트리시우스 귀족·글라디우스 귀족·메르카토르 귀족, 4층 반디의 군세' },
+    ],
+  },
+  {
+    id: 'sea',
+    icon: '🌊',
+    name: '해역 (죽음의 노래와 바닷속 폐허)',
+    period: 28,
+    start: '2026-08-31', // 21시즌: 2026-08-31 05:00 ~ 09-28 04:59 (KR 리셋 기준; API 날짜 표기는 08-30 ~ 09-27)
+    rules: '21시즌 (8/31 05:00 ~ 9/28 04:59). 4주 시즌제, 리셋 시 재생 해역(해곡·급류)만 초기화되고 금기의 해역은 유지. 2파티 동시 편성.',
+    buff: '피해·처치로 연소 수치를 채우면 타오르는 조수 진입(30초) · 공격 명중한 적은 5초간 받는 최종 피해 +60% · 조화 소실 적에게 스킬 명중 시 조화도 파괴 피해 후 상태 종료\n「허상을 비추는 등불」: 실드 획득 시 자신 용융 피해 +3%, 강공격 최종 피해 +2.5%(3초, 최대 15스택·지속시간 갱신)\n「심연을 바라보는 눈동자」: 적 받는 서리 효과 최종 피해 +50% · 서리 효과 부여 시 적 받는 응결 최종 피해 +50%(5초)\n「영혼의 무게를 가늠하는 저울」: 조화 밀집·이탈 부여 후 자신 최종 피해 +40%(30초) · 조화도 파괴 시 파티 전체 속성 피해 +30% 및 기류 피해 +30%(30초)',
+    stages: [
+      { name: '12단계 · 끝 없는 심연', mobs: '적 받는 최종 피해 +30% · 모든 증표 무제한 휴대 · 전반 협주 에너지 100%, 후반 공명 에너지 100%로 시작' },
+      { name: '전반', mobs: '삐리릭·불굴의 호위·경칩의 사냥꾼·보라색 왜가리' },
+      { name: '후반', mobs: '바위거미 S4형·조각상을 재구성하는 돌멩이·경칩의 사냥꾼·보라색 왜가리' },
+    ],
+  },
+  {
+    id: 'matrix',
+    icon: '🧩',
+    name: '종말 매트릭스 · 위험한 경지의 강습',
+    period: 41, // 09-30 갱신 예상; 최종 점검 공지에 따라 조정 필요
+    start: '2026-08-20', // 제2 도전 주기 2단계: 3.6 업데이트 후 ~ 3.7 점검 전
+    rules: '제2 도전 주기 2단계 「위험한 경지의 강습」(3.5~3.8). 현재 단계는 3.6 업데이트 후 ~ 3.7 점검 전까지이며, 다음 단계는 버전 업데이트 시 갱신. 다음 갱신일 9/30은 3.6 일정 기준 예상이며 최종 점검 공지를 우선합니다. 안정 프로토콜 최대 3파티 + 특이점 확장 무제한. 출전당 피로도 1, 위기 특수 요원 데니아는 추가 피로도 1 보유. 강화 캐릭터: 절지·음림·금희·장리·기염·상리요·로코코·브렌트·칸타렐라·카멜리아·페비·카를로타. 무기·에코는 캐릭터 귀속.',
+    buff: '공용: 적 받는 최종 피해 +20%, 적 받는 강공격 최종 피해 +20%\n이상 효과: 이상 부여 시 적 받는 최종 피해 +25%(30초) · 적 받는 서리 효과 최종 피해 +80%\n에코: 에코 어빌리티 최종 피해 +30%, 인멸 최종 피해 +20%, 공명 스킬 최종 피해 +20%\n조화도 파괴: 조화도·이탈 부여 시 파티 전체 최종 피해 +25%(30초) · 조화 밀집·이탈 부여 시 자신 최종 피해 +30%(15초)\n특이점 확장은 라운드가 진행될수록 적이 강화되며, 매트릭스 미믹으로 추가 점수를 획득',
+    stages: [
+      { name: '안정 프로토콜', mobs: '애곡하는 아익스 / 만와뢰 · 잔해 / 이성(異性) 무장 / 천둥의 비늘' },
       { name: '특이점 확장', mobs: '라운드 진행 시 적 강화 · 매트릭스 미믹 추가 점수' },
     ],
   },
@@ -241,6 +284,41 @@ function contentFieldValue(item, def, legacy, field, sourceSchemaVersion) {
   return missing || matchesLegacy ? def[field] : item[field];
 }
 
+function contentSourceUrl(value) {
+  return typeof value === 'string' && value.length <= 2000 &&
+    /^https:\/\/[a-z0-9.-]+(?::\d+)?(?:[/?#][^\s<>"']*)?$/i.test(value) ? value : '';
+}
+
+function contentDateEnd(start, period) {
+  if (!validDate(start) || !Number.isInteger(Number(period)) || Number(period) < 1 || Number(period) > 999) return '';
+  return new Date(Date.parse(`${start}T00:00:00Z`) + Number(period) * 86400000).toISOString().slice(0, 10);
+}
+
+function contentMetadata(item, content, def, sourceSchemaVersion) {
+  const fields = ['period', 'start', 'rules', 'buff', 'stages'];
+  const matchesDefault = fields.every(field => JSON.stringify(content[field]) === JSON.stringify(def[field]));
+  const source = sourceSchemaVersion < CONTENT_DEFAULTS_REFRESH_VERSION && matchesDefault ? def : item;
+  const customized = sourceSchemaVersion < CONTENT_DEFAULTS_REFRESH_VERSION && !matchesDefault;
+  // Keep a legacy user's text attached to the dates it was originally written for.
+  const fallbackStart = customized && validDate(item.start) ? item.start : content.start;
+  const fallbackPeriod = customized && contentDateEnd(fallbackStart, item.period) ? Number(item.period) : content.period;
+  const dataStart = validDate(source.dataStart) ? source.dataStart : fallbackStart;
+  const dataEnd = validDate(source.dataEnd) && source.dataEnd > dataStart
+    ? source.dataEnd : contentDateEnd(dataStart, fallbackPeriod);
+  const sourceUrl = contentSourceUrl(source.sourceUrl);
+  const verifiedAt = validDate(source.verifiedAt) ? source.verifiedAt : '';
+  // Legacy overrides have no proof of an official source. Keep their text, and mark it as user data.
+  // A backup cannot certify arbitrary text simply by supplying an HTTPS URL.
+  const official = !customized && matchesDefault && def.dataStatus === 'official' &&
+    source.dataStatus === 'official' && sourceUrl && verifiedAt &&
+    ['dataStart', 'dataEnd', 'verifiedAt', 'sourceUrl'].every(field => source[field] === def[field]) &&
+    validDate(source.dataStart) && validDate(source.dataEnd) && source.dataEnd > source.dataStart;
+  const untrustedClaim = source.dataStatus === 'official' && !official;
+  return { dataStart, dataEnd, verifiedAt: customized ? '' : verifiedAt,
+    sourceUrl: customized ? '' : sourceUrl,
+    dataStatus: customized || untrustedClaim || source.dataStatus === 'custom' ? 'custom' : official ? 'official' : 'unverified' };
+}
+
 function pityGroupIds(kind) {
   const field = kind === 'char' ? 'charPityGroup' : 'weaponPityGroup';
   const base = kind === 'char' ? DEFAULT_CHAR_PITY_GROUP : DEFAULT_WEAPON_PITY_GROUP;
@@ -322,6 +400,25 @@ function assertImportShape(data) {
     if (hasOwn(item, 'icon') && item.icon !== def.icon) throw new Error('컨텐츠 아이콘은 변경할 수 없습니다.');
     if (hasOwn(item, 'stages') && (!Array.isArray(item.stages) || item.stages.some(s => !isPlainObject(s)))) {
       throw new Error('컨텐츠 단계 정보가 올바르지 않습니다.');
+    }
+    for (const field of ['start', 'dataStart', 'dataEnd', 'verifiedAt']) {
+      if (hasOwn(item, field) && !(field === 'verifiedAt' && item[field] === '') && !validDate(item[field])) {
+        throw new Error('컨텐츠 날짜가 올바르지 않습니다.');
+      }
+    }
+    if (hasOwn(item, 'period') && (!Number.isInteger(Number(item.period)) || Number(item.period) < 1 || Number(item.period) > 999)) {
+      throw new Error('컨텐츠 주기는 1~999일의 정수여야 합니다.');
+    }
+    if (item.dataStart && item.dataEnd && item.dataEnd <= item.dataStart) throw new Error('컨텐츠 자료 종료일은 시작일 이후여야 합니다.');
+    if (hasOwn(item, 'dataStatus') && !['official', 'unverified', 'custom'].includes(item.dataStatus)) {
+      throw new Error('컨텐츠 자료 상태가 올바르지 않습니다.');
+    }
+    if (hasOwn(item, 'sourceUrl') && item.sourceUrl !== '' && !contentSourceUrl(item.sourceUrl)) {
+      throw new Error('컨텐츠 출처는 올바른 HTTPS 주소여야 합니다.');
+    }
+    if (item.dataStatus === 'official' && (!validDate(item.dataStart) || !validDate(item.dataEnd) ||
+        !validDate(item.verifiedAt) || !contentSourceUrl(item.sourceUrl))) {
+      throw new Error('공식 컨텐츠 자료의 적용 기간·확인일·출처가 필요합니다.');
     }
   });
 }
@@ -451,8 +548,8 @@ function normalizeStateData(input, { strict = false } = {}) {
   result.contents = CONTENT_DEFAULTS.map(def => {
     const item = rawContents.find(c => isPlainObject(c) && c.id === def.id);
     if (!item) return clone(def);
-    const legacyDefaults = sourceSchemaVersion < 4
-      ? LEGACY_CONTENT_DEFAULTS_V3 : LEGACY_CONTENT_DEFAULTS_V4;
+    const legacyDefaults = sourceSchemaVersion < 4 ? LEGACY_CONTENT_DEFAULTS_V3
+      : sourceSchemaVersion < 5 ? LEGACY_CONTENT_DEFAULTS_V4 : LEGACY_CONTENT_DEFAULTS_V5;
     const legacy = legacyDefaults.find(content => content.id === def.id);
     const nameValue = contentFieldValue(item, def, legacy, 'name', sourceSchemaVersion);
     const periodValue = contentFieldValue(item, def, legacy, 'period', sourceSchemaVersion);
@@ -466,16 +563,17 @@ function normalizeStateData(input, { strict = false } = {}) {
       const mobs = cleanString(stage.mobs, 1000);
       return name || mobs ? [{ name: name || '단계', mobs }] : [];
     }) : clone(def.stages || []);
-    return {
+    const content = {
       id: def.id,
       icon: def.icon,
       name: cleanString(nameValue, 24) || def.name,
       period: cleanInt(periodValue, 1, 999, def.period),
       start: validDate(startValue) ? startValue : def.start,
-      rules: cleanString(rulesValue, 2000) || def.rules,
-      buff: cleanString(buffValue, 3000) || def.buff,
+      rules: typeof rulesValue === 'string' ? cleanString(rulesValue, 2000) : def.rules,
+      buff: typeof buffValue === 'string' ? cleanString(buffValue, 3000) : def.buff,
       stages,
     };
+    return { ...content, ...contentMetadata(item, content, def, sourceSchemaVersion) };
   });
 
   result.matOverrides = Object.create(null);
@@ -2317,32 +2415,62 @@ document.getElementById('record-form').addEventListener('submit', e => {
    4.5 엔드 컨텐츠 (탑 / 해역 / 매트릭스)
    ================================================================ */
 
-// 이번 주기의 시작일·리셋일 계산 (start를 기준으로 period일마다 반복)
-function cycleInfo(c) {
-  const t = new Date(today());
-  const start = new Date(c.start);
-  const period = Math.max(1, +c.period || 1);
+// 일정은 일자 단위 예상치이며, 저장된 버프의 적용 기간과 별도로 계산합니다.
+function contentToday(now = Date.now()) {
+  return new Date(now + 9 * 3600000).toISOString().slice(0, 10);
+}
+
+function cycleInfo(c, date = contentToday()) {
+  const end = contentDateEnd(c.start, c.period);
+  if (!end || !validDate(date)) return { valid: false };
+  const t = new Date(`${date}T00:00:00Z`);
+  const start = new Date(`${c.start}T00:00:00Z`);
+  const period = Number(c.period);
   const dayMs = 86400000;
   let cycleStart;
   if (t < start) {
     cycleStart = start; // 아직 첫 주기 전 — 시작일까지 카운트
-    return { next: start, left: Math.round((start - t) / dayMs), progress: 0, upcoming: true };
+    return { valid: true, start, end: new Date(`${end}T00:00:00Z`), next: start,
+      left: Math.round((start - t) / dayMs), progress: 0, upcoming: true };
   }
   const elapsed = Math.floor((t - start) / dayMs);
   const into = elapsed % period;
   cycleStart = new Date(start.getTime() + (elapsed - into) * dayMs);
   const next = new Date(cycleStart.getTime() + period * dayMs);
-  return { next, left: period - into, progress: into / period, upcoming: false };
+  return { valid: true, start: cycleStart, end: next, next, left: period - into, progress: into / period, upcoming: false };
 }
 
 function fmtShort(d) {
-  return `${d.getMonth() + 1}/${d.getDate()}`;
+  return `${d.getUTCMonth() + 1}/${d.getUTCDate()}`;
+}
+
+function contentDataInfo(c, date = contentToday()) {
+  const start = hasOwn(c, 'dataStart') ? c.dataStart : c.start;
+  const end = hasOwn(c, 'dataEnd') ? c.dataEnd : contentDateEnd(start, c.period);
+  const valid = validDate(date) && validDate(start) && validDate(end) && end > start;
+  const expired = valid && date >= end;
+  const upcoming = valid && date < start;
+  const official = c.dataStatus === 'official' && valid && validDate(c.verifiedAt) && !!contentSourceUrl(c.sourceUrl);
+  const custom = c.dataStatus === 'custom';
+  const current = official && !expired && !upcoming;
+  const label = !valid ? '자료 적용 기간 확인 필요'
+    : expired ? (custom ? '이전 주기 사용자 자료' : '이전 주기 자료')
+    : custom ? (upcoming ? '예정 주기 사용자 자료' : '사용자 입력 자료')
+    : official ? (upcoming ? '예정 주기 공식 자료' : '현재 주기 공식 자료')
+    : upcoming ? '예정 자료 · 확인 필요' : '최신 정보 확인 필요';
+  const note = expired ? '저장된 버프·등장 몹의 적용 기간이 지났습니다. 최신 정보 확인이 필요합니다.'
+    : !valid ? '자료 날짜가 올바르지 않아 현재 적용 여부를 판단할 수 없습니다.'
+    : custom ? '직접 수정한 자료입니다. 공식 최신 정보와 다를 수 있습니다.'
+    : !official ? '저장된 버프·등장 몹의 공식 확인이 필요합니다.'
+    : upcoming ? '아직 시작되지 않은 자료입니다.' : '아래 내용은 표시된 공식 자료의 적용 기간에 해당합니다.';
+  return { start, end, valid, expired, upcoming, official, custom, current, label, note };
 }
 
 function renderContents() {
   const grid = document.getElementById('content-grid');
   grid.innerHTML = state.contents.map(c => {
     const info = cycleInfo(c);
+    const data = contentDataInfo(c);
     const stages = (c.stages || []).map(s => `
       <div class="stage-row">
         <span class="sn">${esc(s.name)}</span>
@@ -2355,24 +2483,33 @@ function renderContents() {
         <span class="ct-icon">${esc(c.icon || '📌')}</span>
         <div class="t">
           <b>${esc(c.name)}</b>
-          <small>${cleanInt(c.period, 1, 999, 1)}일 주기 · 이번 주기 ${fmtShort(new Date(new Date(info.next).getTime() - cleanInt(c.period, 1, 999, 1) * 86400000))} ~ ${fmtShort(new Date(info.next))}</small>
+          <small>${info.valid ? `${c.period}일 기준 ${info.upcoming ? '예정' : '예상'} 주기 ${fmtShort(info.start)} ~ ${fmtShort(info.end)}` : '주기 날짜 확인 필요'}</small>
         </div>
         <button class="icon-btn" data-edit-content="${c.id}" aria-label="${esc(c.name)} 정보 수정">수정</button>
       </div>
-      <div class="reset-badge">
-        <div class="dd ${info.left <= 3 ? 'soon-reset' : ''}">${info.upcoming ? '시작까지' : '주기 교체까지'} D-${info.left}</div>
-        <div class="sub">${fmtShort(new Date(info.next))} ${info.upcoming ? '시작' : '주기 갱신'}</div>
+      ${info.valid ? `<div class="reset-badge">
+        <div class="dd ${info.left <= 3 ? 'soon-reset' : ''}">${info.upcoming ? '예상 시작까지' : '예상 주기 교체까지'} D-${info.left}</div>
+        <div class="sub">${fmtShort(info.next)} 예상 · 한국 날짜 기준 · 실제 리셋 시각은 게임 내 확인</div>
         <div class="reset-bar"><div class="fill" style="width:${(info.progress * 100).toFixed(1)}%"></div></div>
+      </div>` : ''}
+      <div class="ct-data-status ${data.current ? 'verified' : 'needs-review'}">
+        <strong>${esc(data.label)}</strong>
+        <p>${esc(data.note)}</p>
+        ${data.valid ? `<small>자료 기준 기간: ${esc(data.start)} ~ ${esc(data.end)} (일자 기준)</small>` : ''}
+        ${validDate(c.verifiedAt) ? `<small>출처 확인일: ${esc(c.verifiedAt)}</small>` : ''}
+        ${contentSourceUrl(c.sourceUrl) ? `<a href="${esc(c.sourceUrl)}" target="_blank" rel="noopener noreferrer">${data.official ? '공식 원문' : '참고 출처'}</a>` : ''}
       </div>
+      ${data.expired ? '<details class="ct-archive"><summary>이전 주기 자료 보기</summary>' : ''}
       ${c.rules ? `<p class="ct-rules">${esc(c.rules)}</p>` : ''}
       <div class="ct-block">
-        <h4>✨ 이번 주기 버프</h4>
+        <h4>✨ ${data.current ? '현재 주기 버프' : data.expired ? '이전 주기 버프' : data.upcoming ? '예정 자료의 버프' : '저장된 버프 · 확인 필요'}</h4>
         <div class="ct-buff">${esc(c.buff || '버프 미입력')}</div>
       </div>
       <div class="ct-block">
-        <h4>👹 등장 몹</h4>
+        <h4>👹 ${data.expired ? '이전 주기 등장 몹' : data.current ? '현재 주기 등장 몹' : '저장된 등장 몹'}</h4>
         ${stages || '<div class="empty-note" style="padding:14px">단계를 추가해 주세요</div>'}
       </div>
+      ${data.expired ? '</details>' : ''}
       ${(() => {
         const linked = state.parties.filter(p => p.tag === c.id);
         if (!linked.length) return '';
@@ -2413,9 +2550,16 @@ document.getElementById('content-form').addEventListener('submit', e => {
   e.preventDefault();
   const c = state.contents.find(x => x.id === editingContentId);
   if (!c) return;
+  const start = document.getElementById('ct-start').value;
+  const period = Number(document.getElementById('ct-period').value);
+  if (!validDate(start) || !contentDateEnd(start, period)) {
+    toast('올바른 시작일과 1~999일의 정수 주기를 입력해 주세요');
+    return;
+  }
+  const previous = JSON.stringify([c.start, c.period, c.rules, c.buff, c.stages]);
   c.name = document.getElementById('ct-name').value.trim() || c.name;
-  c.start = document.getElementById('ct-start').value;
-  c.period = cleanInt(document.getElementById('ct-period').value, 1, 999, c.period);
+  c.start = start;
+  c.period = period;
   c.rules = document.getElementById('ct-rules').value.trim();
   c.buff = document.getElementById('ct-buff').value.trim();
   c.stages = document.getElementById('ct-stages').value.split('\n')
@@ -2426,6 +2570,10 @@ document.getElementById('content-form').addEventListener('submit', e => {
         ? { name: '단계', mobs: line }
         : { name: line.slice(0, i).trim(), mobs: line.slice(i + 1).trim() };
     });
+  if (previous !== JSON.stringify([c.start, c.period, c.rules, c.buff, c.stages])) {
+    Object.assign(c, { dataStart: c.start, dataEnd: contentDateEnd(c.start, c.period),
+      dataStatus: 'custom', verifiedAt: '', sourceUrl: '' });
+  }
   save(); renderContents();
   document.getElementById('content-modal').close();
   toast('컨텐츠 정보를 저장했어요');

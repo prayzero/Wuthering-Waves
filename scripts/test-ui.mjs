@@ -88,8 +88,8 @@ const context = vm.createContext({
 
 const data = fs.readFileSync(path.join(root, 'js/data.js'), 'utf8');
 const app = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
-vm.runInContext(`${data}\n${app}\n;globalThis.__ui = {
-  characterMatchesSearch, charById, renderRoster, renderMatStrip, renderBannerCards,
+vm.runInContext(`${data}\nBANNERS.push({ ver: '99.0', phase: '예고 검사', start: '2099-01-01', end: '2099-01-28', pickup: [], rerun: [], leaked: true, note: '예고 필터 검사 fixture' });\n${app}\n;globalThis.__ui = {
+  characterMatchesSearch, charById, renderRoster, renderMatStrip, renderBannerCards, renderContents,
   getState: () => state,
   bannerCount: () => BANNERS.length,
   getSelectedMaterial: () => selectedMatChar,
@@ -155,8 +155,8 @@ assert.doesNotThrow(() => fire('mat-char-strip', 'click', materialButton), 'scro
 
 // Current starts compact; all history remains available without changing saved records.
 assert.match(el('banner-cards').innerHTML, /data-banner="3\.6-후반"/);
-assert.match(el('banner-cards').innerHTML, /Ver 3\.7/);
-assert(el('banner-cards').innerHTML.indexOf('data-banner="3.6-후반"') < el('banner-cards').innerHTML.indexOf('Ver 3.7'), '현재 진행 픽업을 예고보다 먼저 표시');
+assert.match(el('banner-cards').innerHTML, /Ver 99\.0/);
+assert(el('banner-cards').innerHTML.indexOf('data-banner="3.6-후반"') < el('banner-cards').innerHTML.indexOf('Ver 99.0'), '현재 진행 픽업을 예고보다 먼저 표시');
 assert.doesNotMatch(el('banner-cards').innerHTML, /data-banner="1\.0-전반"/);
 assert.equal(historyButtons[0].attributes['aria-pressed'], 'true');
 chooseHistoryFilter('records');
@@ -174,7 +174,7 @@ ui.renderBannerCards();
 assert.match(el('banner-cards').innerHTML, /data-banner="2\.3-후반"/);
 assert.match(el('banner-cards').innerHTML, /data-banner="3\.6-후반"/);
 assert.match(el('banner-cards').innerHTML, /data-del-record="legacy-alias-record"/);
-assert.doesNotMatch(el('banner-cards').innerHTML, /Ver 3\.7/);
+assert.doesNotMatch(el('banner-cards').innerHTML, /Ver 99\.0/);
 assert.match(el('banner-filter-status').textContent, /내 기록 · 2개 픽업/);
 assert.equal((el('banner-cards').innerHTML.match(/data-del-record="legacy-alias-record"/g) || []).length, 1, '이전 이름 기록은 최초 배너에 한 번만 표시');
 assert.equal(historyButtons[1].attributes['aria-pressed'], 'true');
@@ -186,4 +186,58 @@ chooseHistoryFilter('current');
 assert.doesNotMatch(el('banner-cards').innerHTML, /data-banner="2\.3-후반"/);
 assert.equal(JSON.stringify(ui.getState().records), recordsBeforeFilter, '픽업 필터는 기존 기록을 변경하지 않음');
 
-console.log('UI checks passed: character/alias searches, combined filters, material selection, accessible history filters, and saved-data preservation.');
+// The editor keeps unchanged official metadata, but never certifies newly edited text.
+const contentFixture = { id: 'tower', icon: '🗼', name: '검사 탑', start: '2026-09-10', period: 28,
+  rules: '검사 규칙', buff: '공식 검사 버프', stages: [{ name: '1층', mobs: '검사 적' }],
+  dataStart: '2026-09-10', dataEnd: '2026-10-08', verifiedAt: '2026-09-10',
+  sourceUrl: 'https://wutheringwaves.kurogames.com/kr/main/news/detail/fixture', dataStatus: 'official' };
+ui.getState().contents = [contentFixture];
+ui.renderContents();
+assert.match(el('content-grid').innerHTML, /현재 주기 공식 자료/);
+assert.match(el('content-grid').innerHTML, /현재 주기 버프/);
+assert.match(el('content-grid').innerHTML, /rel="noopener noreferrer"/);
+const editContentButton = new FakeElement();
+editContentButton.dataset.editContent = 'tower';
+editContentButton.closest = () => editContentButton;
+fire('content-grid', 'click', editContentButton);
+assert.equal(el('content-modal').open, true);
+el('ct-name').value = '내 탑 이름';
+fire('content-form', 'submit');
+assert.equal(contentFixture.dataStatus, 'official', '이름만 수정하면 공식 자료의 적용 기간 유지');
+assert.equal(contentFixture.dataEnd, '2026-10-08');
+fire('content-grid', 'click', editContentButton);
+const beforeInvalidSubmit = JSON.stringify(contentFixture);
+el('ct-start').value = '2026-02-30';
+fire('content-form', 'submit');
+assert.equal(JSON.stringify(contentFixture), beforeInvalidSubmit, '유효하지 않은 날짜 저장 시 기존 값 보존');
+assert.equal(el('content-modal').open, true, '유효하지 않은 입력은 수정창을 닫지 않음');
+assert.match(el('toast').textContent, /올바른 시작일/);
+el('ct-start').value = '2026-09-10';
+el('ct-period').value = '0';
+fire('content-form', 'submit');
+assert.equal(JSON.stringify(contentFixture), beforeInvalidSubmit, '0일 주기는 저장하지 않음');
+el('ct-period').value = '28';
+el('ct-buff').value = '직접 입력한 버프 <img src=x onerror=alert(1)>';
+fire('content-form', 'submit');
+assert.equal(contentFixture.dataStatus, 'custom');
+assert.equal(contentFixture.verifiedAt, '');
+assert.equal(contentFixture.sourceUrl, '');
+assert.match(el('content-grid').innerHTML, /사용자 입력 자료/);
+assert.match(el('content-grid').innerHTML, /&lt;img src=x onerror=alert\(1\)&gt;/);
+assert.doesNotMatch(el('content-grid').innerHTML, /현재 주기 버프|현재 주기 공식 자료|<img src=x/);
+assert.equal(JSON.parse(storage.get('wuwa-planner-v1')).contents[0].dataStatus, 'custom', '사용자 입력 상태도 저장');
+Object.assign(contentFixture, { dataStart: '2026-08-01', dataEnd: '2026-08-29' });
+ui.renderContents();
+assert.match(el('content-grid').innerHTML, /이전 주기 사용자 자료/);
+assert.match(el('content-grid').innerHTML, /<details class="ct-archive">/);
+assert.match(el('content-grid').innerHTML, /직접 입력한 버프/, '기간이 지난 사용자 원문도 유지');
+Object.assign(contentFixture, { start: '2026-10-01', dataStart: '2026-10-01', dataEnd: '2026-10-29' });
+ui.renderContents();
+assert.match(el('content-grid').innerHTML, /예정 주기 10\/1 ~ 10\/29/, '예정 날짜 헤더는 시작 전 주기를 표시하지 않음');
+assert.match(el('content-grid').innerHTML, /예정 주기 사용자 자료/);
+Object.assign(contentFixture, { start: 'bad-date', dataStart: 'bad-date' });
+ui.renderContents();
+assert.match(el('content-grid').innerHTML, /주기 날짜 확인 필요/);
+assert.doesNotMatch(el('content-grid').innerHTML, /NaN|Invalid Date|현재 주기 버프/);
+
+console.log('UI checks passed: character/alias searches, combined filters, material selection, accessible history filters, stale content labels, content editing, and saved-data preservation.');

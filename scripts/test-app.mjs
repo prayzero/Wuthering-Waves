@@ -90,13 +90,14 @@ vm.runInContext(`${dataSource}\n${appSource}\n;globalThis.__qa = {
     if (typeof historyFilter !== 'undefined') historyFilter = 'all';
     renderBannerCards();
   },
-  renderPlannerOverview, handleQuickNavigation, save,
+  renderPlannerOverview, handleQuickNavigation, save, cycleInfo, contentDataInfo, contentDateEnd, contentToday, renderContents,
   getBanners: () => clone(BANNERS),
   replaceBanners: value => { BANNERS.splice(0, BANNERS.length, ...clone(value)); },
   getState: () => state, setState: value => { state = value; },
   getContentDefaults: () => clone(CONTENT_DEFAULTS),
   getLegacyContentDefaults: () => clone(LEGACY_CONTENT_DEFAULTS_V3),
   getV4ContentDefaults: () => clone(LEGACY_CONTENT_DEFAULTS_V4),
+  getV5ContentDefaults: () => clone(LEGACY_CONTENT_DEFAULTS_V5),
   replaceContentDefaults: value => {
     CONTENT_DEFAULTS.splice(0, CONTENT_DEFAULTS.length, ...clone(value));
   }
@@ -142,6 +143,8 @@ assert.equal(legacy.pity.weaponGroups['weapon-event'].count, 21, 'v1 전무 천�
 
 const realContentDefaults = app.getContentDefaults();
 const legacyContentDefaults = app.getLegacyContentDefaults();
+const withoutContentMetadata = value => JSON.parse(JSON.stringify(value), (key, item) =>
+  ['dataStart', 'dataEnd', 'verifiedAt', 'sourceUrl', 'dataStatus'].includes(key) ? undefined : item);
 const refreshedContentDefaults = legacyContentDefaults.map((content, index) => ({
   ...content,
   name: `${content.name} 최신`,
@@ -150,6 +153,11 @@ const refreshedContentDefaults = legacyContentDefaults.map((content, index) => (
   rules: `${content.rules} 최신 규칙`,
   buff: `${content.buff}\n최신 버프`,
   stages: [{ name: `최신 단계 ${index + 1}`, mobs: `최신 적 ${index + 1}` }],
+  dataStart: `2026-09-0${index + 1}`,
+  dataEnd: app.contentDateEnd(`2026-09-0${index + 1}`, content.period + index + 1),
+  verifiedAt: '2026-09-01',
+  sourceUrl: 'https://wutheringwaves.kurogames.com/kr/main/news/detail/fixture',
+  dataStatus: 'official',
 }));
 app.replaceContentDefaults(refreshedContentDefaults);
 
@@ -158,7 +166,7 @@ const migratedV3Contents = app.normalizeStateData({
   parties: [],
   contents: legacyContentDefaults,
 });
-assert.equal(migratedV3Contents.schemaVersion, 5, 'v3 저장 데이터 스키마 갱신');
+assert.equal(migratedV3Contents.schemaVersion, 6, 'v3 저장 데이터 스키마 갱신');
 assert.equal(JSON.stringify(migratedV3Contents.contents), JSON.stringify(refreshedContentDefaults),
   '수정하지 않은 v3 컨텐츠 기본값을 최신 기본값으로 갱신');
 
@@ -177,7 +185,7 @@ const migratedCustomV3Contents = app.normalizeStateData({
   parties: [],
   contents: customizedV3Contents,
 });
-assert.equal(JSON.stringify(migratedCustomV3Contents.contents[0]), JSON.stringify(customizedV3Contents[0]),
+assert.deepEqual(withoutContentMetadata(migratedCustomV3Contents.contents[0]), customizedV3Contents[0],
   'v3에서 사용자가 수정한 컨텐츠 필드는 보존');
 assert.equal(migratedCustomV3Contents.contents[1].rules, refreshedContentDefaults[1].rules,
   'v3에서 누락된 컨텐츠 필드는 최신 기본값으로 보완');
@@ -191,7 +199,7 @@ const migratedV4Contents = app.normalizeStateData({
   contents: v4ContentDefaults,
   owned: { jingran: true },
 });
-assert.equal(migratedV4Contents.schemaVersion, 5, 'v4 저장 데이터 스키마 갱신');
+assert.equal(migratedV4Contents.schemaVersion, 6, 'v4 저장 데이터 스키마 갱신');
 assert.equal(migratedV4Contents.owned.jingran, true, '컨텐츠 갱신 시 보유 캐릭터 보존');
 assert.equal(JSON.stringify(migratedV4Contents.contents), JSON.stringify(refreshedContentDefaults),
   '수정하지 않은 v4 컨텐츠 기본값을 최신 기본값으로 갱신');
@@ -203,14 +211,97 @@ assert.equal(migratedCustomV4Contents.contents[0].buff, '직접 정한 버프', 
 assert.equal(migratedCustomV4Contents.contents[0].rules, refreshedContentDefaults[0].rules, 'v4 수정하지 않은 규칙 갱신');
 assert.equal(JSON.stringify(migratedCustomV4Contents.contents[1].stages), JSON.stringify(customizedV4Contents[1].stages),
   'v4 사용자 단계 보존');
+const v5ContentDefaults = app.getV5ContentDefaults();
+const migratedV5Contents = app.normalizeStateData({ schemaVersion: 5, parties: [], contents: v5ContentDefaults });
+assert.equal(JSON.stringify(migratedV5Contents.contents), JSON.stringify(refreshedContentDefaults),
+  '수정하지 않은 v5 기본 자료는 메타데이터를 포함한 최신 자료로 갱신');
+const customizedV5Contents = structuredClone(v5ContentDefaults);
+customizedV5Contents[0].buff = '직접 작성한 버프';
+customizedV5Contents[1].stages = [{ name: '직접 작성한 층', mobs: '내 적' }];
+const migratedCustomV5 = app.normalizeStateData({ schemaVersion: 5, parties: [], contents: customizedV5Contents });
+assert.equal(migratedCustomV5.contents[0].buff, '직접 작성한 버프', 'v5 사용자 버프 보존');
+assert.equal(migratedCustomV5.contents[0].dataStatus, 'custom', '사용자 버프를 공식 확인으로 승격하지 않음');
+assert.equal(migratedCustomV5.contents[0].sourceUrl, '', '새 기본값의 공식 출처를 사용자 버프에 붙이지 않음');
+assert.equal(migratedCustomV5.contents[0].dataStart, v5ContentDefaults[0].start, 'v5 사용자 버프의 원래 주기 보존');
+assert.equal(migratedCustomV5.contents[0].dataEnd, app.contentDateEnd(v5ContentDefaults[0].start, v5ContentDefaults[0].period));
+assert.equal(app.contentDataInfo(migratedCustomV5.contents[0], '2026-10-23').expired, true,
+  '지난 주기에 작성한 사용자 버프를 새로운 적용 기간으로 이동하지 않음');
+assert.equal(migratedCustomV5.contents[0].rules, refreshedContentDefaults[0].rules, 'v5 기본 규칙 갱신');
+assert.equal(JSON.stringify(migratedCustomV5.contents[1].stages), JSON.stringify(customizedV5Contents[1].stages), 'v5 사용자 몹 보존');
 const preservedV5Contents = app.normalizeStateData({
   schemaVersion: 5,
   parties: [],
   contents: legacyContentDefaults,
 });
-assert.equal(JSON.stringify(preservedV5Contents.contents), JSON.stringify(legacyContentDefaults),
-  'v5 저장 컨텐츠는 최신 기본값과 달라도 그대로 보존');
+for (const [index, content] of legacyContentDefaults.entries()) {
+  for (const field of ['name', 'period', 'start', 'rules', 'buff', 'stages']) {
+    const expected = JSON.stringify(content[field]) === JSON.stringify(v5ContentDefaults[index][field])
+      ? refreshedContentDefaults[index][field] : content[field];
+    assert.equal(JSON.stringify(preservedV5Contents.contents[index][field]), JSON.stringify(expected),
+      'v5 기본 스냅샷과 다른 필드는 보존하고 동일한 필드만 갱신');
+  }
+}
+assert.equal(preservedV5Contents.contents[0].dataStatus, 'custom');
+assert.equal(JSON.stringify(app.normalizeStateData(migratedCustomV5).contents), JSON.stringify(migratedCustomV5.contents),
+  'v6 재로딩은 사용자 수정과 메타데이터를 그대로 보존');
 app.replaceContentDefaults(realContentDefaults);
+
+const forgedOfficial = app.normalizeStateData({ schemaVersion: 6, parties: [], contents: [{
+  ...realContentDefaults[0], buff: '임의로 작성한 버프', dataStatus: 'official',
+  sourceUrl: 'https://example.com/user-note', verifiedAt: '2026-10-23',
+}] }, { strict: true });
+assert.equal(forgedOfficial.contents[0].dataStatus, 'custom', '백업의 임의 공식 인증은 사용자 자료로 처리');
+assert.equal(app.contentDataInfo(forgedOfficial.contents[0], '2026-10-23').current, false);
+
+const contentFixture = { ...structuredClone(realContentDefaults[0]), start: '2026-10-12', period: 28,
+  dataStart: '2026-10-12', dataEnd: '2026-11-09', verifiedAt: '2026-10-12', dataStatus: 'official',
+  sourceUrl: 'https://wutheringwaves.kurogames.com/kr/main/news/detail/fixture', buff: '검증 fixture 버프', stages: [] };
+assert.equal(app.contentToday(Date.parse('2026-10-11T14:59:59Z')), '2026-10-11', '한국 자정 직전 날짜');
+assert.equal(app.contentToday(Date.parse('2026-10-11T15:00:00Z')), '2026-10-12', '한국 자정 당일 경계는 실행 환경 시간대와 무관');
+const beforeCycle = app.cycleInfo(contentFixture, '2026-10-11');
+assert.equal(beforeCycle.upcoming, true, '최초 시작일 전은 예정 주기');
+assert.equal(beforeCycle.left, 1);
+assert.equal(beforeCycle.start.toISOString().slice(0, 10), '2026-10-12', '예정 주기 헤더에서 한 주기 전 날짜를 빼지 않음');
+assert.equal(beforeCycle.end.toISOString().slice(0, 10), '2026-11-09');
+assert.equal(app.contentDataInfo(contentFixture, '2026-10-11').current, false, '예정 공식 자료를 현재로 표시하지 않음');
+assert.equal(app.cycleInfo(contentFixture, '2026-10-12').left, 28, '시작 당일 새 주기');
+assert.equal(app.contentDataInfo(contentFixture, '2026-10-12').current, true, '적용 시작일 포함');
+assert.equal(app.contentDataInfo(contentFixture, '2026-11-08').current, true, '적용 종료일 전까지 유효');
+assert.equal(app.cycleInfo(contentFixture, '2026-11-09').start.toISOString().slice(0, 10), '2026-11-09', '종료일 일정 계산은 다음 주기로 이동');
+assert.equal(app.contentDataInfo(contentFixture, '2026-11-09').expired, true, '자료 종료일 미포함');
+assert.equal(app.contentDataInfo(contentFixture, '2026-12-07').current, false, '여러 주기가 지나도 과거 버프는 현재 자료가 되지 않음');
+assert.equal(app.contentDataInfo({ ...contentFixture, dataStatus: 'unverified' }, '2026-10-23').current, false,
+  '일정과 확인일만 있어도 미검증 버프는 현재 공식 자료가 아님');
+assert.equal(app.contentDataInfo({ ...contentFixture, dataStatus: 'custom' }, '2026-10-23').custom, true);
+for (const start of ['', '2026-02-30', 'wrong-date']) {
+  assert.equal(app.cycleInfo({ ...contentFixture, start }, '2026-10-23').valid, false, '잘못된 시작일은 계산하지 않음');
+  assert.equal(app.contentDataInfo({ ...contentFixture, dataStart: start }, '2026-10-23').current, false);
+}
+for (const period of [0, -1, 3.5, 'invalid', Infinity]) {
+  assert.equal(app.cycleInfo({ ...contentFixture, period }, '2026-10-23').valid, false, '잘못된 주기는 계산하지 않음');
+}
+for (const override of [
+  { start: '2026-02-30' }, { dataEnd: '2026-10-11' }, { verifiedAt: 'yesterday' },
+  { sourceUrl: 'javascript:alert(1)' }, { dataStatus: 'trusted' }, { period: 1.5 },
+  { sourceUrl: '' },
+]) {
+  assert.throws(() => app.normalizeStateData({ parties: [], contents: [{ ...contentFixture, ...override }] }, { strict: true }),
+    /컨텐츠|공식/, '잘못된 날짜·상태·출처 JSON 가져오기 거부');
+}
+const emptyUserContent = app.normalizeStateData({ schemaVersion: 6, parties: [],
+  contents: [{ ...contentFixture, dataStatus: 'custom', buff: '', rules: '' }] });
+assert.equal(emptyUserContent.contents[0].buff, '', '사용자가 비운 버프는 오래된 기본값으로 복구하지 않음');
+assert.equal(emptyUserContent.contents[0].rules, '');
+
+const contentStateBeforeRender = app.getState();
+app.setState({ ...contentStateBeforeRender, contents: [{ ...contentFixture, start: '2026-05-01',
+  dataStart: '2026-05-01', dataEnd: '2026-05-29' }] });
+app.renderContents();
+assert.match(elements.get('content-grid').innerHTML, /<details class="ct-archive"><summary>이전 주기 자료 보기/);
+assert.match(elements.get('content-grid').innerHTML, /검증 fixture 버프/, '지난 자료 원문 보존');
+assert.doesNotMatch(elements.get('content-grid').innerHTML, /이번 주기 버프|현재 주기 버프/);
+assert.match(elements.get('content-grid').innerHTML, /예상 주기/);
+app.setState(contentStateBeforeRender);
 
 const timedBanner = { start: '2026-09-10', end: '2026-09-29',
   startAt: '2026-09-10T11:00:00+09:00', endAt: '2026-09-29T12:59:59+09:00' };
