@@ -13,7 +13,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="명조 도구">
 <link rel="apple-touch-icon" href="icons/app-180.v2.png">
-<link rel="stylesheet" href="css/style.css?v=26">
+<link rel="stylesheet" href="css/style.css?v=27">
+<link rel="stylesheet" href="css/recommendations.css?v=27">
 </head>
 <body>
 <a class="skip-link" href="#main-content">본문으로 건너뛰기</a>
@@ -33,7 +34,7 @@
       <button class="tab-btn" data-tab="history" aria-label="픽업 기록"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-3-6 3ZM9 7h6M9 11h4"/></svg><span class="nav-label">픽업 기록</span><span class="nav-short" aria-hidden="true">기록</span></button>
       <button class="tab-btn" data-tab="rates" aria-label="확률 정보"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3v17h17M8 15l4-5 4 2 5-7"/></svg><span class="nav-label">확률 정보</span><span class="nav-short" aria-hidden="true">확률</span></button>
     </nav>
-    <div class="sidebar-note"><span class="status-dot"></span>내 기록은 이 기기에 자동 저장<div>백업 파일로 안전하게 보관하세요.</div></div>
+    <div class="sidebar-note"><span class="status-dot"></span>이 기기에 자동 저장</div>
     <div class="header-actions">
       <button class="icon-btn install-btn" id="install-btn" hidden aria-label="앱 설치" title="홈 화면에 앱으로 설치">⬇ 앱 설치</button>
       <button class="icon-btn" id="export-btn" title="데이터 백업(JSON 다운로드)">내보내기</button>
@@ -44,36 +45,35 @@
 </header>
 
 <main id="main-content" tabindex="-1">
-  <div class="workspace-bar"><span>WUTHERING WAVES <span class="workspace-divider">/</span> PERSONAL PLANNER</span><span class="workspace-status"><span class="status-dot"></span> 나의 플레이, 나의 속도로</span></div>
+  <div class="workspace-bar"><span>WUTHERING WAVES</span></div>
   <!-- ================= 홈 · 플래너 ================= -->
   <section class="tab-panel active" id="tab-planner">
     <div class="planner-overview" id="planner-overview"></div>
     <div class="section" id="party-section" tabindex="-1">
       <div class="section-head">
-        <div class="section-title"><span class="section-kicker">TEAM SETUP</span><h2>나의 파티</h2></div>
+        <div class="section-title"><h2>나의 파티</h2></div>
         <span class="spacer"></span>
         <button class="primary-btn" id="add-party-btn">+ 파티 추가</button>
-        <p class="desc">빈 슬롯을 눌러 공명자를 편성하세요. <span class="rule-highlight">일반 파티는 전체 중복 금지 · 컨텐츠 파티는 파티 간 중복 가능</span></p>
+        <details class="inline-help"><summary>편성 규칙</summary><p>보유 캐릭터만 편성할 수 있습니다. 일반 파티는 캐릭터 중복 불가, 콘텐츠 파티는 파티 간 중복 가능합니다.</p></details>
       </div>
       <div class="roster-strip-wrap">
         <div class="roster-strip" id="roster-strip"></div>
-        <p class="strip-hint">보유 캐릭터만 역할별로 표시됩니다. <button type="button" class="link-btn" id="goto-roster">보유 캐릭터 탭</button>에서 캐릭터를 클릭해 보유 처리하면 여기에 나타나요.</p>
+        <p class="strip-hint"><button type="button" class="link-btn" id="goto-roster">보유 캐릭터 관리 →</button></p>
       </div>
       <div class="party-list" id="party-list"></div>
     </div>
 
     <div class="section" id="schedule-section" tabindex="-1">
       <div class="section-head">
-        <div class="section-title"><span class="section-kicker">PICKUP PLAN</span><h2>기다리는 픽업</h2></div>
+        <div class="section-title"><h2>픽업 계획</h2></div>
         <span class="spacer"></span>
         <button class="primary-btn" id="add-schedule-btn">+ 일정 추가</button>
-        <p class="desc">다음 공명자를 위한 준비. 목표와 모아둔 뽑기를 일정별로 관리하세요.</p>
       </div>
       <div class="schedule-list" id="schedule-list"></div>
     </div>
 
     <details class="wallet-section section" id="wallet-section" tabindex="-1">
-      <summary><span class="wallet-icon" aria-hidden="true">◇</span><span><span class="section-kicker">RESOURCE PLANNER</span><span class="wallet-title">천장 현황 &amp; 재화 계산기</span><span class="wallet-desc">보유 재화와 충전 계획으로 가능한 뽑기를 계산하세요.</span></span><span class="wallet-toggle" aria-hidden="true">＋</span></summary>
+      <summary><span class="wallet-icon" aria-hidden="true">◇</span><span class="wallet-title">천장 · 재화 계산기</span><span class="wallet-toggle" aria-hidden="true">＋</span></summary>
       <div class="wallet-body"><p class="desc">픽업 기록을 저장하면 해당 배너 천장이 리셋되고, 연결된 일정의 모아둔 뽑기가 자동 차감됩니다.</p><div class="pity-calc-grid" id="pity-calc"></div></div>
     </details>
 
@@ -83,11 +83,15 @@
   <section class="tab-panel" id="tab-roster">
     <div class="section">
       <div class="section-head">
-        <h2>보유 캐릭터</h2>
+        <h2>캐릭터</h2>
         <span class="spacer"></span>
-        <button class="ghost-btn" id="add-custom-btn">+ 신규 캐릭터 직접 추가</button>
-        <p class="desc">카드를 클릭하면 흑백 ↔ 컬러로 전환되며 보유 상태가 저장됩니다. 보유한 캐릭터만 파티 편성에 사용할 수 있어요.</p>
+        <button class="ghost-btn" id="add-custom-btn">+ 직접 추가</button>
       </div>
+      <div class="filter-row roster-view-switch" id="roster-view-switch" aria-label="캐릭터 화면">
+        <button type="button" class="chip active" data-roster-view="owned" aria-pressed="true">보유 관리</button>
+        <button type="button" class="chip" data-roster-view="recommendations" aria-pressed="false">추천 파티</button>
+      </div>
+      <div id="roster-owned-view">
       <div class="filter-row" id="roster-filter">
         <button class="chip active" data-filter="all" aria-pressed="true">전체</button>
         <button class="chip" data-filter="limited" aria-pressed="false">한정 5성</button>
@@ -98,6 +102,17 @@
       <div class="search-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><input type="search" id="roster-search" placeholder="공명자 이름 검색" aria-label="보유 캐릭터 이름 검색" autocomplete="off"></div>
       <p class="own-summary" id="own-summary"></p>
       <div id="roster-grid"></div>
+      </div>
+      <div id="roster-recommendations-view" hidden>
+        <div class="recommendation-toolbar">
+          <div class="search-field"><input type="search" id="recommendation-search" placeholder="캐릭터 검색" aria-label="추천 캐릭터 이름 검색" autocomplete="off"></div>
+          <label class="recommendation-field" for="recommendation-character">기준 캐릭터<select id="recommendation-character" aria-label="추천 기준 캐릭터"></select></label>
+          <label class="recommendation-field" for="recommendation-content">편성 대상<select id="recommendation-content"><option value="">일반 파티</option><option value="tower">역경의 탑</option><option value="sea">해역</option><option value="matrix">매트릭스</option></select></label>
+          <label class="recommendation-owned-filter"><input type="checkbox" id="recommendation-owned-only">모두 보유한 조합만</label>
+        </div>
+        <p id="recommendation-summary" class="filter-status" aria-live="polite"></p>
+        <div id="recommendation-list"></div>
+      </div>
     </div>
   </section>
 
@@ -105,8 +120,7 @@
   <section class="tab-panel" id="tab-contents">
     <div class="section">
       <div class="section-head">
-        <h2>엔드 컨텐츠 로테이션</h2>
-        <p class="desc">탑 · 해역 · 매트릭스의 일정과 버프·등장 몹을 확인하세요. 공식 자료와 비공식 교차 확인 자료를 출처별로 구분하며, 지난 주기 자료는 접어서 표시합니다. [수정]으로 직접 기록한 내용은 자동 저장됩니다.</p>
+        <h2>콘텐츠</h2>
       </div>
       <div class="content-grid" id="content-grid"></div>
     </div>
@@ -116,8 +130,8 @@
   <section class="tab-panel" id="tab-materials">
     <div class="section">
       <div class="section-head">
-        <h2>캐릭터별 스킬 재료</h2>
-        <p class="desc">캐릭터 아이콘을 누르면 포르테(스킬)·돌파 재료와 Lv.90 + 전 노드 만렙까지 필요한 총비용이 표시됩니다. 최고 난이도 파밍 기준 예상 결정 웨이브 플레이트와 자연 회복 일수도 함께 계산해요.</p>
+        <h2>육성 재료</h2>
+        <p class="desc">Lv.90 · 포르테 전체 완성 기준</p>
       </div>
       <div class="mat-char-strip-wrap card">
         <div class="search-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><input type="search" id="material-search" placeholder="육성할 공명자를 찾아보세요" aria-label="스킬 재료 캐릭터 이름 검색" autocomplete="off"></div>
@@ -137,8 +151,7 @@
   <section class="tab-panel" id="tab-history">
     <div class="section">
       <div class="section-head">
-        <div class="section-title"><span class="section-kicker">CONVENE JOURNAL</span><h2>픽업 &amp; 나의 기록</h2></div>
-        <p class="desc">획득한 공명자와 소모한 뽑기를 기록하세요. 지난 픽업은 전체 배너에서 찾을 수 있어요. <span class="data-checked">2026.09.16 정보 기준</span></p>
+        <div class="section-title"><h2>픽업 기록</h2></div>
       </div>
       <div class="filter-row history-filter" id="history-filter" aria-label="픽업 기록 필터">
         <button class="chip active" data-history-filter="current" aria-pressed="true">현재 · 예고</button>
@@ -152,7 +165,6 @@
     <div class="section">
       <div class="section-head">
         <h2>나의 뽑기 통계</h2>
-        <p class="desc">지금까지 기록한 모든 뽑기의 합산 통계입니다.</p>
       </div>
       <div class="stat-tiles" id="record-stats"></div>
     </div>
@@ -162,7 +174,6 @@
         <h2>기타 시즌 기록</h2>
         <span class="spacer"></span>
         <button class="primary-btn" id="add-record-btn">+ 직접 기록 추가</button>
-        <p class="desc">위 목록에 없거나 아직 공식 일정이 발표되지 않은 신규 배너는 여기에 직접 기록할 수 있어요.</p>
       </div>
       <div class="record-list" id="record-list"></div>
     </div>
@@ -240,9 +251,8 @@
 </main>
 
 <footer>
-  비공식 팬 제작 도구입니다. 픽업 일정과 기본 확률은 KURO GAMES 공식 공지, 콘텐츠 버프·몹은 표시된 비공식 자료의 교차 확인을 기준으로 합니다. 소프트 천장 곡선은 커뮤니티 추정치입니다.
-  모든 기록은 이 브라우저의 로컬 저장소에만 보관됩니다.
-  자료 확인일: 2026-10-23 · <a href="https://github.com/prayzero/Wuthering-Waves/blob/claude/gacha-tracker-party-hp0h9b/docs/data-sources-2026-10-23.md" target="_blank" rel="noopener noreferrer">픽업·공명자 공식 출처</a> · <a href="https://github.com/prayzero/Wuthering-Waves/blob/claude/gacha-tracker-party-hp0h9b/docs/content-sources-2026-10-23.md" target="_blank" rel="noopener noreferrer">버프·몹 교차 확인 기록</a>
+  <span>비공식 팬 도구 · 2026.10.23</span>
+  <span class="footer-links"><a href="https://github.com/prayzero/Wuthering-Waves/blob/claude/gacha-tracker-party-hp0h9b/docs/data-sources-2026-10-23.md" target="_blank" rel="noopener noreferrer">공식 자료</a><a href="https://github.com/prayzero/Wuthering-Waves/blob/claude/gacha-tracker-party-hp0h9b/docs/content-sources-2026-10-23.md" target="_blank" rel="noopener noreferrer">콘텐츠 출처</a><a href="https://github.com/prayzero/Wuthering-Waves/blob/claude/gacha-tracker-party-hp0h9b/docs/party-sources-2026-10-23.md" target="_blank" rel="noopener noreferrer">파티 추천 근거</a></span>
 </footer>
 
 <!-- ================= 모달: 픽업 일정 ================= -->
@@ -457,7 +467,9 @@
 <div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 <div class="chart-tip" id="chart-tip"></div>
 
-<script src="js/data.js?v=26"></script>
-<script src="js/app.js?v=26"></script>
+<script src="js/data.js?v=27"></script>
+<script src="js/teams.js?v=27"></script>
+<script src="js/app.js?v=27"></script>
+<script src="js/recommendations.js?v=27"></script>
 </body>
 </html>

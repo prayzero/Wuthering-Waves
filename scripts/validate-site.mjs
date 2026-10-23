@@ -17,11 +17,12 @@ const validDate = value => {
 
 const required = [
   'index.html', 'css/style.css', 'js/data.js', 'js/app.js', 'sw.js',
+  'css/recommendations.css', 'js/teams.js', 'js/recommendations.js',
   'manifest.webmanifest', 'icons/app-180.v2.png', 'icons/app-192.v2.png', 'icons/app-512.v2.png',
 ];
 required.forEach(file => check(exists(file), `필수 파일 누락: ${file}`));
 
-for (const file of ['js/data.js', 'js/app.js', 'sw.js']) {
+for (const file of ['js/data.js', 'js/teams.js', 'js/app.js', 'js/recommendations.js', 'sw.js']) {
   try { new vm.Script(read(file), { filename: file }); }
   catch (error) { errors.push(`${file} 구문 오류: ${error.message}`); }
 }
@@ -112,8 +113,8 @@ check(depth === 0, 'CSS 중괄호 짝이 맞지 않습니다.');
 
 try {
   const context = vm.createContext({});
-  vm.runInContext(`${read('js/data.js')}\n;globalThis.__qa = {
-    CHARACTERS, BANNERS, CONTENT_DEFAULTS, ELEMENTS, WEAPONS, CHAR_MATS, ASC_MATS,
+  vm.runInContext(`${read('js/data.js')}\n${read('js/teams.js')}\n;globalThis.__qa = {
+    CHARACTERS, PARTY_RECOMMENDATIONS, BANNERS, CONTENT_DEFAULTS, ELEMENTS, WEAPONS, CHAR_MATS, ASC_MATS,
     SIG_WEAPONS, FORGE_FAMILIES, DROP_FAMILIES, WEEKLY_BOSS_MATS, LUNITE_PRICE_CHECKED,
     ASC_TOTALS, FORTE_TOTALS, WAVEPLATE_FARMING,
     charPickupPmf, weaponPickupPmf
@@ -130,6 +131,30 @@ try {
     charIds.add(character.id);
     charNames.add(character.name);
   }
+
+  const teamIds = new Set(), teamMembers = new Set(), coveredCharacters = new Set();
+  for (const team of data.PARTY_RECOMMENDATIONS) {
+    check(safeId(team.id) && !teamIds.has(team.id), `잘못되거나 중복된 추천 ID: ${team.id}`);
+    teamIds.add(team.id);
+    check(Array.isArray(team.members) && team.members.length === 3 && new Set(team.members).size === 3,
+      `추천 파티는 서로 다른 3명이어야 합니다: ${team.id}`);
+    const key = [...team.members].sort().join(',');
+    check(!teamMembers.has(key), `중복 추천 조합: ${team.id}`);
+    teamMembers.add(key);
+    team.members.forEach(id => { check(charIds.has(id), `추천의 알 수 없는 캐릭터: ${team.id}/${id}`); coveredCharacters.add(id); });
+    check(typeof team.label === 'string' && team.label.length > 0 && typeof team.reason === 'string' && team.reason.length > 0,
+      `추천 설명 누락: ${team.id}`);
+    check(!team.members.includes('rover') || /방랑자.*(?:회절|인멸|기류|전도)/.test(team.condition || ''),
+      `방랑자 속성 조건 누락: ${team.id}`);
+    check(validDate(team.verifiedAt), `추천 확인일 오류: ${team.id}`);
+    check(Array.isArray(team.sources) && team.sources.length > 0, `추천 출처 누락: ${team.id}`);
+    for (const source of team.sources || []) {
+      let url; try { url = new URL(source.url); } catch {}
+      check(url?.protocol === 'https:' && !url.username && !url.password && !!source.label && ['official', 'community'].includes(source.kind),
+        `추천 출처 형식 오류: ${team.id}`);
+    }
+  }
+  charIds.forEach(id => check(coveredCharacters.has(id), `추천이 없는 기본 캐릭터: ${id}`));
 
   const bannerKeys = new Set();
   for (const banner of data.BANNERS) {

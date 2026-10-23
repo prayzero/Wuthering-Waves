@@ -400,7 +400,7 @@ assert.match(overviewHtml, /편성 파티 1개/, '빈 파티는 편성 파티 �
 assert.match(overviewHtml, /픽업 계획 1개/, '대시보드 픽업 계획 수');
 assert.match(overviewHtml, /&lt;img onerror=&quot;alert\(1\)&quot;&gt;/, '배너 안내 HTML 이스케이프');
 app.renderPlannerOverview(Date.parse('2027-01-01T12:00:00+09:00'));
-assert.match(elements.get('planner-overview').innerHTML, /현재 진행 중인 확정 픽업이 없어요/, '확정 픽업이 없을 때 빈 상태');
+assert.match(elements.get('planner-overview').innerHTML, /진행 중인 픽업 없음/, '확정 픽업이 없을 때 빈 상태');
 overviewState.owned.qingxiao = false;
 overviewState.parties[0].members = [null, null, null];
 overviewState.schedules = [];

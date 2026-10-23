@@ -906,6 +906,7 @@ function switchTab(name, { scroll = true, focus = false } = {}) {
     p.classList.toggle('active', active);
     p.hidden = !active;
   });
+  if (name === 'roster' && typeof renderRecommendations === 'function') renderRecommendations();
   if (scroll) window.scrollTo({ top: 0 });
   if (focus) activeButton?.focus();
 }
@@ -926,13 +927,17 @@ document.getElementById('tabs').addEventListener('keydown', e => {
   e.preventDefault();
   switchTab(buttons[next].dataset.tab, { scroll: false, focus: true });
 });
-document.getElementById('goto-roster').addEventListener('click', () => switchTab('roster', { focus: true }));
+document.getElementById('goto-roster').addEventListener('click', () => {
+  if (typeof showRosterView === 'function') showRosterView('owned');
+  switchTab('roster', { focus: true });
+});
 
 function handleQuickNavigation(e) {
   const action = e.target.closest?.('[data-go-tab], [data-jump-section]');
   if (!action) return;
   const tab = action.dataset.goTab;
   if (tab && ['planner', 'contents', 'materials', 'roster', 'history', 'rates'].includes(tab)) {
+    if (tab === 'roster' && typeof showRosterView === 'function') showRosterView('owned');
     switchTab(tab, { focus: true });
     return;
   }
@@ -962,8 +967,7 @@ function renderPlannerOverview(now = Date.now()) {
   let bannerMarkup = `
     <div class="overview-banner-empty">
       <span class="overview-kicker">픽업 소식</span>
-      <h2>다음 만남을 준비할 시간</h2>
-      <p>현재 진행 중인 확정 픽업이 없어요. 지난 기록과 공개된 일정을 확인해 보세요.</p>
+      <h2>진행 중인 픽업 없음</h2>
       <button type="button" class="text-btn" data-go-tab="history">픽업 기록 보기 <span aria-hidden="true">↗</span></button>
     </div>`;
   if (activeBanner) {
@@ -991,12 +995,10 @@ function renderPlannerOverview(now = Date.now()) {
   }
   wrap.innerHTML = `
     <div class="overview-copy">
-      <span class="overview-kicker">나만의 명조 플래너</span>
-      <h1>오늘의 계획을,<br>한눈에.</h1>
-      <p>함께할 파티부터 다음 픽업까지.<br>나의 공명자와 성장 계획을 한곳에서 관리하세요.</p>
+      <h1>내 플래너</h1>
       <div class="overview-actions">
-        <button type="button" class="primary-btn" data-jump-section="party-section">파티 편성하기 <span aria-hidden="true">→</span></button>
-        <button type="button" class="ghost-btn" data-go-tab="materials">육성 비용 보기</button>
+        <button type="button" class="primary-btn" data-open-recommendations>추천 파티 <span aria-hidden="true">→</span></button>
+        <button type="button" class="ghost-btn" data-jump-section="party-section">파티 편성</button>
       </div>
     </div>
     <div class="overview-banner">${bannerMarkup}</div>
@@ -1682,7 +1684,7 @@ function renderRosterStrip() {
   const strip = document.getElementById('roster-strip');
   const owned = allChars().filter(c => isOwned(c.id));
   if (!owned.length) {
-    strip.innerHTML = `<div class="empty-note" style="border:none;width:100%">보유 캐릭터가 없어요. [보유 캐릭터] 탭에서 캐릭터를 클릭해 등록해 주세요.</div>`;
+    strip.innerHTML = `<div class="empty-note" style="border:none;width:100%">보유 캐릭터를 먼저 선택해 주세요.</div>`;
     return;
   }
   strip.innerHTML = PARTY_ROLE_GROUPS.map(group => {
@@ -1707,16 +1709,16 @@ function renderRosterStrip() {
 function renderParties() {
   const wrap = document.getElementById('party-list');
   if (!state.parties.length) {
-    wrap.innerHTML = `<div class="empty-note">파티가 없어요. [+ 파티 추가]로 새 파티를 만들어 보세요.</div>`;
+    wrap.innerHTML = `<div class="empty-note">등록된 파티가 없습니다.</div>`;
     return;
   }
   wrap.innerHTML = state.parties.map(p => {
     const conflicts = existingGeneralPartyConflicts(p);
     const modeText = p.tag
-      ? '콘텐츠 파티 · 다른 파티와 캐릭터 중복 가능'
+      ? '콘텐츠 · 중복 편성 가능'
       : conflicts.length
         ? '일반 파티 · 기존 중복 캐릭터를 빼 주세요'
-        : '일반 파티 · 다른 모든 파티와 캐릭터 중복 불가';
+        : '일반 · 중복 편성 불가';
     return `
     <div class="party-card ${conflicts.length ? 'has-conflict' : ''}" data-party="${p.id}">
       <div class="party-head">
@@ -1741,7 +1743,7 @@ function renderParties() {
             </div>`;
           }
           return `<button type="button" class="party-slot" data-slot data-party-id="${p.id}" data-idx="${i}" aria-label="${esc(p.name)} ${i + 1}번 빈 슬롯에 캐릭터 추가">
-            <span class="plus">＋</span><span>클릭 또는<br>드래그로 추가</span>
+            <span class="plus">＋</span><span>캐릭터 추가</span>
           </button>`;
         }).join('')}
       </div>
@@ -1999,6 +2001,8 @@ function renderRoster() {
             <span class="tag">${ELEMENTS[c.element]?.name ?? ''}${c.ver ? ' · ' + c.ver : ''}</span>
             <span class="owned-check">✔ 보유</span>
           </button>
+          ${!state.customChars.some(x => x.id === c.id)
+            ? `<button type="button" class="char-recommend-btn" data-recommend-char="${c.id}" aria-label="${esc(c.name)} 추천 파티">추천 파티</button>` : ''}
           ${state.customChars.some(x => x.id === c.id)
             ? `<button type="button" class="custom-char-delete" data-del-custom="${c.id}" aria-label="${esc(c.name)} 커스텀 캐릭터 삭제">삭제</button>` : ''}
         </div>`).join('')}
@@ -2009,7 +2013,8 @@ function renderRoster() {
   const ownedN = chars.filter(c => isOwned(c.id)).length;
   const visibleN = chars.filter(matches).length;
   document.getElementById('own-summary').textContent =
-    `보유 ${ownedN} / ${total} · 현재 ${visibleN}명 표시 — 카드를 누르면 보유 상태가 저장돼요.`;
+    `보유 ${ownedN} / ${total} · ${visibleN}명 표시`;
+  if (typeof renderRecommendations === 'function') renderRecommendations();
 }
 
 document.getElementById('roster-search')?.addEventListener('input', renderRoster);
@@ -2551,7 +2556,7 @@ function contentSourcesMarkup(c) {
     const label = c.sourceUrl === def?.sourceUrl ? '기존 자료 출처' : '사용자 참고 출처';
     links.push(`<li><a href="${esc(c.sourceUrl)}" target="_blank" rel="noopener noreferrer">${label}</a></li>`);
   }
-  return links.length ? `<details class="ct-source-details"><summary>출처 ${links.length}개 · 구분과 확인 범위</summary><ul class="ct-sources">${links.join('')}</ul></details>` : '';
+  return links.length ? `<details class="ct-source-details"><summary>출처 ${links.length}개</summary><ul class="ct-sources">${links.join('')}</ul></details>` : '';
 }
 
 function renderContents() {
@@ -2571,32 +2576,32 @@ function renderContents() {
         <span class="ct-icon">${esc(c.icon || '📌')}</span>
         <div class="t">
           <b>${esc(c.name)}</b>
-          <small>${info.valid ? `${c.period}일 기준 ${info.upcoming ? '예정' : '예상'} 주기 ${fmtShort(info.start)} ~ ${fmtShort(info.end)}` : '주기 날짜 확인 필요'}</small>
+          <small>${info.valid ? `${fmtShort(info.start)} ~ ${fmtShort(info.end)} · ${info.upcoming ? '예정' : '예상'} 주기` : '주기 날짜 확인 필요'}</small>
         </div>
         <button class="icon-btn" data-edit-content="${c.id}" aria-label="${esc(c.name)} 정보 수정">수정</button>
       </div>
       ${info.valid ? `<div class="reset-badge">
-        <div class="dd ${info.left <= 3 ? 'soon-reset' : ''}">${info.upcoming ? '예상 시작까지' : '예상 주기 교체까지'} D-${info.left}</div>
-        <div class="sub">${fmtShort(info.next)} 예상 · 한국 날짜 기준 · 실제 리셋 시각은 게임 내 확인</div>
+        <div class="dd ${info.left <= 3 ? 'soon-reset' : ''}">${info.upcoming ? '시작' : '교체'} D-${info.left}</div>
+        <div class="sub">${fmtShort(info.next)} 예상 · KST 일자 기준</div>
         <div class="reset-bar"><div class="fill" style="width:${(info.progress * 100).toFixed(1)}%"></div></div>
       </div>` : ''}
       <div class="ct-data-status ${data.current ? data.corroborated ? 'corroborated' : 'verified' : 'needs-review'}">
         <strong>${esc(data.label)}</strong>
-        <p>${esc(data.note)}</p>
-        ${data.valid ? `<small>자료 기준 기간: ${esc(data.start)} ~ ${esc(data.end)} (일자 기준)</small>` : ''}
-        ${validDate(c.verifiedAt) ? `<small>출처 확인일: ${esc(c.verifiedAt)}</small>` : ''}
+        ${!data.current ? `<p>${esc(data.note)}</p>` : ''}
+        ${data.valid ? `<small>적용 ${esc(data.start)} ~ ${esc(data.end)}</small>` : ''}
+        ${validDate(c.verifiedAt) ? `<small>${esc(c.verifiedAt)} 확인</small>` : ''}
         ${contentSourcesMarkup(c)}
       </div>
       ${data.expired ? '<details class="ct-archive"><summary>이전 주기 자료 보기</summary>' : ''}
-      ${c.rules ? `<p class="ct-rules">${esc(c.rules)}</p>` : ''}
+      ${c.rules ? `<details class="ct-rules-details"><summary>규칙 · 확인 범위</summary><p class="ct-rules">${esc(c.rules)}</p></details>` : ''}
       <div class="ct-block">
         <h4>✨ ${data.current ? `현재 주기 버프${data.corroborated ? ' · 비공식' : ''}` : data.expired ? '이전 주기 버프' : data.upcoming ? '예정 자료의 버프' : '저장된 버프 · 확인 필요'}</h4>
         <div class="ct-buff">${esc(c.buff || '버프 미입력')}</div>
       </div>
-      <div class="ct-block">
-        <h4>👹 ${data.expired ? '이전 주기 등장 몹' : data.current ? `현재 주기 등장 몹${data.corroborated ? ' · 비공식' : ''}` : '저장된 등장 몹'}</h4>
+      <details class="ct-block ct-monsters">
+        <summary>${data.expired ? '이전 주기 등장 몹' : data.current ? `현재 주기 등장 몹${data.corroborated ? ' · 비공식' : ''}` : '저장된 등장 몹'} <span>${c.stages?.length || 0}개 구간</span></summary>
         ${stages || '<div class="empty-note" style="padding:14px">단계를 추가해 주세요</div>'}
-      </div>
+      </details>
       ${data.expired ? '</details>' : ''}
       ${(() => {
         const linked = state.parties.filter(p => p.tag === c.id);
