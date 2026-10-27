@@ -18,11 +18,12 @@ const validDate = value => {
 const required = [
   'index.html', 'css/style.css', 'js/data.js', 'js/app.js', 'sw.js',
   'css/recommendations.css', 'js/teams.js', 'js/recommendations.js',
+  'css/progress.css', 'js/progress.js',
   'manifest.webmanifest', 'icons/app-180.v2.png', 'icons/app-192.v2.png', 'icons/app-512.v2.png',
 ];
 required.forEach(file => check(exists(file), `필수 파일 누락: ${file}`));
 
-for (const file of ['js/data.js', 'js/teams.js', 'js/app.js', 'js/recommendations.js', 'sw.js']) {
+for (const file of ['js/data.js', 'js/teams.js', 'js/app.js', 'js/recommendations.js', 'js/progress.js', 'sw.js']) {
   try { new vm.Script(read(file), { filename: file }); }
   catch (error) { errors.push(`${file} 구문 오류: ${error.message}`); }
 }

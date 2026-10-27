@@ -139,20 +139,23 @@ function renderRecommendations() {
 }
 
 function showRosterView(view, { focus = false } = {}) {
-  if (!['owned', 'recommendations'].includes(view)) return false;
+  if (!['owned', 'recommendations', 'progress'].includes(view)) return false;
   recommendationActiveView = view;
   const owned = document.getElementById('roster-owned-view');
   const recommendations = document.getElementById('roster-recommendations-view');
+  const progress = document.getElementById('roster-progress-view');
   if (owned) owned.hidden = view !== 'owned';
   if (recommendations) recommendations.hidden = view !== 'recommendations';
+  if (progress) progress.hidden = view !== 'progress';
   document.querySelectorAll('#roster-view-switch [data-roster-view]').forEach(button => {
     const active = button.dataset.rosterView === view;
     button.classList.toggle('active', active);
     button.setAttribute('aria-pressed', String(active));
-    button.setAttribute('aria-controls', button.dataset.rosterView === 'owned' ? 'roster-owned-view' : 'roster-recommendations-view');
+    button.setAttribute('aria-controls', `roster-${button.dataset.rosterView}-view`);
     if (active && focus) button.focus();
   });
   if (view === 'recommendations') renderRecommendations();
+  if (view === 'progress' && typeof renderCharacterProgress === 'function') renderCharacterProgress();
   return true;
 }
 

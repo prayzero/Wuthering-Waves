@@ -3,7 +3,13 @@
    ================================================================ */
 
 const STORE_KEY = 'wuwa-planner-v1';
-const STATE_SCHEMA_VERSION = 7;
+const STATE_SCHEMA_VERSION = 8;
+const CHARACTER_PROGRESS_FIELDS = [
+  { key: 'level90', label: 'Lv.90 완료' },
+  { key: 'skills', label: '스킬 레벨 완료' },
+  { key: 'echo', label: '에코 완료' },
+  { key: 'weapon', label: '무기 레벨 완료' },
+];
 const CONTENT_DEFAULTS_REFRESH_VERSION = 7;
 const LEGACY_CONTENT_DEFAULTS_V3 = [
   {
@@ -188,6 +194,7 @@ const defaultPity = () => ({
 const defaultState = () => ({
   schemaVersion: STATE_SCHEMA_VERSION,
   owned: Object.create(null), // charId -> true
+  characterProgress: Object.create(null), // charId -> four independently checked milestones
   customChars: [],      // {id, name, rarity, element, group}
   schedules: [],        // {id, charId, name, start, end, saved, goal, memo}
   parties: [{ id: uid(), name: '파티 1', members: [null, null, null], tag: '' }],
@@ -449,7 +456,7 @@ function assertImportShape(data) {
       throw new Error(`${key} 배열에 잘못된 항목이 있습니다.`);
     }
   });
-  ['owned', 'matOverrides', 'pity', 'calc'].forEach(key => {
+  ['owned', 'characterProgress', 'matOverrides', 'pity', 'calc'].forEach(key => {
     if (hasOwn(data, key) && !isPlainObject(data[key])) throw new Error(`${key} 항목이 올바르지 않습니다.`);
   });
   if (hasOwn(data.calc || {}, 'purchases') &&
@@ -557,6 +564,24 @@ function normalizeStateData(input, { strict = false } = {}) {
   if (isPlainObject(raw.owned)) {
     Object.entries(raw.owned).forEach(([id, owned]) => {
       if (owned === true && charIds.has(id)) result.owned[id] = true;
+    });
+  }
+
+  if (isPlainObject(raw.characterProgress)) {
+    Object.entries(raw.characterProgress).forEach(([id, progress]) => {
+      if (!charIds.has(id)) return;
+      if (!isPlainObject(progress)) {
+        if (strict) throw new Error('캐릭터 육성 기록이 올바르지 않습니다.');
+        return;
+      }
+      const normalized = {};
+      CHARACTER_PROGRESS_FIELDS.forEach(({ key }) => {
+        if (strict && hasOwn(progress, key) && typeof progress[key] !== 'boolean') {
+          throw new Error('육성 완료 항목은 체크 여부(true/false)여야 합니다.');
+        }
+        normalized[key] = hasOwn(progress, key) && progress[key] === true;
+      });
+      result.characterProgress[id] = normalized;
     });
   }
 
@@ -770,6 +795,28 @@ function isOwned(id) {
   return hasOwn(state.owned, id) && state.owned[id] === true;
 }
 
+function getCharacterProgress(id) {
+  const progress = hasOwn(state.characterProgress || {}, id) ? state.characterProgress[id] : {};
+  return Object.fromEntries(CHARACTER_PROGRESS_FIELDS.map(({ key }) => [key, progress?.[key] === true]));
+}
+
+function setCharacterProgress(id, key, checked) {
+  if (!charById(id) || !isOwned(id)) return { ok: false, message: '보유한 캐릭터만 육성 상태를 입력할 수 있습니다.' };
+  if (!CHARACTER_PROGRESS_FIELDS.some(field => field.key === key) || typeof checked !== 'boolean') {
+    return { ok: false, message: '육성 항목이 올바르지 않습니다.' };
+  }
+  const hadProgress = hasOwn(state.characterProgress, id);
+  const previous = state.characterProgress[id];
+  state.characterProgress[id] = { ...getCharacterProgress(id), [key]: checked };
+  try { save(); }
+  catch {
+    if (hadProgress) state.characterProgress[id] = previous;
+    else delete state.characterProgress[id];
+    return { ok: false, message: '저장하지 못했습니다. 브라우저 저장 공간을 확인해 주세요.' };
+  }
+  return { ok: true };
+}
+
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, m => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -907,6 +954,7 @@ function switchTab(name, { scroll = true, focus = false } = {}) {
     p.hidden = !active;
   });
   if (name === 'roster' && typeof renderRecommendations === 'function') renderRecommendations();
+  if (name === 'roster' && typeof renderCharacterProgress === 'function') renderCharacterProgress();
   if (scroll) window.scrollTo({ top: 0 });
   if (focus) activeButton?.focus();
 }
@@ -2001,6 +2049,7 @@ function renderRoster() {
             <span class="tag">${ELEMENTS[c.element]?.name ?? ''}${c.ver ? ' · ' + c.ver : ''}</span>
             <span class="owned-check">✔ 보유</span>
           </button>
+          ${isOwned(c.id) ? `<button type="button" class="char-progress-btn" data-progress-char="${c.id}" aria-label="${esc(c.name)} 육성 현황">육성 ${Object.values(getCharacterProgress(c.id)).filter(Boolean).length}/4</button>` : ''}
           ${!state.customChars.some(x => x.id === c.id)
             ? `<button type="button" class="char-recommend-btn" data-recommend-char="${c.id}" aria-label="${esc(c.name)} 추천 파티">추천 파티</button>` : ''}
           ${state.customChars.some(x => x.id === c.id)
@@ -2015,6 +2064,7 @@ function renderRoster() {
   document.getElementById('own-summary').textContent =
     `보유 ${ownedN} / ${total} · ${visibleN}명 표시`;
   if (typeof renderRecommendations === 'function') renderRecommendations();
+  if (typeof renderCharacterProgress === 'function') renderCharacterProgress();
 }
 
 document.getElementById('roster-search')?.addEventListener('input', renderRoster);
@@ -2028,6 +2078,7 @@ document.getElementById('roster-grid').addEventListener('click', e => {
     state.customChars = state.customChars.filter(c => c.id !== id);
     delete state.owned[id];
     delete state.matOverrides[id];
+    delete state.characterProgress[id];
     state.schedules = state.schedules.filter(s => s.charId !== id);
     state.records = state.records.filter(r => r.charId !== id);
     state.parties.forEach(p => { p.members = p.members.map(m => m === id ? null : m); });

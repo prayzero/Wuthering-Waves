@@ -3,24 +3,28 @@
    배포 시 CACHE_VERSION을 올리면 이전 캐시가 정리됩니다. */
 
 const CACHE_PREFIX = 'wuwa-planner-';
-const CACHE_VERSION = 'wuwa-planner-v27';
+const CACHE_VERSION = 'wuwa-planner-v28';
 const IMAGE_CACHE = 'wuwa-planner-images-v1';
 const ACTIVE_CACHES = new Set([CACHE_VERSION, IMAGE_CACHE]);
 const APP_SHELL = [
   './',
   './index.html',
   './css/style.css',
-  './css/style.css?v=27',
+  './css/style.css?v=28',
   './css/recommendations.css',
-  './css/recommendations.css?v=27',
+  './css/recommendations.css?v=28',
   './js/data.js',
-  './js/data.js?v=27',
+  './js/data.js?v=28',
   './js/app.js',
-  './js/app.js?v=27',
+  './js/app.js?v=28',
   './js/teams.js',
-  './js/teams.js?v=27',
+  './js/teams.js?v=28',
   './js/recommendations.js',
-  './js/recommendations.js?v=27',
+  './js/recommendations.js?v=28',
+  './css/progress.css',
+  './css/progress.css?v=28',
+  './js/progress.js',
+  './js/progress.js?v=28',
   './manifest.webmanifest',
   './icons/app-192.v2.png',
   './icons/app-512.v2.png',

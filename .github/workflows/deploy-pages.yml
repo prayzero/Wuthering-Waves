@@ -31,6 +31,7 @@ jobs:
           node scripts/test-app.mjs
           node scripts/test-ui.mjs
           node scripts/test-recommendations.mjs
+          node scripts/test-progress.mjs
           node scripts/test-sw.mjs
 
   deploy:

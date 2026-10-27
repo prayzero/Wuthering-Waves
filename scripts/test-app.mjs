@@ -169,7 +169,7 @@ const migratedV3Contents = app.normalizeStateData({
   parties: [],
   contents: legacyContentDefaults,
 });
-assert.equal(migratedV3Contents.schemaVersion, 7, 'v3 저장 데이터 스키마 갱신');
+assert.equal(migratedV3Contents.schemaVersion, 8, 'v3 저장 데이터 스키마 갱신');
 assert.equal(JSON.stringify(migratedV3Contents.contents), JSON.stringify(refreshedContentDefaults),
   '수정하지 않은 v3 컨텐츠 기본값을 최신 기본값으로 갱신');
 
@@ -202,7 +202,7 @@ const migratedV4Contents = app.normalizeStateData({
   contents: v4ContentDefaults,
   owned: { jingran: true },
 });
-assert.equal(migratedV4Contents.schemaVersion, 7, 'v4 저장 데이터 스키마 갱신');
+assert.equal(migratedV4Contents.schemaVersion, 8, 'v4 저장 데이터 스키마 갱신');
 assert.equal(migratedV4Contents.owned.jingran, true, '컨텐츠 갱신 시 보유 캐릭터 보존');
 assert.equal(JSON.stringify(migratedV4Contents.contents), JSON.stringify(refreshedContentDefaults),
   '수정하지 않은 v4 컨텐츠 기본값을 최신 기본값으로 갱신');
