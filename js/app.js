@@ -3,7 +3,7 @@
    ================================================================ */
 
 const STORE_KEY = 'wuwa-planner-v1';
-const STATE_SCHEMA_VERSION = 8;
+const STATE_SCHEMA_VERSION = 9;
 const CHARACTER_PROGRESS_FIELDS = [
   { key: 'level90', label: 'Lv.90 완료' },
   { key: 'skills', label: '스킬 레벨 완료' },
@@ -194,7 +194,7 @@ const defaultPity = () => ({
 const defaultState = () => ({
   schemaVersion: STATE_SCHEMA_VERSION,
   owned: Object.create(null), // charId -> true
-  characterProgress: Object.create(null), // charId -> four independently checked milestones
+  characterProgress: Object.create(null), // charId -> four milestones, sequence and signatureWeapon
   customChars: [],      // {id, name, rarity, element, group}
   schedules: [],        // {id, charId, name, start, end, saved, goal, memo}
   parties: [{ id: uid(), name: '파티 1', members: [null, null, null], tag: '' }],
@@ -581,7 +581,7 @@ function normalizeStateData(input, { strict = false } = {}) {
         }
         normalized[key] = hasOwn(progress, key) && progress[key] === true;
       });
-      result.characterProgress[id] = normalized;
+      result.characterProgress[id] = { ...normalized, ...normalizeCharacterBuild(progress, { strict }) };
     });
   }
 
@@ -800,14 +800,32 @@ function getCharacterProgress(id) {
   return Object.fromEntries(CHARACTER_PROGRESS_FIELDS.map(({ key }) => [key, progress?.[key] === true]));
 }
 
-function setCharacterProgress(id, key, checked) {
-  if (!charById(id) || !isOwned(id)) return { ok: false, message: '보유한 캐릭터만 육성 상태를 입력할 수 있습니다.' };
-  if (!CHARACTER_PROGRESS_FIELDS.some(field => field.key === key) || typeof checked !== 'boolean') {
-    return { ok: false, message: '육성 항목이 올바르지 않습니다.' };
+function validCharacterSequence(value) {
+  return value === null || (Number.isInteger(value) && value >= 0 && value <= 6);
+}
+
+function normalizeCharacterBuild(input, { strict = false } = {}) {
+  const raw = isPlainObject(input) ? input : {};
+  const sequence = hasOwn(raw, 'sequence') ? raw.sequence : null;
+  const signatureWeapon = hasOwn(raw, 'signatureWeapon') ? raw.signatureWeapon : null;
+  if (strict && !validCharacterSequence(sequence)) throw new Error('캐릭터 돌파 수는 미입력(null) 또는 0~6의 정수여야 합니다.');
+  if (strict && signatureWeapon !== null && typeof signatureWeapon !== 'boolean') {
+    throw new Error('전용무기 보유 여부는 미입력(null) 또는 true/false여야 합니다.');
   }
+  return {
+    sequence: validCharacterSequence(sequence) ? sequence : null,
+    signatureWeapon: typeof signatureWeapon === 'boolean' ? signatureWeapon : null,
+  };
+}
+
+function getCharacterBuild(id) {
+  return normalizeCharacterBuild(hasOwn(state.characterProgress || {}, id) ? state.characterProgress[id] : null);
+}
+
+function persistCharacterProgress(id, patch) {
   const hadProgress = hasOwn(state.characterProgress, id);
   const previous = state.characterProgress[id];
-  state.characterProgress[id] = { ...getCharacterProgress(id), [key]: checked };
+  state.characterProgress[id] = { ...getCharacterProgress(id), ...getCharacterBuild(id), ...patch };
   try { save(); }
   catch {
     if (hadProgress) state.characterProgress[id] = previous;
@@ -815,6 +833,23 @@ function setCharacterProgress(id, key, checked) {
     return { ok: false, message: '저장하지 못했습니다. 브라우저 저장 공간을 확인해 주세요.' };
   }
   return { ok: true };
+}
+
+function setCharacterProgress(id, key, checked) {
+  if (!charById(id) || !isOwned(id)) return { ok: false, message: '보유한 캐릭터만 육성 상태를 입력할 수 있습니다.' };
+  if (!CHARACTER_PROGRESS_FIELDS.some(field => field.key === key) || typeof checked !== 'boolean') {
+    return { ok: false, message: '육성 항목이 올바르지 않습니다.' };
+  }
+  return persistCharacterProgress(id, { [key]: checked });
+}
+
+function setCharacterBuild(id, key, value) {
+  if (!charById(id) || !isOwned(id)) return { ok: false, message: '보유한 캐릭터만 세팅을 입력할 수 있습니다.' };
+  if (key === 'sequence' ? !validCharacterSequence(value)
+    : key === 'signatureWeapon' ? value !== null && typeof value !== 'boolean' : true) {
+    return { ok: false, message: '돌파 수 또는 전용무기 보유 여부가 올바르지 않습니다.' };
+  }
+  return persistCharacterProgress(id, { [key]: value });
 }
 
 function esc(s) {

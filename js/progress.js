@@ -13,7 +13,7 @@ function characterProgressFocusSnapshot(list) {
 
 function restoreCharacterProgressFocus(list, snapshot) {
   if (!snapshot) return;
-  const inputs = Array.from(list.querySelectorAll('input[data-progress-character][data-progress-field]'));
+  const inputs = Array.from(list.querySelectorAll('[data-progress-character][data-progress-field]'));
   let target = inputs.find(input => input.dataset.progressCharacter === snapshot.id && input.dataset.progressField === snapshot.key);
   if (!target && inputs.length) {
     const cards = Array.from(list.querySelectorAll('[data-progress-card]'));
@@ -22,6 +22,40 @@ function restoreCharacterProgressFocus(list, snapshot) {
       || inputs.find(input => input.dataset.progressCharacter === nextId) || inputs[0];
   }
   (target || document.getElementById('progress-filter') || document.getElementById('progress-search'))?.focus({ preventScroll: true });
+}
+
+function characterBuildSelectValue(build, key) {
+  const value = build[key];
+  return value === null || value === undefined ? '' : String(value);
+}
+
+function parseCharacterBuildSelection(key, value) {
+  if (!['sequence', 'signatureWeapon'].includes(key) || typeof value !== 'string') return { ok: false };
+  if (value === '') return { ok: true, value: null };
+  if (key === 'sequence' && /^[0-6]$/.test(value)) return { ok: true, value: Number(value) };
+  if (key === 'signatureWeapon' && ['true', 'false'].includes(value)) return { ok: true, value: value === 'true' };
+  return { ok: false };
+}
+
+function characterBuildSelectionLabel(key, value) {
+  if (value === null) return '미입력';
+  return key === 'sequence' ? value === 0 ? '명함' : `${value}돌` : value ? '보유' : '미보유';
+}
+
+function characterBuildMarkup(character, build) {
+  const sequence = characterBuildSelectValue(build, 'sequence');
+  const signature = characterBuildSelectValue(build, 'signatureWeapon');
+  return `<div class="progress-build">
+    <label class="progress-build-field"><span>돌파</span><select data-progress-character="${esc(character.id)}" data-progress-field="sequence" aria-label="${esc(character.name)} · 돌파">
+      <option value=""${sequence === '' ? ' selected' : ''}>미입력</option>
+      ${Array.from({ length: 7 }, (_, value) => `<option value="${value}"${sequence === String(value) ? ' selected' : ''}>${value === 0 ? '명함' : `${value}돌`}</option>`).join('')}
+    </select></label>
+    <label class="progress-build-field"><span>전용무기</span><select data-progress-character="${esc(character.id)}" data-progress-field="signatureWeapon" aria-label="${esc(character.name)} · 전용무기">
+      <option value=""${signature === '' ? ' selected' : ''}>미입력</option>
+      <option value="false"${signature === 'false' ? ' selected' : ''}>미보유</option>
+      <option value="true"${signature === 'true' ? ' selected' : ''}>보유</option>
+    </select></label>
+  </div>`;
 }
 
 function updateCharacterProgressBadges() {
@@ -45,8 +79,9 @@ function renderCharacterProgress(focusHint) {
   const filter = ['all', 'incomplete', 'complete'].includes(filterValue) ? filterValue : 'all';
   const owned = allChars().filter(character => isOwned(character.id)).map(character => {
     const progress = getCharacterProgress(character.id);
+    const build = getCharacterBuild(character.id);
     const count = fields.filter(field => progress[field.key] === true).length;
-    return { character, progress, count };
+    return { character, progress, build, count };
   });
   const visible = owned.filter(({ character, count }) =>
     (!characterProgressTargetId || character.id === characterProgressTargetId) &&
@@ -58,8 +93,9 @@ function renderCharacterProgress(focusHint) {
     [character.id, character.name, character.img, character.element, character.rarity, character.role]) });
   const cards = Array.from(list.querySelectorAll('[data-progress-card]'));
   const inputs = Array.from(list.querySelectorAll('input[data-progress-character][data-progress-field]'));
+  const selects = Array.from(list.querySelectorAll('select[data-progress-character][data-progress-field]'));
   const canUpdate = visible.length > 0 && structureKey === characterProgressStructureKey &&
-    cards.length === visible.length && inputs.length === visible.length * fields.length;
+    cards.length === visible.length && inputs.length === visible.length * fields.length && selects.length === visible.length * 2;
   let replaced = false;
   if (canUpdate) {
     const byId = new Map(visible.map(item => [item.character.id, item]));
@@ -75,12 +111,13 @@ function renderCharacterProgress(focusHint) {
       if (count) count.textContent = `${item.count}/${fields.length} 완료`;
     });
   } else {
-    const markup = visible.map(({ character, progress, count }, index) => `<article class="progress-card" data-progress-card="${esc(character.id)}" data-complete="${count === fields.length}" aria-labelledby="progress-character-${index}">
+    const markup = visible.map(({ character, progress, build, count }, index) => `<article class="progress-card" data-progress-card="${esc(character.id)}" data-complete="${count === fields.length}" aria-labelledby="progress-character-${index}">
       <div class="progress-card-head">
         ${avatarHTML(character, { small: true })}
         <h3 id="progress-character-${index}">${esc(character.name)}</h3>
         <span class="progress-count" data-progress-count>${count}/${fields.length} 완료</span>
       </div>
+      ${characterBuildMarkup(character, build)}
       <fieldset class="progress-checks"><legend class="sr-only">${esc(character.name)} 육성 완료 항목</legend>
         ${fields.map(field => `<label class="progress-check"><input type="checkbox" data-progress-character="${esc(character.id)}" data-progress-field="${esc(field.key)}" aria-label="${esc(character.name)} · ${esc(field.label)}"${progress[field.key] === true ? ' checked' : ''}><span>${esc(field.label)}</span></label>`).join('')}
       </fieldset>
@@ -92,6 +129,11 @@ function renderCharacterProgress(focusHint) {
       replaced = true;
     }
   }
+  const buildById = new Map(visible.map(item => [item.character.id, item.build]));
+  list.querySelectorAll('select[data-progress-character][data-progress-field]').forEach(select => {
+    const build = buildById.get(select.dataset.progressCharacter);
+    if (build) select.value = characterBuildSelectValue(build, select.dataset.progressField);
+  });
   characterProgressStructureKey = structureKey;
   updateCharacterProgressBadges();
   if (replaced) restoreCharacterProgressFocus(list, snapshot);
@@ -118,25 +160,37 @@ function openCharacterProgress(id) {
 }
 
 document.getElementById('progress-list')?.addEventListener('change', event => {
-  const input = event.target.closest?.('input[data-progress-character][data-progress-field]');
+  const input = event.target.closest?.('[data-progress-character][data-progress-field]');
   if (!input) return;
   const list = document.getElementById('progress-list');
   const snapshot = characterProgressFocusSnapshot(list);
   const id = input.dataset.progressCharacter;
   const key = input.dataset.progressField;
   const field = CHARACTER_PROGRESS_FIELDS.find(item => item.key === key);
+  const isBuild = key === 'sequence' || key === 'signatureWeapon';
   const checked = input.checked === true;
   let result;
-  try { result = setCharacterProgress(id, key, checked); }
+  let selection;
+  try {
+    if (isBuild && input.tagName === 'SELECT') {
+      selection = input.selectedIndex === -1 ? { ok: false } : parseCharacterBuildSelection(key, input.value);
+      result = selection.ok ? setCharacterBuild(id, key, selection.value)
+        : { ok: false, message: '선택값이 올바르지 않습니다.' };
+    } else if (field && input.tagName === 'INPUT' && input.type === 'checkbox') {
+      result = setCharacterProgress(id, key, checked);
+    } else result = { ok: false, message: '육성 항목이 올바르지 않습니다.' };
+  }
   catch { result = { ok: false, message: '저장하지 못했습니다. 브라우저 저장 공간을 확인해 주세요.' }; }
   // The state API owns persistence and rollback; always show its canonical value.
-  input.checked = getCharacterProgress(id)[key] === true;
+  if (isBuild) input.value = characterBuildSelectValue(getCharacterBuild(id), key);
+  else input.checked = getCharacterProgress(id)[key] === true;
   renderCharacterProgress(snapshot);
   const feedback = document.getElementById('progress-feedback');
   if (feedback) {
-    feedback.textContent = result?.ok
-      ? `${charById(id)?.name || '캐릭터'} · ${field?.label || '육성 항목'} ${checked ? '저장했습니다.' : '해제했습니다.'}`
-      : result?.message || '육성 상태를 저장하지 못했습니다.';
+    const name = charById(id)?.name || '캐릭터';
+    feedback.textContent = !result?.ok ? result?.message || '육성 상태를 저장하지 못했습니다.'
+      : isBuild ? `${name} · ${key === 'sequence' ? '돌파' : '전용무기'} ${characterBuildSelectionLabel(key, selection.value)} 저장했습니다.`
+      : `${name} · ${field.label} ${checked ? '저장했습니다.' : '해제했습니다.'}`;
   }
 });
 
