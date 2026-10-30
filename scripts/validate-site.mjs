@@ -17,13 +17,13 @@ const validDate = value => {
 
 const required = [
   'index.html', 'css/style.css', 'js/data.js', 'js/app.js', 'sw.js',
-  'css/recommendations.css', 'js/teams.js', 'js/recommendations.js',
+  'css/recommendations.css', 'js/teams.js', 'js/optimizer.js', 'js/recommendations.js',
   'css/progress.css', 'js/progress.js',
   'manifest.webmanifest', 'icons/app-180.v2.png', 'icons/app-192.v2.png', 'icons/app-512.v2.png',
 ];
 required.forEach(file => check(exists(file), `필수 파일 누락: ${file}`));
 
-for (const file of ['js/data.js', 'js/teams.js', 'js/app.js', 'js/recommendations.js', 'js/progress.js', 'sw.js']) {
+for (const file of ['js/data.js', 'js/teams.js', 'js/app.js', 'js/optimizer.js', 'js/recommendations.js', 'js/progress.js', 'sw.js']) {
   try { new vm.Script(read(file), { filename: file }); }
   catch (error) { errors.push(`${file} 구문 오류: ${error.message}`); }
 }
@@ -149,6 +149,17 @@ try {
       `방랑자 속성 조건 누락: ${team.id}`);
     check(validDate(team.verifiedAt), `추천 확인일 오류: ${team.id}`);
     check(Array.isArray(team.sources) && team.sources.length > 0, `추천 출처 누락: ${team.id}`);
+    if (team.requirements !== undefined) {
+      check(Array.isArray(team.requirements) && team.requirements.length <= 3, `추천 필수 조건 배열 오류: ${team.id}`);
+      for (const requirement of Array.isArray(team.requirements) ? team.requirements : []) {
+        check(requirement && team.members.includes(requirement.characterId), `필수 조건 캐릭터 오류: ${team.id}`);
+        check(requirement && (Number.isInteger(requirement.minSequence) && requirement.minSequence >= 0 && requirement.minSequence <= 6 ||
+          requirement.signatureWeapon === true), `필수 조건 값 오류: ${team.id}`);
+        if (requirement && Object.hasOwn(requirement, 'minSequence')) check(Number.isInteger(requirement.minSequence) &&
+          requirement.minSequence >= 0 && requirement.minSequence <= 6, `필수 돌파 조건 오류: ${team.id}`);
+        if (requirement && Object.hasOwn(requirement, 'signatureWeapon')) check(requirement.signatureWeapon === true, `필수 전무 조건 오류: ${team.id}`);
+      }
+    }
     for (const source of team.sources || []) {
       let url; try { url = new URL(source.url); } catch {}
       check(url?.protocol === 'https:' && !url.username && !url.password && !!source.label && ['official', 'community'].includes(source.kind),

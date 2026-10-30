@@ -45,12 +45,14 @@ const documentStub = {
   addEventListener(type, handler) { (this.listeners[type] ||= []).push(handler); },
 };
 let failStorage = false;
+let confirmAnswer = true;
+const confirmations = [];
 const storage = new Map();
 const context = vm.createContext({ console, document: documentStub,
   localStorage: { getItem: key => storage.get(key) ?? null, setItem(key, value) {
     if (failStorage) throw new Error('QuotaExceededError'); storage.set(key, String(value));
   } }, navigator: {}, window: { addEventListener() {}, scrollTo() {}, innerWidth: 1280, innerHeight: 800 },
-  confirm: () => true, setTimeout: () => 1, clearTimeout() {} });
+  confirm: message => { confirmations.push(message); return confirmAnswer; }, setTimeout: () => 1, clearTimeout() {} });
 
 // Separate scripts match browser loading, avoiding cross-script function-hoisting artifacts.
 vm.runInContext(fs.readFileSync(path.join(root, 'js/data.js'), 'utf8'), context, { filename: 'data.js' });
@@ -64,9 +66,11 @@ const fixtures = [
 ];
 vm.runInContext(`const PARTY_RECOMMENDATIONS = ${JSON.stringify(fixtures)};`, context);
 vm.runInContext(fs.readFileSync(path.join(root, 'js/app.js'), 'utf8'), context, { filename: 'app.js' });
+vm.runInContext(fs.readFileSync(path.join(root, 'js/optimizer.js'), 'utf8'), context, { filename: 'optimizer.js' });
 vm.runInContext(fs.readFileSync(path.join(root, 'js/recommendations.js'), 'utf8'), context, { filename: 'recommendations.js' });
 vm.runInContext(`globalThis.__recQA = {
   renderRecommendations, openRecommendations, showRosterView, addRecommendation,
+  renderAutomaticParties, calculateAutomaticPartyPlan, saveAutomaticParties,
   issue: (id, tag) => recommendationAddIssue(PARTY_RECOMMENDATIONS.find(entry => entry.id === id), tag),
   getState: () => state,
   setState: value => { state = normalizeStateData(JSON.parse(JSON.stringify(value))); },
@@ -100,7 +104,7 @@ docClick('[data-open-recommendations]');
 assert.equal(el('roster-recommendations-view').hidden, false);
 assert.equal(el('roster-owned-view').hidden, true);
 assert.equal(el('tab-roster').hidden, false);
-assert.equal(documentStub.activeElement, el('recommendation-character'));
+assert.equal(documentStub.activeElement, el('auto-party-scope'));
 assert.equal(viewButtons[1].attributes['aria-pressed'], 'true');
 fire(el('roster-view-switch'), 'keydown', { target: viewButtons[1], key: 'ArrowLeft' });
 assert.equal(el('roster-owned-view').hidden, false);
@@ -268,7 +272,8 @@ const realRecommendations = vm.runInContext('JSON.stringify(PARTY_RECOMMENDATION
 const realEntries = JSON.parse(realRecommendations);
 assert(realEntries.length > 0, '실제 추천 데이터가 존재함');
 app.setRecommendations(realEntries);
-app.setState(stateFixture({ parties: [], owned: Object.fromEntries(Array.from(app.allCharacterIds(), id => [id, true])) }));
+app.setState(stateFixture({ parties: [], owned: Object.fromEntries(Array.from(app.allCharacterIds(), id => [id, true])),
+  characterProgress: { rover: { sequence: 4 } } }));
 for (const entry of realEntries) {
   assert.equal(app.issue(entry.id, 'tower'), null, `${entry.id} 실제 조합의 캐릭터·방랑자 조건·ID 검증`);
   assert(Array.isArray(entry.sources) && entry.sources.length > 0, `${entry.id} 추천 출처 있음`);
@@ -283,4 +288,117 @@ const realAdd = app.addRecommendation(realEntries[0].id, 'tower');
 assert.equal(realAdd.ok, true, '실제 추천 데이터로 파티 저장 성공');
 assert.deepEqual(Array.from(realAdd.party.members), realEntries[0].members);
 
+// End-to-end UI handlers with the actual optimizer, independent of example team order.
+const autoEntries = [fixtures[0], fixtures[1], { ...fixtures[2], id: 'second-team',
+  members: ['suoming', 'iuno', 'rover'], condition: '방랑자 인멸 속성' }];
+const autoOwned = Object.fromEntries(['hsin', 'suoming', 'shorekeeper', 'verina', 'ciaccona', 'iuno', 'rover', 'jiyan'].map(id => [id, true]));
+const autoState = overrides => stateFixture({ owned: autoOwned, parties: [], ...overrides });
+const plain = value => JSON.parse(JSON.stringify(value));
+const nonParties = value => { const copy = plain(value); delete copy.parties; return copy; };
+function setAuto(overrides = {}) {
+  app.setRecommendations(autoEntries);
+  app.setState(autoState(overrides));
+  el('auto-party-scope').value = 'all';
+  el('auto-party-limit').value = '';
+  confirmAnswer = true;
+  failStorage = false;
+  app.renderRecommendations();
+}
+setAuto();
+assert.equal(app.calculateAutomaticPartyPlan().teams.length, 2, '전체 묶음은 먼저 보이는 1파티 대신 겹치지 않는 2파티를 선택');
+assert(el('auto-party-summary').textContent.includes('2파티 / 6명'));
+assert.match(el('auto-party-remaining').innerHTML, /다른 보유 조합 1개/);
+assert.match(el('auto-party-list').innerHTML, /돌파 미입력/);
+assert.equal(el('auto-party-save').disabled, false);
+const beforeAuto = plain(app.getState());
+fire(el('auto-party-save'), 'click');
+assert.equal(app.getState().parties.length, 2, '실제 일괄저장 버튼 핸들러');
+assert.equal(new Set(app.getState().parties.flatMap(p => p.members)).size, 6);
+assert.deepEqual(nonParties(app.getState()), nonParties(beforeAuto), '파티 이외의 기록을 보존');
+assert.equal(JSON.parse(storage.get('wuwa-planner-v1')).parties.length, 2, '브라우저 저장 반영');
+assert.equal(app.saveAutomaticParties().code, 'already-applied', '동일조합 재적용 차단');
+assert.equal(documentStub.activeElement, el('party-section'));
+fire(el('auto-party-scope'), 'change', { target: Object.assign(el('auto-party-scope'), { value: 'available' }) });
+assert.equal(app.calculateAutomaticPartyPlan().teams.length, 0, '저장한 캐릭터는 제외모드에서 재사용하지 않음');
+assert.equal(el('auto-party-save').disabled, true);
+
+setAuto({ parties: [{ id: 'old-general', name: '보존 확인', members: ['shorekeeper', null, null], tag: '' },
+  { id: 'old-content', name: '탑 기록', members: ['jiyan', null, null], tag: 'tower' }] });
+const beforeReplace = plain(app.getState());
+confirmAnswer = false;
+assert.equal(app.saveAutomaticParties().code, 'cancelled');
+assert.deepEqual(plain(app.getState()), beforeReplace, '교체 취소는 기록을 변경하지 않음');
+assert.match(confirmations.at(-1), /일반 파티 1개/);
+confirmAnswer = true;
+assert.equal(app.saveAutomaticParties().ok, true);
+assert.deepEqual(plain(app.getState().parties.find(p => p.id === 'old-content')), beforeReplace.parties.find(p => p.id === 'old-content'));
+assert.equal(app.getState().parties.some(p => p.id === 'old-general'), false);
+assert.deepEqual(nonParties(app.getState()), nonParties(beforeReplace));
+
+setAuto({ parties: [{ id: 'busy-content', name: '해역 파티', members: ['hsin', null, null], tag: 'sea' }] });
+assert.equal(app.calculateAutomaticPartyPlan().teams.length, 2, '전체모드에서는 충돌해도 결과 미리보기 제공');
+assert.equal(app.saveAutomaticParties().code, 'existing-conflict', '콘텐츠 파티와 겹치는 일반편성 저장 차단');
+assert.match(el('auto-party-save-note').textContent, /콘텐츠 편성과 겹침/);
+el('auto-party-scope').value = 'available';
+fire(el('auto-party-scope'), 'change');
+const beforeAppend = plain(app.getState());
+assert.equal(app.calculateAutomaticPartyPlan().teams.length, 1);
+assert.equal(app.saveAutomaticParties().ok, true);
+assert.deepEqual(plain(app.getState().parties[0]), beforeAppend.parties[0], '제외모드는 기존파티를 보존하고 추가');
+
+setAuto();
+el('auto-party-limit').value = '1';
+fire(el('auto-party-limit'), 'change');
+assert.equal(app.calculateAutomaticPartyPlan().teams.length, 1, '파티수 선택 핸들러');
+assert(el('auto-party-summary').textContent.includes('1파티 / 3명'));
+setAuto();
+delete app.getState().owned.hsin;
+const afterOwnership = JSON.stringify(app.getState());
+assert.equal(app.saveAutomaticParties().code, 'stale-plan', '미리보기 후 보유변경 감지');
+assert.equal(JSON.stringify(app.getState()), afterOwnership);
+setAuto();
+app.getState().characterProgress.hsin = { sequence: 2, signatureWeapon: true };
+assert.equal(app.saveAutomaticParties().code, 'stale-plan', '미리보기 후 세팅변경 감지');
+setAuto();
+app.setRecommendations([...autoEntries, { ...fixtures[0], id: 'new-source' }]);
+assert.equal(app.saveAutomaticParties().code, 'stale-plan', '미리보기 후 후보변경 감지');
+
+setAuto({ parties: [{ id: 'rollback', name: '남길 파티', members: ['shorekeeper', null, null], tag: '' }] });
+const beforeQuota = plain(app.getState());
+const storageBeforeQuota = storage.get('wuwa-planner-v1');
+failStorage = true;
+assert.equal(app.saveAutomaticParties().code, 'save-failed');
+failStorage = false;
+assert.deepEqual(plain(app.getState()), beforeQuota, '전체 일괄저장 실패 시 기존 배열 복구');
+assert.equal(storage.get('wuwa-planner-v1'), storageBeforeQuota);
+setAuto({ parties: [{ id: 'collision', name: 'ID충돌', members: ['jiyan', null, null], tag: 'tower' }] });
+const beforeCollision = JSON.stringify(app.getState());
+vm.runInContext('globalThis.savedUid = uid; uid = () => "collision";', context);
+assert.equal(app.saveAutomaticParties().code, 'id-conflict');
+vm.runInContext('uid = globalThis.savedUid;', context);
+assert.equal(JSON.stringify(app.getState()), beforeCollision);
+setAuto({ parties: Array.from({ length: 99 }, (_, i) => ({ id: 'full-' + i, name: '빈 탑', members: [null,null,null], tag: 'tower' })) });
+assert.equal(app.saveAutomaticParties().code, 'party-limit');
+
+setAuto();
+app.setRecommendations([{ ...fixtures[0], id: 'conditional', requirements: [{ characterId: 'hsin', minSequence: 4, signatureWeapon: true }] }]);
+app.renderRecommendations();
+assert.match(el('auto-party-remaining').innerHTML, /입력·필수 조건 확인 1조합/);
+assert.equal(app.calculateAutomaticPartyPlan().teams.length, 0);
+assert.equal(app.issue('conditional', 'tower').code, 'requirements');
+vm.runInContext("setCharacterBuild('hsin', 'sequence', 4); setCharacterBuild('hsin', 'signatureWeapon', true);", context);
+app.renderRecommendations();
+assert.equal(app.calculateAutomaticPartyPlan().teams.length, 1);
+assert.equal(app.issue('conditional', 'tower'), null);
+app.setRecommendations([{ ...fixtures[0], label: '<img src=x onerror=alert(1)>', reason: '<svg onload=x>',
+  condition: '<script>unsafe</script>' }]);
+app.renderRecommendations();
+assert.match(el('auto-party-list').innerHTML, /&lt;img/);
+assert.doesNotMatch(el('auto-party-list').innerHTML, /<script>|<svg onload|<img src=x/);
+setAuto({ owned: {} });
+assert.equal(el('auto-party-save').disabled, true);
+assert.match(el('auto-party-list').innerHTML, /3명 이상/);
+assert.equal(app.saveAutomaticParties().code, 'empty-plan');
+
+console.log('자동편성 UI 통합 검사 통과: 전체최적화, 일괄저장·교체취소·콘텐츠보존·중복·stale·quota·ID·상한·조건·XSS.');
 console.log(`추천 파티 검사 통과: 실제 ${realEntries.length}조합 연결, 검색·보유 정렬·키보드, 방랑자 조건, 보유·중복 규칙, 출처·XSS, 저장 및 기존 데이터 보존.`);

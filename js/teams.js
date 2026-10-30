@@ -1,5 +1,5 @@
-/* 2026-10-23 · 공략 기반 대표 조합. 공식 추천/순위가 아닙니다.
-   출처와 조건: 각 항목 및 docs/party-sources-2026-10-23.md */
+/* 공략 기반 대표·대체 조합. 공식 추천/성능 순위가 아닙니다.
+   출처와 조건: 각 항목 및 docs/party-sources-2026-10-23.md, docs/party-sources-2026-10-30.md */
 const PARTY_RECOMMENDATIONS = [
   {
     "id": "aemeath-tune-rupture",
@@ -412,7 +412,7 @@ const PARTY_RECOMMENDATIONS = [
     ],
     "label": "카르티시아 · 치사 지원",
     "reason": "샤콘이 기류 이상 효과를 공급하고 치사가 최대 중첩을 늘려 카르티시아의 공격을 지원합니다.",
-    "condition": "치사 전용무기 보유 시 추가 버프를 활용하는 편성입니다.",
+    "condition": "치사 전용무기 보유 시 추가 버프를 활용합니다. 전용무기 없이도 편성할 수 있습니다.",
     "sources": [
       {
         "label": "Prydwen · 카르티시아 공략",
@@ -420,7 +420,7 @@ const PARTY_RECOMMENDATIONS = [
         "kind": "community"
       }
     ],
-    "verifiedAt": "2026-10-23"
+    "verifiedAt": "2026-10-30"
   },
   {
     "id": "phrolova-cantarella-qiuyuan",
@@ -726,7 +726,7 @@ const PARTY_RECOMMENDATIONS = [
     ],
     "label": "젠니 · 회절 방랑자 교대",
     "reason": "페비와 회절 방랑자가 이상 효과를 계속 공급해 젠니의 강화 공격 자원을 보충합니다.",
-    "condition": "방랑자는 회절 속성으로 4돌 치유·6돌 내성 감소를 활용하며, 페비는 지원 모드(Confession)와 빠른 교대 운용을 사용합니다.",
+    "condition": "방랑자: 회절 속성·4돌 이상(회복 담당). 6돌이면 내성 감소도 적용합니다. 페비는 지원 모드(Confession)로 사용하며 빠른 교대 운용이 필요합니다.",
     "sources": [
       {
         "label": "Prydwen · 회절 방랑자 공략",
@@ -739,7 +739,13 @@ const PARTY_RECOMMENDATIONS = [
         "kind": "community"
       }
     ],
-    "verifiedAt": "2026-10-23"
+    "verifiedAt": "2026-10-30",
+    "requirements": [
+      {
+        "characterId": "rover",
+        "minSequence": 4
+      }
+    ]
   },
   {
     "id": "aalto-ciaccona-rover-aero",
@@ -759,5 +765,1149 @@ const PARTY_RECOMMENDATIONS = [
       }
     ],
     "verifiedAt": "2026-10-23"
+  },
+  {
+    "id": "jiyan-mortefi-shorekeeper",
+    "members": [
+      "jiyan",
+      "mortefi",
+      "shorekeeper"
+    ],
+    "label": "기염 · 모르테피 · 파수인",
+    "reason": "모르테피의 강공격 지원을 기염에게 연결합니다. 파수인의 회복·크리티컬 지원을 함께 사용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 기염 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/jiyan",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "jiyan-iuno-verina",
+    "members": [
+      "jiyan",
+      "iuno",
+      "verina"
+    ],
+    "label": "기염 · 유노 · 벨리나",
+    "reason": "유노의 강공격 지원을 기염에게 연결합니다. 벨리나의 회복·공격 지원을 함께 사용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 기염 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/jiyan",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "jiyan-iuno-shorekeeper",
+    "members": [
+      "jiyan",
+      "iuno",
+      "shorekeeper"
+    ],
+    "label": "기염 · 유노 · 파수인",
+    "reason": "유노의 강공격 지원을 기염에게 연결합니다. 파수인의 회복·크리티컬 지원을 함께 사용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 기염 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/jiyan",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "jiyan-rebecca-verina",
+    "members": [
+      "jiyan",
+      "rebecca",
+      "verina"
+    ],
+    "label": "기염 · 레베카 · 벨리나",
+    "reason": "레베카의 강공격 지원을 기염에게 연결합니다. 벨리나의 회복·공격 지원을 함께 사용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 기염 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/jiyan",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "jiyan-rebecca-shorekeeper",
+    "members": [
+      "jiyan",
+      "rebecca",
+      "shorekeeper"
+    ],
+    "label": "기염 · 레베카 · 파수인",
+    "reason": "레베카의 강공격 지원을 기염에게 연결합니다. 파수인의 회복·크리티컬 지원을 함께 사용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 기염 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/jiyan",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "jiyan-ciaccona-shorekeeper",
+    "members": [
+      "jiyan",
+      "ciaccona",
+      "shorekeeper"
+    ],
+    "label": "기염 · 샤콘 · 파수인",
+    "reason": "샤콘의 교대 유지 지원과 파수인의 회복을 활용합니다.",
+    "condition": "기염과 샤콘의 공격 중 교대를 활용하는 운용입니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 기염 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/jiyan",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "jiyan-lynae-mornye",
+    "members": [
+      "jiyan",
+      "lynae",
+      "mornye"
+    ],
+    "label": "기염 · 린네 · 모니에",
+    "reason": "기염을 주력으로 쓰는 조화 지원 대안입니다. 린네와 모니에의 조화 계열 지원을 함께 사용합니다.",
+    "condition": "린네·모니에를 다른 주력 파티에 쓰지 않을 때의 대안",
+    "sources": [
+      {
+        "label": "Prydwen · 기염 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/jiyan",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "encore-sanhua-shorekeeper",
+    "members": [
+      "encore",
+      "sanhua",
+      "shorekeeper"
+    ],
+    "label": "앙코 · 산화 · 파수인",
+    "reason": "산화의 일반 공격 지원을 앙코에게 연결합니다. 파수인의 회복·크리티컬 지원을 함께 사용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 앙코 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/encore",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "encore-sanhua-baizhi",
+    "members": [
+      "encore",
+      "sanhua",
+      "baizhi"
+    ],
+    "label": "앙코 · 산화 · 설지",
+    "reason": "산화의 일반 공격 지원을 앙코에게 연결합니다. 설지를 회복 대안으로 사용합니다. 주력 딜러가 설지의 공격 버프를 받도록 운용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 앙코 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/encore",
+        "kind": "community"
+      },
+      {
+        "label": "Prydwen · 설지 범용 회복·제약 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/baizhi",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "encore-lupa-mornye",
+    "members": [
+      "encore",
+      "lupa",
+      "mornye"
+    ],
+    "label": "앙코 · 루파 · 모니에",
+    "reason": "루파의 용융 지원과 모니에의 편성 시너지를 활용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 앙코 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/encore",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "encore-brant-lupa",
+    "members": [
+      "encore",
+      "brant",
+      "lupa"
+    ],
+    "label": "앙코 · 브렌트 · 루파",
+    "reason": "루파·브렌트의 용융 지원을 앙코에게 이어 줍니다.",
+    "condition": "용융 3인 편성. 루파 → 브렌트 → 앙코 순서로 반주를 연결합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 앙코 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/encore",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "encore-brant-verina",
+    "members": [
+      "encore",
+      "brant",
+      "verina"
+    ],
+    "label": "앙코 · 브렌트 · 벨리나",
+    "reason": "브렌트의 용융·스킬 지원을 앙코에게 연결합니다. 벨리나의 회복·공격 지원을 함께 사용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 앙코 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/encore",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "encore-brant-shorekeeper",
+    "members": [
+      "encore",
+      "brant",
+      "shorekeeper"
+    ],
+    "label": "앙코 · 브렌트 · 파수인",
+    "reason": "브렌트의 용융·스킬 지원을 앙코에게 연결합니다. 파수인의 회복·크리티컬 지원을 함께 사용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 앙코 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/encore",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "calcharo-yinlin-verina",
+    "members": [
+      "calcharo",
+      "yinlin",
+      "verina"
+    ],
+    "label": "카카루 · 음림 · 벨리나",
+    "reason": "음림의 전도·해방 지원을 카카루에게 연결합니다. 벨리나의 회복·공격 지원을 함께 사용합니다.",
+    "condition": "음림 반주 → 카카루. 버프는 최대 14초이며 카카루 교대 시 종료됩니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 카카루 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/calcharo",
+        "kind": "community"
+      },
+      {
+        "label": "Prydwen · 음림 반주 지속·교대 조건",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/yinlin",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "calcharo-yinlin-shorekeeper",
+    "members": [
+      "calcharo",
+      "yinlin",
+      "shorekeeper"
+    ],
+    "label": "카카루 · 음림 · 파수인",
+    "reason": "음림의 전도·해방 지원을 카카루에게 연결합니다. 파수인의 회복·크리티컬 지원을 함께 사용합니다.",
+    "condition": "음림 반주 → 카카루. 버프는 최대 14초이며 카카루 교대 시 종료됩니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 카카루 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/calcharo",
+        "kind": "community"
+      },
+      {
+        "label": "Prydwen · 음림 반주 지속·교대 조건",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/yinlin",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "calcharo-lynae-mornye",
+    "members": [
+      "calcharo",
+      "lynae",
+      "mornye"
+    ],
+    "label": "카카루 · 린네 · 모니에",
+    "reason": "린네의 범용·해방 지원을 카카루에게 연결합니다. 린네와 모니에의 조화 계열 지원을 함께 사용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 카카루 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/calcharo",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "calcharo-lynae-shorekeeper",
+    "members": [
+      "calcharo",
+      "lynae",
+      "shorekeeper"
+    ],
+    "label": "카카루 · 린네 · 파수인",
+    "reason": "린네의 범용·해방 지원을 카카루에게 연결합니다. 파수인의 회복·크리티컬 지원을 함께 사용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 카카루 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/calcharo",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "calcharo-lynae-verina",
+    "members": [
+      "calcharo",
+      "lynae",
+      "verina"
+    ],
+    "label": "카카루 · 린네 · 벨리나",
+    "reason": "린네의 범용·해방 지원을 카카루에게 연결합니다. 벨리나의 회복·공격 지원을 함께 사용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 카카루 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/calcharo",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "lingyang-sanhua-shorekeeper",
+    "members": [
+      "lingyang",
+      "sanhua",
+      "shorekeeper"
+    ],
+    "label": "능양 · 산화 · 파수인",
+    "reason": "산화의 일반 공격 지원을 능양에게 연결합니다. 파수인의 회복·크리티컬 지원을 함께 사용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 능양 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/lingyang",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "lingyang-sanhua-baizhi",
+    "members": [
+      "lingyang",
+      "sanhua",
+      "baizhi"
+    ],
+    "label": "능양 · 산화 · 설지",
+    "reason": "산화의 일반 공격 지원을 능양에게 연결합니다. 설지를 회복 대안으로 사용합니다. 주력 딜러가 설지의 공격 버프를 받도록 운용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 능양 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/lingyang",
+        "kind": "community"
+      },
+      {
+        "label": "Prydwen · 설지 범용 회복·제약 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/baizhi",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "lingyang-zhezhi-verina",
+    "members": [
+      "lingyang",
+      "zhezhi",
+      "verina"
+    ],
+    "label": "능양 · 절지 · 벨리나",
+    "reason": "절지의 응결·스킬 지원을 능양에게 연결합니다. 벨리나의 회복·공격 지원을 함께 사용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 능양 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/lingyang",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "lingyang-zhezhi-shorekeeper",
+    "members": [
+      "lingyang",
+      "zhezhi",
+      "shorekeeper"
+    ],
+    "label": "능양 · 절지 · 파수인",
+    "reason": "절지의 응결·스킬 지원을 능양에게 연결합니다. 파수인의 회복·크리티컬 지원을 함께 사용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 능양 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/lingyang",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "lingyang-lynae-mornye",
+    "members": [
+      "lingyang",
+      "lynae",
+      "mornye"
+    ],
+    "label": "능양 · 린네 · 모니에",
+    "reason": "린네의 범용 지원을 능양에게 연결합니다. 린네와 모니에의 조화 계열 지원을 함께 사용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 능양 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/lingyang",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "camellya-sanhua-shorekeeper",
+    "members": [
+      "camellya",
+      "sanhua",
+      "shorekeeper"
+    ],
+    "label": "카멜리아 · 산화 · 파수인",
+    "reason": "산화의 일반 공격 지원을 카멜리아에게 연결합니다. 파수인의 회복·크리티컬 지원을 함께 사용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 카멜리아 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/camellya",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "camellya-sanhua-verina",
+    "members": [
+      "camellya",
+      "sanhua",
+      "verina"
+    ],
+    "label": "카멜리아 · 산화 · 벨리나",
+    "reason": "산화의 일반 공격 지원을 카멜리아에게 연결합니다. 벨리나의 회복·공격 지원을 함께 사용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 카멜리아 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/camellya",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "camellya-sanhua-baizhi",
+    "members": [
+      "camellya",
+      "sanhua",
+      "baizhi"
+    ],
+    "label": "카멜리아 · 산화 · 설지",
+    "reason": "산화의 일반 공격 지원을 카멜리아에게 연결합니다. 설지를 회복 대안으로 사용합니다. 주력 딜러가 설지의 공격 버프를 받도록 운용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 카멜리아 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/camellya",
+        "kind": "community"
+      },
+      {
+        "label": "Prydwen · 설지 범용 회복·제약 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/baizhi",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "camellya-roccia-verina",
+    "members": [
+      "camellya",
+      "roccia",
+      "verina"
+    ],
+    "label": "카멜리아 · 로코코 · 벨리나",
+    "reason": "로코코의 인멸·일반 공격 지원을 카멜리아에게 연결합니다. 벨리나의 회복·공격 지원을 함께 사용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 카멜리아 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/camellya",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "camellya-danjin-shorekeeper",
+    "members": [
+      "camellya",
+      "danjin",
+      "shorekeeper"
+    ],
+    "label": "카멜리아 · 단근 · 파수인",
+    "reason": "단근의 인멸 지원을 카멜리아에게 연결합니다. 파수인의 회복·크리티컬 지원을 함께 사용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 카멜리아 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/camellya",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "camellya-danjin-verina",
+    "members": [
+      "camellya",
+      "danjin",
+      "verina"
+    ],
+    "label": "카멜리아 · 단근 · 벨리나",
+    "reason": "단근의 인멸 지원을 카멜리아에게 연결합니다. 벨리나의 회복·공격 지원을 함께 사용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 카멜리아 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/camellya",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "camellya-danjin-baizhi",
+    "members": [
+      "camellya",
+      "danjin",
+      "baizhi"
+    ],
+    "label": "카멜리아 · 단근 · 설지",
+    "reason": "단근의 인멸 지원을 카멜리아에게 연결합니다. 설지를 회복 대안으로 사용합니다. 주력 딜러가 설지의 공격 버프를 받도록 운용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 카멜리아 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/camellya",
+        "kind": "community"
+      },
+      {
+        "label": "Prydwen · 설지 범용 회복·제약 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/baizhi",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "camellya-lynae-mornye",
+    "members": [
+      "camellya",
+      "lynae",
+      "mornye"
+    ],
+    "label": "카멜리아 · 린네 · 모니에",
+    "reason": "린네의 범용 지원을 카멜리아에게 연결합니다. 린네와 모니에의 조화 계열 지원을 함께 사용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 카멜리아 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/camellya",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "jinhsi-zhezhi-shorekeeper",
+    "members": [
+      "jinhsi",
+      "zhezhi",
+      "shorekeeper"
+    ],
+    "label": "금희 · 절지 · 파수인",
+    "reason": "절지의 협동 공격·스킬 지원으로 금희의 공격을 보조합니다. 파수인의 회복·크리티컬 지원을 함께 사용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 금희 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/jinhsi",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "jinhsi-yuanwu-shorekeeper",
+    "members": [
+      "jinhsi",
+      "yuanwu",
+      "shorekeeper"
+    ],
+    "label": "금희 · 연무 · 파수인",
+    "reason": "연무의 협동 공격으로 금희의 공격을 보조합니다. 파수인의 회복·크리티컬 지원을 함께 사용합니다.",
+    "condition": "연무의 공격 범위를 유지하며 짧게 출전시킵니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 금희 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/jinhsi",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "jinhsi-yinlin-verina",
+    "members": [
+      "jinhsi",
+      "yinlin",
+      "verina"
+    ],
+    "label": "금희 · 음림 · 벨리나",
+    "reason": "음림의 협동 공격으로 금희의 공격을 보조합니다. 벨리나의 회복·공격 지원을 함께 사용합니다.",
+    "condition": "적이 교체되면 음림의 표식을 다시 적용해야 합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 금희 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/jinhsi",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "jinhsi-yinlin-shorekeeper",
+    "members": [
+      "jinhsi",
+      "yinlin",
+      "shorekeeper"
+    ],
+    "label": "금희 · 음림 · 파수인",
+    "reason": "음림의 협동 공격으로 금희의 공격을 보조합니다. 파수인의 회복·크리티컬 지원을 함께 사용합니다.",
+    "condition": "적이 교체되면 음림의 표식을 다시 적용해야 합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 금희 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/jinhsi",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "rover-danjin-verina",
+    "members": [
+      "rover",
+      "danjin",
+      "verina"
+    ],
+    "label": "방랑자 · 단근 · 벨리나",
+    "reason": "단근의 인멸 지원을 방랑자에게 연결합니다. 벨리나의 회복·공격 지원을 함께 사용합니다.",
+    "condition": "방랑자: 인멸 속성. 단근은 짧은 반주 지원 위주로 운용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 방랑자 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/rover-havoc",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "rover-danjin-shorekeeper",
+    "members": [
+      "rover",
+      "danjin",
+      "shorekeeper"
+    ],
+    "label": "방랑자 · 단근 · 파수인",
+    "reason": "단근의 인멸 지원을 방랑자에게 연결합니다. 파수인의 회복·크리티컬 지원을 함께 사용합니다.",
+    "condition": "방랑자: 인멸 속성. 단근은 짧은 반주 지원 위주로 운용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 방랑자 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/rover-havoc",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "rover-sanhua-verina",
+    "members": [
+      "rover",
+      "sanhua",
+      "verina"
+    ],
+    "label": "방랑자 · 산화 · 벨리나",
+    "reason": "산화의 일반 공격 지원을 방랑자에게 연결합니다. 벨리나의 회복·공격 지원을 함께 사용합니다.",
+    "condition": "방랑자: 인멸 속성",
+    "sources": [
+      {
+        "label": "Prydwen · 방랑자 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/rover-havoc",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "rover-sanhua-shorekeeper",
+    "members": [
+      "rover",
+      "sanhua",
+      "shorekeeper"
+    ],
+    "label": "방랑자 · 산화 · 파수인",
+    "reason": "산화의 일반 공격 지원을 방랑자에게 연결합니다. 파수인의 회복·크리티컬 지원을 함께 사용합니다.",
+    "condition": "방랑자: 인멸 속성",
+    "sources": [
+      {
+        "label": "Prydwen · 방랑자 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/rover-havoc",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "rover-sanhua-baizhi",
+    "members": [
+      "rover",
+      "sanhua",
+      "baizhi"
+    ],
+    "label": "방랑자 · 산화 · 설지",
+    "reason": "산화의 일반 공격 지원을 방랑자에게 연결합니다. 설지를 회복 대안으로 사용합니다. 주력 딜러가 설지의 공격 버프를 받도록 운용합니다.",
+    "condition": "방랑자: 인멸 속성",
+    "sources": [
+      {
+        "label": "Prydwen · 방랑자 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/rover-havoc",
+        "kind": "community"
+      },
+      {
+        "label": "Prydwen · 설지 범용 회복·제약 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/baizhi",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "rover-roccia-verina",
+    "members": [
+      "rover",
+      "roccia",
+      "verina"
+    ],
+    "label": "방랑자 · 로코코 · 벨리나",
+    "reason": "로코코의 인멸·일반 공격 지원을 방랑자에게 연결합니다. 벨리나의 회복·공격 지원을 함께 사용합니다.",
+    "condition": "방랑자: 인멸 속성",
+    "sources": [
+      {
+        "label": "Prydwen · 방랑자 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/rover-havoc",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "rover-roccia-shorekeeper",
+    "members": [
+      "rover",
+      "roccia",
+      "shorekeeper"
+    ],
+    "label": "방랑자 · 로코코 · 파수인",
+    "reason": "로코코의 인멸·일반 공격 지원을 방랑자에게 연결합니다. 파수인의 회복·크리티컬 지원을 함께 사용합니다.",
+    "condition": "방랑자: 인멸 속성",
+    "sources": [
+      {
+        "label": "Prydwen · 방랑자 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/rover-havoc",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "xiangliyao-yinlin-verina",
+    "members": [
+      "xiangliyao",
+      "yinlin",
+      "verina"
+    ],
+    "label": "상리요 · 음림 · 벨리나",
+    "reason": "음림의 전도·해방 지원을 상리요에게 연결합니다. 벨리나의 회복·공격 지원을 함께 사용합니다.",
+    "condition": "음림 반주 → 상리요. 버프는 최대 14초이며 상리요 교대 시 종료됩니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 상리요 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/xiangli-yao",
+        "kind": "community"
+      },
+      {
+        "label": "Prydwen · 음림 반주 지속·교대 조건",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/yinlin",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "xiangliyao-jianxin-shorekeeper",
+    "members": [
+      "xiangliyao",
+      "jianxin",
+      "shorekeeper"
+    ],
+    "label": "상리요 · 감심 · 파수인",
+    "reason": "감심의 해방 지원을 상리요에게 연결합니다. 파수인의 회복·크리티컬 지원을 함께 사용합니다.",
+    "condition": "감심의 긴 출전과 상리요의 에너지 충전을 고려하는 대체안입니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 상리요 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/xiangli-yao",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "xiangliyao-lynae-mornye",
+    "members": [
+      "xiangliyao",
+      "lynae",
+      "mornye"
+    ],
+    "label": "상리요 · 린네 · 모니에",
+    "reason": "린네의 범용·해방 지원을 상리요에게 연결합니다. 린네와 모니에의 조화 계열 지원을 함께 사용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 상리요 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/xiangli-yao",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "xiangliyao-lynae-shorekeeper",
+    "members": [
+      "xiangliyao",
+      "lynae",
+      "shorekeeper"
+    ],
+    "label": "상리요 · 린네 · 파수인",
+    "reason": "린네의 범용·해방 지원을 상리요에게 연결합니다. 파수인의 회복·크리티컬 지원을 함께 사용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 상리요 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/xiangli-yao",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "xiangliyao-lynae-verina",
+    "members": [
+      "xiangliyao",
+      "lynae",
+      "verina"
+    ],
+    "label": "상리요 · 린네 · 벨리나",
+    "reason": "린네의 범용·해방 지원을 상리요에게 연결합니다. 벨리나의 회복·공격 지원을 함께 사용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 상리요 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/xiangli-yao",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "carlotta-zhezhi-verina",
+    "members": [
+      "carlotta",
+      "zhezhi",
+      "verina"
+    ],
+    "label": "카를로타 · 절지 · 벨리나",
+    "reason": "절지의 응결·스킬 지원을 카를로타에게 연결합니다. 벨리나의 회복·공격 지원을 함께 사용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 카를로타 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/carlotta",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "carlotta-yangyang-shorekeeper",
+    "members": [
+      "carlotta",
+      "yangyang",
+      "shorekeeper"
+    ],
+    "label": "카를로타 · 양양 · 파수인",
+    "reason": "양양의 짧은 출전과 에너지 지원으로 카를로타의 순환을 보조합니다. 파수인의 회복·크리티컬 지원을 함께 사용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 카를로타 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/carlotta",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "carlotta-yangyang-buling",
+    "members": [
+      "carlotta",
+      "yangyang",
+      "buling"
+    ],
+    "label": "카를로타 · 양양 · 복링",
+    "reason": "양양의 짧은 출전과 에너지 지원으로 카를로타의 순환을 보조합니다. 복링의 회복·스킬 피해 지원을 함께 사용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 카를로타 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/carlotta",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "carlotta-taoqi-shorekeeper",
+    "members": [
+      "carlotta",
+      "taoqi",
+      "shorekeeper"
+    ],
+    "label": "카를로타 · 도기 · 파수인",
+    "reason": "도기의 스킬 지원을 카를로타에게 연결합니다. 파수인의 회복·크리티컬 지원을 함께 사용합니다.",
+    "condition": "도기의 긴 협주 충전 시간을 고려하는 대체안입니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 카를로타 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/carlotta",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "carlotta-taoqi-buling",
+    "members": [
+      "carlotta",
+      "taoqi",
+      "buling"
+    ],
+    "label": "카를로타 · 도기 · 복링",
+    "reason": "도기의 스킬 지원을 카를로타에게 연결합니다. 복링의 회복·스킬 피해 지원을 함께 사용합니다.",
+    "condition": "도기의 긴 협주 충전 시간을 고려하는 대체안입니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 카를로타 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/carlotta",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "carlotta-lynae-mornye",
+    "members": [
+      "carlotta",
+      "lynae",
+      "mornye"
+    ],
+    "label": "카를로타 · 린네 · 모니에",
+    "reason": "린네의 범용 지원을 카를로타에게 연결합니다. 린네와 모니에의 조화 계열 지원을 함께 사용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 카를로타 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/carlotta",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "carlotta-lynae-shorekeeper",
+    "members": [
+      "carlotta",
+      "lynae",
+      "shorekeeper"
+    ],
+    "label": "카를로타 · 린네 · 파수인",
+    "reason": "린네의 범용 지원을 카를로타에게 연결합니다. 파수인의 회복·크리티컬 지원을 함께 사용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 카를로타 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/carlotta",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "carlotta-lynae-verina",
+    "members": [
+      "carlotta",
+      "lynae",
+      "verina"
+    ],
+    "label": "카를로타 · 린네 · 벨리나",
+    "reason": "린네의 범용 지원을 카를로타에게 연결합니다. 벨리나의 회복·공격 지원을 함께 사용합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 카를로타 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/carlotta",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "zani-phoebe-verina",
+    "members": [
+      "zani",
+      "phoebe",
+      "verina"
+    ],
+    "label": "젠니 · 페비 · 벨리나",
+    "reason": "페비의 회절 상태 이상 지원을 자니에게 연결합니다. 벨리나의 회복·공격 지원을 함께 사용합니다.",
+    "condition": "페비: 지원 모드(Confession)",
+    "sources": [
+      {
+        "label": "Prydwen · 젠니 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/zani",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "zani-rover-verina",
+    "members": [
+      "zani",
+      "rover",
+      "verina"
+    ],
+    "label": "젠니 · 방랑자 · 벨리나",
+    "reason": "회절 방랑자를 페비 대신 상태 이상 공급원으로 사용합니다. 벨리나의 회복·공격 지원을 함께 사용합니다.",
+    "condition": "방랑자: 회절 속성. 페비 편성보다 상태 이상 공급·피해 증폭이 부족한 대안입니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 젠니 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/zani",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "zani-rover-shorekeeper",
+    "members": [
+      "zani",
+      "rover",
+      "shorekeeper"
+    ],
+    "label": "젠니 · 방랑자 · 파수인",
+    "reason": "회절 방랑자를 페비 대신 상태 이상 공급원으로 사용합니다. 파수인의 회복·크리티컬 지원을 함께 사용합니다.",
+    "condition": "방랑자: 회절 속성. 페비 편성보다 상태 이상 공급·피해 증폭이 부족한 대안입니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 젠니 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/zani",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "cartethyia-ciaccona-shorekeeper",
+    "members": [
+      "cartethyia",
+      "ciaccona",
+      "shorekeeper"
+    ],
+    "label": "카르티시아 · 샤콘 · 파수인",
+    "reason": "샤콘의 기류 상태 이상 지원과 파수인의 회복을 활용합니다.",
+    "condition": "해역처럼 적이 자주 교체되어 상태 이상 중첩을 유지하기 어려운 전투의 대안",
+    "sources": [
+      {
+        "label": "Prydwen · 카르티시아 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/cartethyia",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "cartethyia-sanhua-rover",
+    "members": [
+      "cartethyia",
+      "sanhua",
+      "rover"
+    ],
+    "label": "카르티시아 · 산화 · 방랑자",
+    "reason": "산화의 짧은 출전과 기류 방랑자의 상태 이상 지원을 활용합니다.",
+    "condition": "방랑자: 기류 속성. 샤콘이 없을 때의 대체안입니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 카르티시아 시너지·지원 슬롯",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/cartethyia",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-10-30"
   }
 ];
