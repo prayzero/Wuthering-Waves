@@ -80,6 +80,7 @@ vm.runInContext(`globalThis.__recQA = {
   restoreCharacter: character => { CHARACTERS.push(character); },
   placement: memberPlacementIssue, renderRoster,
   allCharacterIds: () => CHARACTERS.map(character => character.id),
+  releasedCharacterIds: () => CHARACTERS.filter(character => !character.announced).map(character => character.id),
 };`, context);
 const app = context.__recQA;
 const fire = (target, type, event = {}) => {
@@ -278,7 +279,7 @@ for (const entry of realEntries) {
   assert.equal(app.issue(entry.id, 'tower'), null, `${entry.id} 실제 조합의 캐릭터·방랑자 조건·ID 검증`);
   assert(Array.isArray(entry.sources) && entry.sources.length > 0, `${entry.id} 추천 출처 있음`);
 }
-for (const id of app.allCharacterIds()) {
+for (const id of app.releasedCharacterIds()) {
   assert(realEntries.some(entry => entry.members.includes(id)), `${id} 캐릭터에 추천 조합 제공`);
 }
 app.openRecommendations('hsin');

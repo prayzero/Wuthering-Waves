@@ -1,5 +1,5 @@
 /* 공략 기반 대표·대체 조합. 공식 추천/성능 순위가 아닙니다.
-   출처와 조건: 각 항목 및 docs/party-sources-2026-10-23.md, docs/party-sources-2026-10-30.md */
+   출처와 조건: 각 항목 및 docs/party-sources-2026-10-23.md, docs/party-sources-2026-10-30.md, docs/party-sources-2026-11-09.md */
 const PARTY_RECOMMENDATIONS = [
   {
     "id": "aemeath-tune-rupture",
@@ -197,7 +197,7 @@ const PARTY_RECOMMENDATIONS = [
     ],
     "label": "여우·쇄명 Unison",
     "reason": "쇄명의 전도·Unison 지원이 여우의 별자리와 맞물리고 파수인이 회복과 크리티컬 지원을 제공합니다.",
-    "condition": "여우의 별자리: 합일(Unison) 모드",
+    "condition": "여우의 별자리: 합일(Unison) 모드. 쇄명의 반주 버프는 8초 또는 지원받는 캐릭터 교대 시 종료됩니다.",
     "sources": [
       {
         "label": "Prydwen · 쇄명 출시 후 Unison 조합",
@@ -210,7 +210,7 @@ const PARTY_RECOMMENDATIONS = [
         "kind": "community"
       }
     ],
-    "verifiedAt": "2026-10-23"
+    "verifiedAt": "2026-11-09"
   },
   {
     "id": "hsin-electro-flare",
@@ -229,7 +229,7 @@ const PARTY_RECOMMENDATIONS = [
         "kind": "community"
       }
     ],
-    "verifiedAt": "2026-10-23"
+    "verifiedAt": "2026-11-09"
   },
   {
     "id": "suoming-main-dps",
@@ -240,7 +240,7 @@ const PARTY_RECOMMENDATIONS = [
     ],
     "label": "쇄명 메인 딜러",
     "reason": "린네와 모니에의 범용 피해 지원을 결합해 쇄명이 직접 공격하는 시간을 강화합니다.",
-    "condition": "쇄명을 메인 딜러로 쓰는 대안",
+    "condition": "린네·모니에를 함께 편성합니다. 쇄명은 해방 후 스킬로 합일을 소모하는 메인 딜러 운용입니다.",
     "sources": [
       {
         "label": "Prydwen · 쇄명 메인 딜러 조합",
@@ -248,7 +248,7 @@ const PARTY_RECOMMENDATIONS = [
         "kind": "community"
       }
     ],
-    "verifiedAt": "2026-10-23"
+    "verifiedAt": "2026-11-09"
   },
   {
     "id": "jiyan-mortefi-verina",
@@ -1909,5 +1909,124 @@ const PARTY_RECOMMENDATIONS = [
       }
     ],
     "verifiedAt": "2026-10-30"
+  },
+  {
+    "id": "hsin-suoming-verina",
+    "members": [
+      "hsin",
+      "suoming",
+      "verina"
+    ],
+    "label": "여우·쇄명 벨리나 대안",
+    "reason": "합일 조합의 지원 슬롯을 벨리나의 회복과 버프로 채웁니다.",
+    "condition": "여우의 별자리: 합일(Unison) 모드. 쇄명 반주 후 여우의 별자리로 연결합니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 여우의 별자리 시너지·지원 대안",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/hsin",
+        "kind": "community"
+      },
+      {
+        "label": "Prydwen · 쇄명 시너지·운용",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/suoming",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-11-09"
+  },
+  {
+    "id": "hsin-suoming-buling",
+    "members": [
+      "hsin",
+      "suoming",
+      "buling"
+    ],
+    "label": "여우·쇄명 복링 대안",
+    "reason": "벨리나도 다른 파티에서 사용한다면 복링을 지원 대안으로 활용합니다.",
+    "condition": "여우의 별자리: 합일(Unison) 모드. 공략상 벨리나보다 낮은 우선순위의 대안입니다.",
+    "sources": [
+      {
+        "label": "Prydwen · 여우의 별자리 시너지·지원 대안",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/hsin",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-11-09"
+  },
+  {
+    "id": "hsin-rover-chisa",
+    "members": [
+      "hsin",
+      "rover",
+      "chisa"
+    ],
+    "label": "여우 전도 상태 이상·치사",
+    "reason": "전도 방랑자의 상태 이상 부여에 치사의 지원을 조합합니다.",
+    "condition": "방랑자: 전도 속성 / 여우의 별자리: Electro Flare 모드",
+    "sources": [
+      {
+        "label": "Prydwen · 여우의 별자리 시너지·지원 대안",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/hsin",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-11-09"
+  },
+  {
+    "id": "hsin-rover-buling",
+    "members": [
+      "hsin",
+      "rover",
+      "buling"
+    ],
+    "label": "여우 전도 상태 이상·복링",
+    "reason": "복링의 전도 상태 이상 부여와 지원을 이용하는 대체 조합입니다.",
+    "condition": "방랑자: 전도 속성 / 여우의 별자리: Electro Flare 모드",
+    "sources": [
+      {
+        "label": "Prydwen · 여우의 별자리 시너지·지원 대안",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/hsin",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-11-09"
+  },
+  {
+    "id": "suoming-sanhua-shorekeeper",
+    "members": [
+      "suoming",
+      "sanhua",
+      "shorekeeper"
+    ],
+    "label": "쇄명·산화 파수인 지원",
+    "reason": "산화의 일반 공격 지원과 파수인의 회복·버프를 쇄명에게 연결합니다.",
+    "condition": "쇄명은 해방 후 스킬로 합일을 소모하는 메인 딜러 운용입니다. 산화 반주 → 쇄명.",
+    "sources": [
+      {
+        "label": "Prydwen · 쇄명 시너지·운용",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/suoming",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-11-09"
+  },
+  {
+    "id": "suoming-sanhua-verina",
+    "members": [
+      "suoming",
+      "sanhua",
+      "verina"
+    ],
+    "label": "쇄명·산화 벨리나 지원",
+    "reason": "산화가 쇄명의 일반 공격을 보조하고 벨리나가 회복과 버프를 맡습니다.",
+    "condition": "쇄명은 해방 후 스킬로 합일을 소모하는 메인 딜러 운용입니다. 산화 반주 → 쇄명.",
+    "sources": [
+      {
+        "label": "Prydwen · 쇄명 시너지·운용",
+        "url": "https://www.prydwen.gg/wuthering-waves/characters/suoming",
+        "kind": "community"
+      }
+    ],
+    "verifiedAt": "2026-11-09"
   }
 ];

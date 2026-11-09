@@ -3,30 +3,30 @@
    배포 시 CACHE_VERSION을 올리면 이전 캐시가 정리됩니다. */
 
 const CACHE_PREFIX = 'wuwa-planner-';
-const CACHE_VERSION = 'wuwa-planner-v30';
+const CACHE_VERSION = 'wuwa-planner-v31';
 const IMAGE_CACHE = 'wuwa-planner-images-v1';
 const ACTIVE_CACHES = new Set([CACHE_VERSION, IMAGE_CACHE]);
 const APP_SHELL = [
   './',
   './index.html',
   './css/style.css',
-  './css/style.css?v=30',
+  './css/style.css?v=31',
   './css/recommendations.css',
-  './css/recommendations.css?v=30',
+  './css/recommendations.css?v=31',
   './js/data.js',
-  './js/data.js?v=30',
+  './js/data.js?v=31',
   './js/app.js',
-  './js/app.js?v=30',
+  './js/app.js?v=31',
   './js/optimizer.js',
-  './js/optimizer.js?v=30',
+  './js/optimizer.js?v=31',
   './js/teams.js',
-  './js/teams.js?v=30',
+  './js/teams.js?v=31',
   './js/recommendations.js',
-  './js/recommendations.js?v=30',
+  './js/recommendations.js?v=31',
   './css/progress.css',
-  './css/progress.css?v=30',
+  './css/progress.css?v=31',
   './js/progress.js',
-  './js/progress.js?v=30',
+  './js/progress.js?v=31',
   './manifest.webmanifest',
   './icons/app-192.v2.png',
   './icons/app-512.v2.png',

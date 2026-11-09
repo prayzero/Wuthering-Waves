@@ -88,7 +88,7 @@ const context = vm.createContext({
 
 const data = fs.readFileSync(path.join(root, 'js/data.js'), 'utf8');
 const app = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
-vm.runInContext(`${data}\nBANNERS.push({ ver: '99.0', phase: '예고 검사', start: '2099-01-01', end: '2099-01-28', pickup: [], rerun: [], leaked: true, note: '예고 필터 검사 fixture' });\n${app}\n;globalThis.__ui = {
+vm.runInContext(`${data}\nBANNERS.push({ ver: '98.0', phase: '공식 예고 검사', announced: true, start: '2026-11-12', end: '', pickup: ['hsin'], rerun: ['iuno'], sourceUrl: 'https://example.com/official', note: '공식 예고 검사 fixture' }); BANNERS.push({ ver: '99.0', phase: '예고 검사', start: '2099-01-01', end: '2099-01-28', pickup: [], rerun: [], leaked: true, note: '예고 필터 검사 fixture' });\n${app}\n;globalThis.__ui = {
   characterMatchesSearch, charById, renderRoster, renderMatStrip, renderBannerCards, renderContents,
   getState: () => state,
   bannerCount: () => BANNERS.length,
@@ -136,6 +136,9 @@ search('roster-search', '<script>');
 assert.doesNotMatch(el('roster-grid').innerHTML, /<script>/);
 search('roster-search', '');
 assert.match(el('roster-grid').innerHTML, /data-toggle-own="verina"/);
+assert.match(el('roster-grid').innerHTML, /data-toggle-own="lily"/);
+assert.match(el('roster-grid').innerHTML, /출시 예정 · 11\/12/);
+assert.equal(ui.characterMatchesSearch(ui.charById('lily'), 'Lily'), true);
 assert.equal(JSON.stringify(ui.getState()), stateBeforeSearch, '검색·필터는 저장된 보유 데이터를 변경하지 않음');
 
 // Material search keeps the selected detail while narrowing the character list.
@@ -160,6 +163,13 @@ assert.equal(el('mat-detail').innerHTML, selectedDetail, '검색어 변경이 �
 el('mat-detail').scrollIntoView = undefined;
 assert.doesNotThrow(() => fire('mat-char-strip', 'click', materialButton), 'scrollIntoView 없는 환경도 지원');
 
+assert.match(el('banner-cards').innerHTML, /data-announced-banner="98.0-공식 예고 검사"/);
+assert.match(el('banner-cards').innerHTML, /종료일 미공개/);
+assert.match(el('banner-cards').innerHTML, /공식 공지<\/a>/);
+assert.doesNotMatch(el('banner-cards').innerHTML, /data-banner="98.0-공식 예고 검사"/);
+assert.match(el('banner-cards').innerHTML, /data-announced-banner="3\.8-전반"/);
+assert.match(el('banner-cards').innerHTML, /data-announced-banner="3\.8-후반"/);
+assert.doesNotMatch(el('banner-cards').innerHTML, /data-banner="3\.8-(전반|후반)"/);
 // Current starts compact; all history remains available without changing saved records.
 assert.match(el('banner-cards').innerHTML, /data-banner="3\.6-후반"/);
 assert.match(el('banner-cards').innerHTML, /Ver 99\.0/);

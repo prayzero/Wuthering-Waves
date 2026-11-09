@@ -228,14 +228,14 @@ const fixture = (overrides = {}) => ({ ...plain(app.defaults()), schemaVersion: 
 
 assert.deepEqual(Array.from(app.fields, field => field.key), fieldKeys, '공개된 육성 항목은 네 종류');
 assert(app.fields.every(field => typeof field.label === 'string' && field.label.trim()), '모든 항목에 표시 이름 제공');
-assert.equal(app.getState().schemaVersion, 9);
+assert.equal(app.getState().schemaVersion, 10);
 assert.deepEqual(plain(app.getState().characterProgress), {});
 
 const oldBackup = fixture({ schemaVersion: 7 });
 delete oldBackup.characterProgress;
 const oldBackupCopy = plain(oldBackup);
 const migrated = app.normalize(oldBackup, true);
-assert.equal(migrated.schemaVersion, 9);
+assert.equal(migrated.schemaVersion, 10);
 assert.deepEqual(plain(migrated.characterProgress), {}, '구형 백업은 미체크 상태로 시작');
 assert.deepEqual(oldBackup, oldBackupCopy, '마이그레이션은 입력 백업을 수정하지 않음');
 assert.deepEqual(withoutProgress(migrated), withoutProgress(app.normalize(fixture(), true)), '기존 일정·기록·파티·콘텐츠를 보존');
@@ -243,7 +243,7 @@ const v8Checks = { hsin: { level90: true, skills: false, echo: true, weapon: fal
   verina: { level90: false, skills: true, echo: false, weapon: true } };
 const v8Backup = fixture({ schemaVersion: 8, characterProgress: v8Checks });
 const v8Migrated = app.normalize(v8Backup, true);
-assert.equal(v8Migrated.schemaVersion, 9);
+assert.equal(v8Migrated.schemaVersion, 10);
 for (const [id, progress] of Object.entries(v8Checks)) {
   assert.deepEqual(plain(v8Migrated.characterProgress[id]), { ...progress, ...emptyBuild() },
     'v8 백업의 네 체크는 유지하고 신규 항목은 미입력으로 복원');
@@ -696,4 +696,4 @@ app.openCharacterProgress('missing');
 assert.equal(h.document.activeElement, el('progress-search'));
 assert.deepEqual(plain(app.getState().characterProgress), plain(app.normalize(fixture({ characterProgress: savedEntries })).characterProgress));
 
-console.log('육성 체크리스트 검사 통과: 네 완료 항목과 돌파·전무 독립 저장, schema 9 및 v8 백업, nullable 24조합, 새로고침·실제 백업 왕복, 기존 기록 보존, 보유 변경·사용자 캐릭터 삭제, 타입·범위·프로토타입·XSS, 저장 실패 복구, select 값/초점 유지·동일 구조 import·4항목 필터 독립성.');
+console.log('육성 체크리스트 검사 통과: 네 완료 항목과 돌파·전무 독립 저장, schema 10 및 v8 백업, nullable 24조합, 새로고침·실제 백업 왕복, 기존 기록 보존, 보유 변경·사용자 캐릭터 삭제, 타입·범위·프로토타입·XSS, 저장 실패 복구, select 값/초점 유지·동일 구조 import·4항목 필터 독립성.');

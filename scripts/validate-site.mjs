@@ -166,14 +166,20 @@ try {
         `추천 출처 형식 오류: ${team.id}`);
     }
   }
-  charIds.forEach(id => check(coveredCharacters.has(id), `추천이 없는 기본 캐릭터: ${id}`));
+  charIds.forEach(id => check(coveredCharacters.has(id) || data.CHARACTERS.find(c => c.id === id)?.announced === true,
+    `추천이 없는 출시 캐릭터: ${id}`));
 
   const bannerKeys = new Set();
   for (const banner of data.BANNERS) {
     const key = `${banner.ver}-${banner.phase}`;
     check(!bannerKeys.has(key), `중복 배너: ${key}`);
     bannerKeys.add(key);
-    if (!banner.leaked) {
+    if (banner.announced) {
+      check(!banner.leaked && /^https:\/\//.test(banner.sourceUrl || ''), `공식 예고 출처 누락: ${key}`);
+      check(!banner.start || validDate(banner.start), `공식 예고 시작일 오류: ${key}`);
+      check(!banner.end || validDate(banner.end), `공식 예고 종료일 오류: ${key}`);
+      check(!banner.start || !banner.end || banner.start <= banner.end, `공식 예고 날짜 순서 오류: ${key}`);
+    } else if (!banner.leaked) {
       check(validDate(banner.start) && validDate(banner.end) && banner.start <= banner.end, `배너 날짜 오류: ${key}`);
     }
     for (const field of ['startAt', 'endAt']) {
@@ -199,6 +205,22 @@ try {
   const currentBanner = data.BANNERS.find(b => b.ver === '3.6' && b.phase === '후반');
   const phase37First = data.BANNERS.find(b => b.ver === '3.7' && b.phase === '전반');
   const phase37Second = data.BANNERS.find(b => b.ver === '3.7' && b.phase === '후반');
+  const phase38First = data.BANNERS.find(b => b.ver === '3.8' && b.phase === '전반');
+  const phase38Second = data.BANNERS.find(b => b.ver === '3.8' && b.phase === '후반');
+  const lily = data.CHARACTERS.find(c => c.id === 'lily');
+  check(lily?.announced === true && lily.releaseDate === '2026-11-12' && lily.name === '릴리' &&
+    lily.rarity === 5 && lily.element === 'spectro' && lily.weapon === 'pistols', '릴리 공식 공개 정보 오류');
+  check(data.SIG_WEAPONS.lily === '럴러바이' &&
+    data.CHAR_MATS.lily?.join('|') === 'combustor|exoswarm|기억 속 금빛 (Gold in Memory)' &&
+    data.ASC_MATS.lily?.join('|') === 'Reverie Lily|태양을 노리는 손끝', '릴리 공식 가이드 무기·소재 오류');
+  check(phase38First?.announced === true && phase38First.start === '2026-11-12' &&
+    !phase38First.startAt && !phase38First.end && phase38First.pickup?.join(',') === 'lily' &&
+    phase38First.rerun?.join(',') === 'sigrika,qiuyuan', '3.8 전반 공식 예고 구성·미공개 일정 오류');
+  check(phase38Second?.announced === true && !phase38Second.start && !phase38Second.end &&
+    phase38Second.pickup?.length === 0 && phase38Second.rerun?.join(',') === 'xuanling,suisui,hiyuki',
+    '3.8 후반 공식 예고 구성·미공개 일정 오류');
+  check(!data.PARTY_RECOMMENDATIONS.some(team => team.members.includes('lily')),
+    '미출시 릴리의 검증되지 않은 추천 파티가 포함되었습니다.');
   check(collab?.charPityGroup && collab?.weaponPityGroup, '3.4 콜라보 별도 천장 그룹이 없습니다.');
   check(selection?.charPityGroup && selection?.weaponPityGroup, '3.5 선택형 별도 천장 그룹이 없습니다.');
   check(selection?.freePulls === 10, '3.5 선택형 무료 10뽑 데이터가 없습니다.');
@@ -273,20 +295,23 @@ try {
     }
     contentIds.add(content.id);
   }
-  check(data.CONTENT_DEFAULTS.find(c => c.id === 'tower')?.start === '2026-10-12', '공식 이벤트 노트 역경의 탑 일정 오류');
-  check(data.CONTENT_DEFAULTS.find(c => c.id === 'sea')?.start === '2026-09-28', '공식 이벤트 노트 해역 일정 오류');
+  check(data.CONTENT_DEFAULTS.find(c => c.id === 'tower')?.start === '2026-11-09' &&
+    data.CONTENT_DEFAULTS.find(c => c.id === 'tower')?.dataEnd === '2026-12-07', '공식 이벤트 노트 역경의 탑 일정 오류');
+  check(data.CONTENT_DEFAULTS.find(c => c.id === 'sea')?.start === '2026-10-26' &&
+    data.CONTENT_DEFAULTS.find(c => c.id === 'sea')?.dataEnd === '2026-11-23', '공식 이벤트 노트 해역 일정 오류');
   check(data.CONTENT_DEFAULTS.find(c => c.id === 'matrix')?.start === '2026-10-07' &&
     data.CONTENT_DEFAULTS.find(c => c.id === 'matrix')?.dataEnd === '2026-11-12', '공식 이벤트 노트 매트릭스 일정 오류');
   check(data.CONTENT_DEFAULTS.every(c => c.dataStatus === 'corroborated'),
     '비공식 교차 확인 전투 자료의 상태 표시가 올바르지 않습니다.');
   const towerContent = data.CONTENT_DEFAULTS.find(c => c.id === 'tower');
-  check(towerContent.stages.length === 12 && towerContent.stages.find(s => s.name === '심연 4층')?.mobs.includes('크라운리스'),
-    '41시즌 탑의 층/보스가 올바르지 않습니다.');
-  check(towerContent.buff.includes('+55%(20초)') && towerContent.buff.includes('전도·회절 피해 제외'),
-    '41시즌 탑의 교차 확인 버프가 올바르지 않습니다.');
+  check(towerContent.stages.length === 6 && towerContent.stages.find(s => s.name === '심연 4층')?.mobs.includes('애곡하는 아익스'),
+    '42시즌 탑의 교차 확인 6개 층/보스가 올바르지 않습니다.');
+  check(towerContent.buff.includes('전도·에코 어빌리티 피해 제외') && towerContent.buff.includes('에코 어빌리티 최종 피해 +50%') &&
+    !towerContent.buff.includes('전도·회절 피해 제외'), '42시즌 탑의 교차 확인 버프가 올바르지 않습니다.');
   const seaContent = data.CONTENT_DEFAULTS.find(c => c.id === 'sea');
-  check(seaContent.buff.includes('껍데기만 남은 이상') && seaContent.buff.includes('+30%(15초)') &&
-    seaContent.stages.some(s => s.mobs.includes('미스터 매직')), '22시즌 해역의 증표/몹이 올바르지 않습니다.');
+  check(seaContent.buff.includes('영감이 샘솟은 정교한 기술') && seaContent.buff.includes('+65%(20초)') &&
+    seaContent.buff.includes('+60%(20초)') && !seaContent.buff.includes('껍데기만 남은 이상') &&
+    seaContent.stages.some(s => s.mobs.includes('상강의 사냥꾼')), '23시즌 해역의 증표/몹이 올바르지 않습니다.');
   const matrixContent = data.CONTENT_DEFAULTS.find(c => c.id === 'matrix');
   check(matrixContent.buff.includes('+11%(최대 5스택, 2초') && matrixContent.buff.includes('+55%(30초)'),
     '매트릭스 실드 중첩/합일 대응 지속시간이 교차 확인값과 다릅니다.');

@@ -85,7 +85,7 @@ vm.runInContext(`${dataSource}\n${appSource}\n;globalThis.__qa = {
   lunitePurchasePrice, lunitePurchaseAmount, addSelectedLunitePurchase, renderPityCalc, calculatorResultMarkup,
   calculateProgressionWaveplates,
   applyRecordSideEffects, revertRecordSideEffects, rebaseRecordEffectsForDeletion, esc,
-  partyRoleKey, memberPlacementIssue, generalModeConflicts, setMember, openPicker, bannerIsActive,
+  partyRoleKey, memberPlacementIssue, generalModeConflicts, setMember, openPicker, bannerIsActive, bannerIsUpcoming,
   renderBannerCards: () => {
     if (typeof historyFilter !== 'undefined') historyFilter = 'all';
     renderBannerCards();
@@ -100,6 +100,7 @@ vm.runInContext(`${dataSource}\n${appSource}\n;globalThis.__qa = {
   getV4ContentDefaults: () => clone(LEGACY_CONTENT_DEFAULTS_V4),
   getV5ContentDefaults: () => clone(LEGACY_CONTENT_DEFAULTS_V5),
   getV6ContentDefaults: () => clone(LEGACY_CONTENT_DEFAULTS_V6),
+  getV9ContentDefaults: () => clone(LEGACY_CONTENT_DEFAULTS_V9),
   replaceContentDefaults: value => {
     CONTENT_DEFAULTS.splice(0, CONTENT_DEFAULTS.length, ...clone(value));
   }
@@ -169,7 +170,7 @@ const migratedV3Contents = app.normalizeStateData({
   parties: [],
   contents: legacyContentDefaults,
 });
-assert.equal(migratedV3Contents.schemaVersion, 9, 'v3 저장 데이터 스키마 갱신');
+assert.equal(migratedV3Contents.schemaVersion, 10, 'v3 저장 데이터 스키마 갱신');
 assert.equal(JSON.stringify(migratedV3Contents.contents), JSON.stringify(refreshedContentDefaults),
   '수정하지 않은 v3 컨텐츠 기본값을 최신 기본값으로 갱신');
 
@@ -202,7 +203,7 @@ const migratedV4Contents = app.normalizeStateData({
   contents: v4ContentDefaults,
   owned: { jingran: true },
 });
-assert.equal(migratedV4Contents.schemaVersion, 9, 'v4 저장 데이터 스키마 갱신');
+assert.equal(migratedV4Contents.schemaVersion, 10, 'v4 저장 데이터 스키마 갱신');
 assert.equal(migratedV4Contents.owned.jingran, true, '컨텐츠 갱신 시 보유 캐릭터 보존');
 assert.equal(JSON.stringify(migratedV4Contents.contents), JSON.stringify(refreshedContentDefaults),
   '수정하지 않은 v4 컨텐츠 기본값을 최신 기본값으로 갱신');
@@ -273,6 +274,103 @@ const migratedMetadataOnlyV6 = app.normalizeStateData({ schemaVersion: 6, partie
 assert.equal(migratedMetadataOnlyV6.contents[0].dataStart, '2026-08-01', 'v6 백업에서 따로 수정한 자료 기간 보존');
 assert.equal(migratedMetadataOnlyV6.contents[0].dataEnd, '2026-08-29');
 assert.equal(migratedMetadataOnlyV6.contents[0].dataStatus, 'custom', '기간을 수정한 자료를 새 기간의 검증 자료로 인증하지 않음');
+
+// A published v7-v9 content entry is one dated record. Refresh only untouched
+// records; a single edit must never mix old text with the next cycle's enemies.
+const publishedV9Defaults = app.getV9ContentDefaults();
+const novemberFixtureDefaults = publishedV9Defaults.map((entry, index) => ({
+  ...entry,
+  period: entry.period + 1,
+  start: `2026-11-${String(9 + index).padStart(2, '0')}`,
+  dataStart: `2026-11-${String(9 + index).padStart(2, '0')}`,
+  dataEnd: `2026-12-${String(7 + index).padStart(2, '0')}`,
+  verifiedAt: '2026-11-09',
+  rules: `새 규칙 ${index}`,
+  buff: `새 버프 ${index}`,
+  stages: [{ name: `새 단계 ${index}`, mobs: `새 몹 ${index}` }],
+  sourceUrl: 'https://wutheringwaves.kurogames.com/kr/main/news/detail/november-fixture',
+  dataStatus: 'corroborated',
+  sources: [
+    { label: '시험 공식 일정', url: 'https://wutheringwaves.kurogames.com/kr/main/news/detail/november-fixture', kind: 'official', scope: '일정' },
+    { label: '시험 커뮤니티', url: 'https://example.com/november', kind: 'community', scope: '버프와 몹' },
+  ],
+}));
+app.replaceContentDefaults(novemberFixtureDefaults);
+const preservedV9User = app.normalizeStateData({
+  schemaVersion: 9,
+  owned: { jiyan: true, verina: true },
+  characterProgress: {
+    jiyan: { level90: true, skills: false, echo: true, weapon: true, sequence: 2, signatureWeapon: true },
+    verina: { level90: false, skills: true, echo: false, weapon: false, sequence: 0, signatureWeapon: false },
+  },
+  parties: [{ id: 'november-party', name: '내 편성', members: ['jiyan', 'verina', null], tag: 'tower' }],
+  schedules: [{ id: 'november-schedule', charId: 'jiyan', name: '내 일정', start: '2026-11-01', end: '2026-11-20', saved: 123, goal: '명함+전무', memo: '유지' }],
+  records: [{ id: 'november-record', season: '내 픽업', type: 'char', charId: 'jiyan', copy: 0, pulls: 70, lost: false }],
+  calc: { astrite: 12345, lunite: 600, charTickets: 9, weaponTickets: 2 },
+  pity: { charCount: 37, charGuaranteed: true, weaponCount: 21 },
+  contents: publishedV9Defaults,
+});
+const withoutContentAndSchema = value => JSON.parse(JSON.stringify(value), (key, item) =>
+  ['contents', 'schemaVersion'].includes(key) ? undefined : item);
+const plainContent = value => JSON.parse(JSON.stringify(value));
+const preservedRecordFields = ['name', 'period', 'start', 'rules', 'buff', 'stages', 'dataStart', 'dataEnd'];
+for (const version of [7, 8, 9]) {
+  const source = { ...plainContent(preservedV9User), schemaVersion: version, contents: plainContent(publishedV9Defaults) };
+  const before = JSON.stringify(source);
+  const refreshed = app.normalizeStateData(source, { strict: true });
+  assert.equal(refreshed.schemaVersion, 10, `v${version}→v10 스키마`);
+  assert.deepEqual(plainContent(refreshed.contents), plainContent(novemberFixtureDefaults), `v${version} 미수정 게시 자료 전체 갱신`);
+  assert.deepEqual(withoutContentAndSchema(refreshed), withoutContentAndSchema(preservedV9User), `v${version} 육성·돌파·전무·보유·편성·일정·뽑기·재화 보존`);
+  assert.equal(JSON.stringify(source), before, `v${version} 가져오기 원본을 변경하지 않음`);
+  assert.deepEqual(plainContent(app.normalizeStateData(refreshed, { strict: true })), plainContent(refreshed), `v${version} 미수정 갱신의 재로딩 멱등`);
+
+  const editedCases = [
+    ['사용자 상태만', { dataStatus: 'custom' }],
+    ['버프 한 필드', { buff: '직접 적은 버프' }],
+    ['단계 한 필드', { stages: [{ name: '직접 적은 층', mobs: '직접 적은 몹' }] }],
+    ['명시적 빈 버프', { buff: '' }],
+    ['명시적 빈 규칙', { rules: '' }],
+    ['명시적 빈 단계', { stages: [] }],
+    ['이름만 수정', { name: '직접 붙인 이름' }],
+    ['주기만 수정', { period: 13 }],
+    ['일정 시작만 수정', { start: '2026-10-01' }],
+    ['자료 기간만 수정', { dataStart: '2026-10-01', dataEnd: '2026-10-29' }],
+    ['확인일만 수정', { verifiedAt: '2026-10-24' }],
+    ['원문 URL만 수정', { sourceUrl: 'https://example.com/my-source' }],
+    ['출처 목록만 수정', { sources: [{ label: '내 메모', url: 'https://example.com/my-note', kind: 'community', scope: '직접 확인' }] }],
+    ['명시적 빈 출처 목록', { sources: [] }],
+  ];
+  for (const [label, patch] of editedCases) {
+    const edited = { ...plainContent(publishedV9Defaults[0]), ...patch };
+    const changedInput = { ...source, contents: [edited, ...plainContent(publishedV9Defaults.slice(1))] };
+    const changed = app.normalizeStateData(changedInput, { strict: true });
+    for (const field of preservedRecordFields) {
+      assert.equal(JSON.stringify(changed.contents[0][field]), JSON.stringify(edited[field]), `v${version}/${label}: ${field} 원래 자료와 기간 보존`);
+    }
+    assert.equal(changed.contents[0].dataStatus, 'custom', `v${version}/${label}: 자동 인증 금지`);
+    assert.equal(changed.contents[0].sourceUrl, '', `v${version}/${label}: 출처 인증 제거`);
+    assert.equal(changed.contents[0].verifiedAt, '');
+    assert.equal(JSON.stringify(changed.contents[0].sources), '[]');
+    assert.deepEqual(plainContent(changed.contents.slice(1)), plainContent(novemberFixtureDefaults.slice(1)), `v${version}/${label}: 다른 미수정 콘텐츠는 갱신`);
+    assert.deepEqual(withoutContentAndSchema(changed), withoutContentAndSchema(preservedV9User), `v${version}/${label}: 사용자 기록 보존`);
+    assert.deepEqual(plainContent(app.normalizeStateData(changed, { strict: true })), plainContent(changed), `v${version}/${label}: 재로딩 멱등`);
+  }
+
+  const alreadyCurrent = app.normalizeStateData({ ...source, contents: novemberFixtureDefaults }, { strict: true });
+  assert.deepEqual(plainContent(alreadyCurrent.contents), plainContent(novemberFixtureDefaults), `v${version} 번호의 이미 최신인 자료는 검증 상태를 유지`);
+  for (const patch of [
+    { buff: '인증을 흉내 낸 버프' },
+    { stages: [{ name: '위조 단계', mobs: '위조 몹' }] },
+    { sources: [{ ...novemberFixtureDefaults[0].sources[1], url: 'https://example.net/forged' }] },
+    { sourceUrl: 'https://example.net/forged' },
+    { dataStatus: 'official' },
+  ]) {
+    const forged = app.normalizeStateData({ ...source, contents: [{ ...novemberFixtureDefaults[0], ...patch }] }, { strict: true });
+    assert.equal(forged.contents[0].dataStatus, 'custom', `v${version}: 현재 자료 일부를 변조한 인증 금지`);
+    assert.equal(app.contentDataInfo(forged.contents[0], '2026-11-10').current, false);
+  }
+}
+console.log('v10 콘텐츠 갱신 검사 통과: v7/8/9 미수정 갱신, 42가지 수정·빈 값·메타데이터 보존, 위조 인증 방지·다른 기록 보존·멱등.');
 app.replaceContentDefaults(realContentDefaults);
 
 const forgedOfficial = app.normalizeStateData({ schemaVersion: 6, parties: [], contents: [{
@@ -364,6 +462,14 @@ for (const sources of [null, {}, [null], Array(13).fill(corroboratedFixture.sour
     /컨텐츠 출처/, '잘못된 출처 구조·URL·종류·빈 범위 거부');
 }
 app.replaceContentDefaults(realContentDefaults);
+
+const announcedBanner = { ver: '3.8', phase: '예고 검사', start: '2026-11-12', end: '', announced: true };
+assert.equal(app.bannerIsActive(announcedBanner, Date.parse('2026-11-12T12:00:00+09:00')), false, '예정 점검 종료 시각을 실제 출시로 자동 승격하지 않음');
+assert.equal(app.bannerIsUpcoming(announcedBanner, Date.parse('2026-11-09T12:00:00+09:00')), true, '종료일 미공개 공식 예고 표시');
+assert.equal(app.bannerIsUpcoming({ ...announcedBanner, start: '' }), true, '전체 일정 미정 공식 예고 표시');
+assert.equal(app.bannerIsUpcoming({ ...announcedBanner, end: '2026-12-03' }, Date.parse('2026-12-04T00:00:00+09:00')), false, '종료일이 지난 예고를 현재 목록에서 제외');
+assert.equal(app.bannerIsUpcoming({ start: '2026-11-12', end: '2026-12-03' }, Date.parse('2026-11-11T23:59:59+09:00')), true);
+assert.equal(app.bannerIsUpcoming({ start: '2026-11-12', end: '2026-12-03' }, Date.parse('2026-11-12T00:00:00+09:00')), false);
 
 const timedBanner = { start: '2026-09-10', end: '2026-09-29',
   startAt: '2026-09-10T11:00:00+09:00', endAt: '2026-09-29T12:59:59+09:00' };

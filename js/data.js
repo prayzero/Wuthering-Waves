@@ -1,7 +1,7 @@
 /* ================================================================
    WuWa 픽업 플래너 — 정적 데이터
    캐릭터 로스터 / 역대 픽업 배너 / 확률 모델 상수
-   기준일: 2026-10-23 (공식 한국 공지 확인 · 버전 3.7 후반)
+   기준일: 2026-11-09 (3.7 후반 재확인 · 3.8 공식 예고)
    ================================================================ */
 
 // 속성 정의 (게임 내 고유 색상)
@@ -67,6 +67,8 @@ const CHARACTERS = [
   { id: 'hsin',        name: '여우의 별자리', rarity: 5, element: 'electro', group: 'limited', ver: '3.7', weapon: 'rectifier', role: '딜러', img: 'https://wutheringwaves.kurogames.com/static4.0/assets/xin-4e9f5c0c.webp' },
   // 역할은 공식 전투 스타일(빠른 협주·전도/공명 스킬 피해 부스트)에 따른 플래너 분류입니다.
   { id: 'suoming',     name: '쇄명',       rarity: 5, element: 'electro', group: 'limited', ver: '3.7', weapon: 'sword', role: '서브딜러/서포터', img: 'https://wutheringwaves.kurogames.com/static4.0/assets/suoming-cc986429.webp' },
+  // 3.8 공식 공개: 출시 전 정보이며 상세 일정은 개별 모집 공지 확인 후 갱신합니다.
+  {"id":"lily","name":"릴리","rarity":5,"element":"spectro","group":"limited","ver":"3.8","weapon":"pistols","role":"힐러/서포터","img":"https://wutheringwaves.kurogames.com/static4.0/assets/lily-485d0de8.webp","announced":true,"releaseDate":"2026-11-12","sourceUrl":"https://wutheringwaves.kurogames.com/en/main/news/detail/5725"},
   // ---- 상시 5성 ----
   { id: 'rover',       name: '방랑자',     rarity: 5, element: 'spectro', group: 'standard', weapon: 'sword',      role: '주인공 (회절/인멸/기류/전도)', img: WG('5') },
   { id: 'calcharo',    name: '카카루',     rarity: 5, element: 'electro', group: 'standard', weapon: 'broadblade', role: '딜러',            img: WG('18') },
@@ -89,7 +91,7 @@ const CHARACTERS = [
   { id: 'buling',      name: '복링',       rarity: 4, element: 'electro', group: 'four', weapon: 'rectifier',  role: '서포터',       img: WG('58_UI') },
 ];
 
-/* ---- 역대 픽업 배너 (1.0 ~ 3.7 후반, 복각 포함, 페이즈 단위) ----
+/* ---- 역대 픽업 배너 (1.0 ~ 3.7 후반 / 3.8 공식 예고, 페이즈 단위) ----
    pickup: 신규 픽업 캐릭터 id / rerun: 복각 캐릭터 id
    startAt/endAt: 공식 확정 시각이 있는 경우 한국 표준시로 기록 (endAt 포함).
    3.6 후반 공식 공지: https://wutheringwaves.kurogames.com/en/main/news/detail/5431
@@ -144,7 +146,10 @@ const BANNERS = [
   { ver: '3.7', phase: '전반', start: '2026-09-30', end: '2026-10-22', pickup: ['hsin'], rerun: ['chisa', 'iuno'],
     note: '공식 3.7 이벤트 노트 기준 · 3.7 업데이트 완료 후 시작 · 여우의 별자리 전무 「옥궐에 피는 꽃」' },
   { ver: '3.7', phase: '후반', start: '2026-10-22', end: '2026-11-11', startAt: '2026-10-22T11:00:00+09:00', endAt: '2026-11-11T12:59:59.999+09:00', pickup: ['suoming'], rerun: ['lucilla', 'lynae'], fourStars: ['lumi', 'danjin', 'chixia'],
-    note: 'KR 공식 일정: 10-22 11:00 ~ 11-11 12:59 · 전무 「적막한 어둠」·「프리즈 프레임」·「스펙트럼 블래스터」 · 4성 무기: 행진의 서곡·역설의 격류·전우의 의리 (10-23 확인)' },
+    note: 'KR 공식 일정: 10-22 11:00 ~ 11-11 12:59 · 전무 「적막한 어둠」·「프리즈 프레임」·「스펙트럼 블래스터」 · 4성 무기: 행진의 서곡·역설의 격류·전우의 의리 (11-09 재확인)' },
+  // 종료일·후반 시작일 미공개. 실제 모집으로 자동 전환하지 않습니다.
+  {"ver":"3.8","phase":"전반","start":"2026-11-12","end":null,"pickup":["lily"],"rerun":["sigrika","qiuyuan"],"announced":true,"sourceUrl":"https://wutheringwaves.kurogames.com/en/main/news/detail/5689","note":"공식 예고 · 3.8 업데이트 완료 후 시작 예정 · 종료일·4성 미공개 · 릴리 전무 「럴러바이」"},
+  {"ver":"3.8","phase":"후반","start":null,"end":null,"pickup":[],"rerun":["xuanling","suisui","hiyuki"],"announced":true,"sourceUrl":"https://wutheringwaves.kurogames.com/en/main/news/detail/5689","note":"공식 예고 · 시작일·종료일·4성 미공개"},
 ];
 
 // 캐릭터명 변경 전 기록과의 호환용 (현 표기 → 예전 표기 목록)
@@ -156,6 +161,7 @@ const OLD_NAME_ALIASES = {
   '양양 · 현령': ['현령'], '루크 · 헤르센': ['루크 헤르센'], '에이메스': ['에메스'], '설지': ['백지'], '복링': ['복령'],
   '청초': ['천초'],
   '여우의 별자리': ['Hsin', 'hsin', 'Xin', 'xin'], '쇄명': ['Suoming', 'suoming'],
+  "릴리": ["Lily","lily"],
 };
 
 /* ---- 확률 모델 ----
@@ -350,6 +356,7 @@ const CHAR_MATS = {
   lumi:        ['residue',    'howler',     "사계의 단검 (Sentinel's Dagger)"],
   youhu:       ['cadence',    'ring',       '비문 고종 (Monument Bell)'],
   buling:      ['helix',      'whisperin',  '심해의 저주 (Curse of the Abyss)'],
+  "lily": ["combustor","exoswarm","기억 속 금빛 (Gold in Memory)"],
 };
 
 // 전용 무기(전무) 이름 — 한국어 정식 명칭 (공식 공지·encore.moe KR 무기 목록 대조, 2026-08-20)
@@ -394,6 +401,7 @@ const SIG_WEAPONS = {
   jingran: '수많은 인도',           // Thousandfold Deliverance
   hsin: '옥궐에 피는 꽃',           // 공식 KR 3.7 업데이트 공지 50612
   suoming: '적막한 어둠',           // 공식 KR 후반 무기 튜닝 공지 50594
+  "lily": "럴러바이",
 };
 
 // 돌파(레벨업) 재료 [지역 특산물, 필드 보스 드랍] — 몹 드랍은 스킬과 같은 계열, null = 확인 불가
@@ -455,6 +463,7 @@ const ASC_MATS = {
   lumi:        ['검은 연꽃', '번개의 성핵'],
   youhu:       ['보라색 산호', '고요한 위상'],
   buling:      ['공작화', '오염된 꼭두각시 왕관'],
+  "lily": ["Reverie Lily","태양을 노리는 손끝"],
 };
 
 // 돌파 공통 수량 (0→6돌파, Lv.90 상한 기준 — 인게임 확인)
@@ -500,77 +509,187 @@ const WAVEPLATE_FARMING = {
    dataEnd는 일자 단위 표시 경계이며, 실제 리셋 시각 확정값이 아닙니다. */
 const CONTENT_DEFAULTS = [
   {
-    id: 'tower', icon: '🗼', name: '역경의 탑 (심경 구역)',
-    period: 28, start: '2026-10-12',
-    dataStart: '2026-10-12', dataEnd: '2026-11-09', verifiedAt: '2026-10-23',
-    sourceUrl: 'https://aki-gm-resources-back.aki-game.net/notice/image/FPYtMsiebdOVEMDU.jpg',
-    dataStatus: 'corroborated',
-    sources: [
-      { label: 'KURO 3.7 이벤트 노트', url: 'https://aki-gm-resources-back.aki-game.net/notice/image/FPYtMsiebdOVEMDU.jpg', kind: 'official', scope: '일정만 확인 · 버프/몹 근거 아님' },
-      { label: 'Encore · 탑 41시즌', url: 'https://api.encore.moe/ko/toa/41', kind: 'community', scope: '한국어 버프·12개 층 등장 몹' },
-      { label: '아라오지 · 10/12 플레이 기록', url: 'https://www.araoji-game.com/entry/wuthering-waves183', kind: 'community', scope: '41시즌 버프·보스 실플레이 대조' },
-      { label: 'TOPUPLive · 10/20 공략', url: 'https://www.topuplive.com/news/wuthering-waves-3-7-tower-of-adversity-guide.html', kind: 'community', scope: '버프 수치·12개 층 몹 대조' },
-      { label: '인벤 스누피냥 · 41시즌', url: 'https://m.inven.co.kr/board/party/6196/3178?vtype=mobile', kind: 'community', scope: '국내 플레이 기록의 주요 보스 대조' },
+    "id": "tower",
+    "icon": "🗼",
+    "name": "역경의 탑 (심경 구역)",
+    "period": 28,
+    "start": "2026-11-09",
+    "dataStart": "2026-11-09",
+    "dataEnd": "2026-12-07",
+    "verifiedAt": "2026-11-09",
+    "sourceUrl": "https://aki-gm-resources-back.aki-game.net/notice/image/FPYtMsiebdOVEMDU.jpg",
+    "dataStatus": "corroborated",
+    "sources": [
+      {
+        "label": "KURO 3.7 이벤트 노트",
+        "url": "https://aki-gm-resources-back.aki-game.net/notice/image/FPYtMsiebdOVEMDU.jpg",
+        "kind": "official",
+        "scope": "일정만 확인 · 버프/몹 근거 아님"
+      },
+      {
+        "label": "Encore · 탑 42시즌",
+        "url": "https://api.encore.moe/ko/toa/42",
+        "kind": "community",
+        "scope": "한국어 버프·층별 등장 몹"
+      },
+      {
+        "label": "아라오지 · 11/9 인게임 기록",
+        "url": "https://www.araoji-game.com/entry/wuthering-waves191",
+        "kind": "community",
+        "scope": "버프 전체·잔향 4층·울림 4층·심연 1~4층 몹 화면 대조"
+      }
     ],
-    rules: '41시즌. 공식 일정 10/12~11/9, 다음 11/9~12/7. 실제 리셋 시각은 게임 내 안내를 확인해 주세요. 아래 버프·몹은 Encore와 별도 실플레이·공략 자료를 대조한 비공식 정보입니다.',
-    buff: '잔향: 적 인멸 저항 -10%. 에코 발동마다 파티 전체 속성 피해 +6%(최대 4스택), 4스택에서 크리티컬 피해 +36%. 동일 캐릭터의 동일 에코로 중복 발동 불가.\n심연 1~2층: 적 전도·용융 저항 -10%, 회절·응결 저항 +10%. 전도·용융 피해 보너스 +30%. 이상 효과 부여 시 크리티컬 피해 +25%(20초).\n심연 3~4층: 전투 시작 60초 뒤 공격 명중 시 적 받는 최종 피해 +5%, 5초마다 +5%(최대 60%). 적 전체 속성 저항 +15%(전도·회절 피해 제외). 변주 발동 시 파티 최종 피해 +15%(20초), 전자 효과 부여 시 자신 최종 피해 +55%(20초), 합일 대응 시 자신 전도 최종 피해 +50%(20초).\n울림: 적 응결 저항 -10%. 변주 발동 후 자신 공격력 매초 +5%(최대 4스택), 4스택에서 공명 스킬 피해 보너스 +40%. 퇴장 시 효과 해제.',
-    stages: [
-      { name: '잔향 1층', mobs: '그린멜팅카멜레온(유체) · 그린멜팅카멜레온' },
-      { name: '잔향 2층', mobs: '갈기늑대 · 불꽃 / 유령 인형 · 헤드 / 유령 인형 · 레프 / 유령 인형 · 라잇' },
-      { name: '잔향 3층', mobs: '칵찰찰 · 거암 투사 · 오열하는 전사 · 화살곰' },
-      { name: '잔향 4층', mobs: '유령 인형 · 탄식의 고룡' },
-      { name: '심연 1층', mobs: '반디의 군세' },
-      { name: '심연 2층', mobs: '불굴의 호위 · 추방자 장인 · 돌아갈 곳이 없는 오류' },
-      { name: '심연 3층', mobs: '심연의 위병 · 심판하는 전사 · 잔성 · 밀리너 / 흑야 기사 · 음험한 백로' },
-      { name: '심연 4층', mobs: '이성(異性) 무장 · 크라운리스' },
-      { name: '울림 1층', mobs: '드레이크 · 기류' },
-      { name: '울림 2층', mobs: '초록색 왜가리' },
-      { name: '울림 3층', mobs: '소용돌이 곰' },
-      { name: '울림 4층', mobs: '플뢰르 드 리스' },
-    ],
+    "rules": "42시즌. 공식 일정 11/9~12/7. 몹은 교차 확인한 잔향·울림 4층과 심연 1~4층을 표시합니다. 정확한 리셋 시각은 게임 내 안내를 확인해 주세요.",
+    "buff": "잔향: 적 용융 저항 -10%. 변주 발동 시 자신 크리티컬 피해 +20%, 일반 공격 피해 보너스 +40%(18초, 재발동 시 시간 갱신).\n심연 1~2층: 적 전도·응결 저항 -10%, 용융·인멸 저항 +10%. 크리티컬 피해 +25%, 응결 피해 보너스 +30%.\n심연 3~4층: 전투 시작 60초 뒤 공격 명중 시 적 받는 최종 피해 +5%, 5초마다 +5%(최대 60%). 적 전체 속성 저항 +15%(전도·에코 어빌리티 피해 제외). 변주 발동 시 파티 최종 피해 +15%(20초), 전자 효과 부여 시 자신 최종 피해 +55%(20초), 합일 대응 시 자신 전도 최종 피해 +50%(20초). 자신의 에코 어빌리티 최종 피해 +50%.\n울림: 적 회절 저항 -10%. 피해를 입힐 때 적 방어력 25% 무시. 이상 효과가 부여된 적의 받는 피해 증폭 +20%.",
+    "stages": [
+      {
+        "name": "잔향 4층",
+        "mobs": "잔성 · 밀리너 / 음험한 백로"
+      },
+      {
+        "name": "심연 1층",
+        "mobs": "크라운리스"
+      },
+      {
+        "name": "심연 2층",
+        "mobs": "그린멜팅카멜레온 · 아이언후프 · 지옥불 기사"
+      },
+      {
+        "name": "심연 3층",
+        "mobs": "추방자 장인 · 아즈즈 · 카피타네우스 · 백야 기사 · 시길룸"
+      },
+      {
+        "name": "심연 4층",
+        "mobs": "돌아갈 곳이 없는 오류 · 애곡하는 아익스"
+      },
+      {
+        "name": "울림 4층",
+        "mobs": "탄식의 고룡"
+      }
+    ]
   },
   {
-    id: 'sea', icon: '🌊', name: '해역 (죽음의 노래와 바닷속 폐허)',
-    period: 28, start: '2026-09-28',
-    dataStart: '2026-09-28', dataEnd: '2026-10-26', verifiedAt: '2026-10-23',
-    sourceUrl: 'https://aki-gm-resources-back.aki-game.net/notice/image/FPYtMsiebdOVEMDU.jpg',
-    dataStatus: 'corroborated',
-    sources: [
-      { label: 'KURO 3.7 이벤트 노트', url: 'https://aki-gm-resources-back.aki-game.net/notice/image/FPYtMsiebdOVEMDU.jpg', kind: 'official', scope: '일정만 확인 · 버프/몹 근거 아님' },
-      { label: 'Encore · 해역 22시즌', url: 'https://api-v2.encore.moe/api/ko/whiwa/22', kind: 'community', scope: '시즌·단계별 몹·진입 효과' },
-      { label: 'Encore · 허상을 비추는 등불', url: 'https://api-v2.encore.moe/api/ko/item/71500103', kind: 'community', scope: '금색 증표 수치' },
-      { label: 'Encore · 껍데기만 남은 이상', url: 'https://api-v2.encore.moe/api/ko/item/71500104', kind: 'community', scope: '금색 증표 수치' },
-      { label: 'Encore · 영혼의 무게를 가늠하는 저울', url: 'https://api-v2.encore.moe/api/ko/item/71500105', kind: 'community', scope: '금색 증표 수치' },
-      { label: '아라오지 · 9/28 인게임 기록', url: 'https://www.araoji-game.com/entry/wuthering-waves179', kind: 'community', scope: '금색 증표 3종·9~11단계 저항 속성·12단계 몹·진입 에너지 대조' },
-      { label: '일본 커뮤니티 위키 · 해역', url: 'https://wikiwiki.jp/w-w/%E6%AD%BB%E3%81%AE%E6%AD%8C%E3%81%8C%E7%BA%8F%E3%81%86%E6%B5%B7%E3%81%AE%E5%BB%83%E5%A2%9F', kind: 'community', scope: '공통 조수 효과·9~11단계 추가 저항·12단계 추가 피해·증표 제한 예외' },
+    "id": "sea",
+    "icon": "🌊",
+    "name": "해역 (죽음의 노래와 바닷속 폐허)",
+    "period": 28,
+    "start": "2026-10-26",
+    "dataStart": "2026-10-26",
+    "dataEnd": "2026-11-23",
+    "verifiedAt": "2026-11-09",
+    "sourceUrl": "https://aki-gm-resources-back.aki-game.net/notice/image/FPYtMsiebdOVEMDU.jpg",
+    "dataStatus": "corroborated",
+    "sources": [
+      {
+        "label": "KURO 3.7 이벤트 노트",
+        "url": "https://aki-gm-resources-back.aki-game.net/notice/image/FPYtMsiebdOVEMDU.jpg",
+        "kind": "official",
+        "scope": "일정만 확인 · 버프/몹 근거 아님"
+      },
+      {
+        "label": "Encore · 해역 23시즌",
+        "url": "https://api-v2.encore.moe/api/ko/whiwa/23",
+        "kind": "community",
+        "scope": "시즌 효과·진입 에너지·저항·등장 몹"
+      },
+      {
+        "label": "Encore · 허상을 비추는 등불",
+        "url": "https://api-v2.encore.moe/api/ko/item/71500107",
+        "kind": "community",
+        "scope": "금색 증표 수치"
+      },
+      {
+        "label": "Encore · 영감이 샘솟은 정교한 기술",
+        "url": "https://api-v2.encore.moe/api/ko/item/71500108",
+        "kind": "community",
+        "scope": "금색 증표 수치"
+      },
+      {
+        "label": "Encore · 영혼의 무게를 가늠하는 저울",
+        "url": "https://api-v2.encore.moe/api/ko/item/71500109",
+        "kind": "community",
+        "scope": "금색 증표 수치"
+      },
+      {
+        "label": "아라오지 · 10/26 인게임 기록",
+        "url": "https://www.araoji-game.com/entry/wuthering-waves186",
+        "kind": "community",
+        "scope": "금색 증표 3종·9~11단계 저항 속성·12단계 몹 화면 대조"
+      },
+      {
+        "label": "일본 커뮤니티 위키 · 해역",
+        "url": "https://wikiwiki.jp/w-w/%E6%AD%BB%E3%81%AE%E6%AD%8C%E3%81%8C%E7%BA%8F%E3%81%86%E6%B5%B7%E3%81%AE%E5%BB%83%E5%A2%9F",
+        "kind": "community",
+        "scope": "현재 주기 공통 효과·추가 저항·12단계 효과·증표 제한 대조"
+      }
     ],
-    rules: '22시즌. 공식 일정 9/28~10/26, 다음 10/26~11/23. 실제 리셋 시각은 게임 내 안내를 확인해 주세요. 비공식 교차 확인 범위는 공통 효과·금색 증표 3종·9~11단계 추가 저항과 12단계 끝 없는 심연의 전후반입니다. 다른 단계의 전체 몹 목록은 이 요약에 포함하지 않습니다.',
-    buff: '공통: 피해·처치로 연소 수치 충전. 가득 차면 타오르는 조수(30초)에 진입하며, 공격에 맞은 적의 받는 최종 피해 +60%(5초). 조화 소실 상태의 적에게 스킬 명중 시 조화도 파괴 피해 후 해당 상태 종료.\n금색 증표 3종(기본 사용 제한 각 2회):\n「허상을 비추는 등불」: 실드 획득 시 자신 용융 피해 보너스 +3%, 강공격 최종 피해 +2.5%(3초, 최대 15스택, 재획득 시 시간 갱신).\n「껍데기만 남은 이상」: 적 받는 전도 최종 피해 +30%. 변주 발동 시 자신 전도 최종 피해 +30%(15초).\n「영혼의 무게를 가늠하는 저울」: 조화 밀집·이탈 부여 후 자신 최종 피해 +40%(30초). 아군 조화도 파괴 시 파티 전체 속성 피해 보너스 +30%, 기류 추가 +30%(30초).\n9~11단계: 적 추가 속성 저항 +20%(9 용융 / 10 응결 / 11 인멸). 진입 시 전반 협주 에너지 100%, 후반 공명 에너지 100%.\n12단계 끝 없는 심연: 적 받는 최종 피해 +30%, 모든 증표 휴대 무제한. 진입 시 전반 협주 에너지 100%, 후반 공명 에너지 100%.',
-    stages: [
-      { name: '12단계 · 전반', mobs: '쓸쓸한 아가씨 · 심연의 위병 · 구름 바다 요정 · 불굴의 호위' },
-      { name: '12단계 · 후반', mobs: '미스터 매직 · 가시장미버섯 · 구름 바다 요정 · 불굴의 호위' },
-    ],
+    "rules": "23시즌. 공식 일정 10/26~11/23. 금색 증표 3종과 공통 효과·9~11단계 저항을 교차 확인했습니다. 몹은 12단계 전후반을 표시합니다. 정확한 리셋 시각은 게임 내 안내를 확인해 주세요.",
+    "buff": "공통: 피해·처치로 연소 수치 충전. 가득 차면 타오르는 조수(30초)에 진입하며, 공격에 맞은 적의 받는 최종 피해 +60%(5초). 조화 소실 상태의 적에게 스킬 명중 시 조화도 파괴 피해 후 해당 상태 종료.\n금색 증표 3종(기본 사용 제한 각 2회):\n「허상을 비추는 등불」: 실드 획득 시 자신 용융 피해 보너스 +3%, 강공격 최종 피해 +2.5%(3초, 최대 15스택, 재획득 시 시간 갱신).\n「영감이 샘솟은 정교한 기술」: 전자 효과 부여 시 자신 최종 피해 +65%(20초). 합일 대응 시 자신 전도 최종 피해 +60%(20초).\n「영혼의 무게를 가늠하는 저울」: 조화 밀집·이탈 부여 후 자신 최종 피해 +40%(30초). 아군 조화도 파괴 시 파티 전체 속성 피해 보너스 +30%, 기류 추가 +30%(30초).\n9~11단계: 적 추가 속성 저항 +20%(9 용융 / 10 응결 / 11 인멸). 진입 시 전반 협주 에너지 100%, 후반 공명 에너지 100%.\n12단계 끝 없는 심연: 적 받는 최종 피해 +30%, 모든 증표 휴대 무제한. 진입 시 전반 협주 에너지 100%, 후반 공명 에너지 100%.",
+    "stages": [
+      {
+        "name": "12단계 · 전반",
+        "mobs": "미스터 매직 / 갈기늑대 · 눈꽃 / 페이 이그니스 / 심연의 위병"
+      },
+      {
+        "name": "12단계 · 후반",
+        "mobs": "상강의 사냥꾼 · 글라디우스 귀족 · 페이 이그니스 · 심연의 위병"
+      }
+    ]
   },
   {
-    id: 'matrix', icon: '🧩', name: '종말 매트릭스 · 위험한 경지의 강습',
-    period: 36, start: '2026-10-07',
-    dataStart: '2026-10-07', dataEnd: '2026-11-12', verifiedAt: '2026-10-23',
-    sourceUrl: 'https://aki-gm-resources-back.aki-game.net/notice/image/FPYtMsiebdOVEMDU.jpg',
-    dataStatus: 'corroborated',
-    sources: [
-      { label: 'KURO 3.7 이벤트 노트', url: 'https://aki-gm-resources-back.aki-game.net/notice/image/FPYtMsiebdOVEMDU.jpg', kind: 'official', scope: '일정만 확인 · 버프/몹 근거 아님' },
-      { label: 'Encore · S2 단계3', url: 'https://api-v2.encore.moe/api/ko/dpmatrix/8', kind: 'community', scope: '회로 4종·적 순서·린네 추가 출전' },
-      { label: '아라오지 · 10/13 인게임 기록', url: 'https://www.araoji-game.com/entry/wuthering-waves184', kind: 'community', scope: '회로 수치·지속시간·보스·린네 2회 출전 대조' },
-      { label: 'SAYO · 3.7 플레이 메모', url: 'https://sayo-nyaa.tistory.com/2403', kind: 'community', scope: '특이점 보스 4종과 미믹 진행 순서 대조' },
+    "id": "matrix",
+    "icon": "🧩",
+    "name": "종말 매트릭스 · 위험한 경지의 강습",
+    "period": 36,
+    "start": "2026-10-07",
+    "dataStart": "2026-10-07",
+    "dataEnd": "2026-11-12",
+    "verifiedAt": "2026-11-09",
+    "sourceUrl": "https://aki-gm-resources-back.aki-game.net/notice/image/FPYtMsiebdOVEMDU.jpg",
+    "dataStatus": "corroborated",
+    "sources": [
+      {
+        "label": "KURO 3.7 이벤트 노트",
+        "url": "https://aki-gm-resources-back.aki-game.net/notice/image/FPYtMsiebdOVEMDU.jpg",
+        "kind": "official",
+        "scope": "일정만 확인 · 버프/몹 근거 아님"
+      },
+      {
+        "label": "Encore · S2 단계3",
+        "url": "https://api-v2.encore.moe/api/ko/dpmatrix/8",
+        "kind": "community",
+        "scope": "회로 4종·적 순서·린네 추가 출전"
+      },
+      {
+        "label": "아라오지 · 10/13 인게임 기록",
+        "url": "https://www.araoji-game.com/entry/wuthering-waves184",
+        "kind": "community",
+        "scope": "회로 수치·지속시간·보스·린네 2회 출전 대조"
+      },
+      {
+        "label": "SAYO · 3.7 플레이 메모",
+        "url": "https://sayo-nyaa.tistory.com/2403",
+        "kind": "community",
+        "scope": "특이점 보스 4종과 미믹 진행 순서 대조"
+      }
     ],
-    rules: '제2 도전 주기 3단계(Encore ID 8). 공식 일정 10/7~11/12, 실제 종료 시각과 다음 단계 일정 미확인. 안정 프로토콜 최대 3파티, 특이점 확장 파티 수 제한 없음, 출전당 피로도 1. 서로 다른 공명자 간 동일 무기·에코 동시 사용 불가. 회로·보스는 비공식 교차 확인 자료입니다. 린네는 이번 단계 2회 출전 가능하며, 다른 공명자의 개별 강화 수치는 이 요약에 포함하지 않습니다.',
-    buff: '공용 강화: 적 받는 최종 피해 +20%, 적 받는 일반 공격 최종 피해 +20%.\n이상 효과 강화: 이상 효과 부여 시 목표 받는 최종 피해 +25%, 받는 전도 최종 피해 추가 +30%(30초).\n기본 피해 강화: 에코 어빌리티 최종 피해 +40%. 합일 대응 시 자신 최종 피해 +55%(30초). 실드 획득 시 자신 최종 피해 +11%(최대 5스택, 2초, 퇴장 시 해제).\n조화도 파괴 강화: 조화도·이탈 부여 시 파티 전체 최종 피해 +25%(30초). 해킹·이탈 부여 시 자신 최종 피해 +30%(30초).',
-    stages: [
-      { name: '안정 · 등장 순서', mobs: '지옥불 기사 → 봉정계유 → 크라운리스 → 하늘의 기관 인형 · 겁살' },
-      { name: '특이점 · 반복 순서', mobs: '지옥불 기사 → 봉정계유 → 크라운리스 → 하늘의 기관 인형 · 겁살 → 매트릭스 미믹' },
-      { name: '보스 속성 저항', mobs: '지옥불 기사: 용융 / 봉정계유: 응결 / 크라운리스: 인멸 / 하늘의 기관 인형 · 겁살: 기류' },
-    ],
-  },
+    "rules": "제2 도전 주기 3단계(Encore ID 8). 공식 일정 10/7~11/12. 정확한 종료 시각과 다음 단계 일정은 미확인입니다. 안정 최대 3파티, 특이점 파티 수 제한 없음, 출전당 피로도 1. 서로 다른 공명자 간 동일 무기·에코 동시 사용 불가. 린네는 2회 출전 가능하며, 다른 공명자의 개별 강화 수치는 이 요약에 포함하지 않습니다.",
+    "buff": "공용 강화: 적 받는 최종 피해 +20%, 적 받는 일반 공격 최종 피해 +20%.\n이상 효과 강화: 이상 효과 부여 시 목표 받는 최종 피해 +25%, 받는 전도 최종 피해 추가 +30%(30초).\n기본 피해 강화: 에코 어빌리티 최종 피해 +40%. 합일 대응 시 자신 최종 피해 +55%(30초). 실드 획득 시 자신 최종 피해 +11%(최대 5스택, 2초, 퇴장 시 해제).\n조화도 파괴 강화: 조화도·이탈 부여 시 파티 전체 최종 피해 +25%(30초). 해킹·이탈 부여 시 자신 최종 피해 +30%(30초).",
+    "stages": [
+      {
+        "name": "안정 · 등장 순서",
+        "mobs": "지옥불 기사 → 봉정계유 → 크라운리스 → 하늘의 기관 인형 · 겁살"
+      },
+      {
+        "name": "특이점 · 반복 순서",
+        "mobs": "지옥불 기사 → 봉정계유 → 크라운리스 → 하늘의 기관 인형 · 겁살 → 매트릭스 미믹"
+      },
+      {
+        "name": "보스 속성 저항",
+        "mobs": "지옥불 기사: 용융 / 봉정계유: 응결 / 크라운리스: 인멸 / 하늘의 기관 인형 · 겁살: 기류"
+      }
+    ]
+  }
 ];
 /* ---- 재화 ----
    1뽑 = 별의 소리(Astrite) 160. 달빛(Lunite)은 1:1로 별의 소리 전환.
